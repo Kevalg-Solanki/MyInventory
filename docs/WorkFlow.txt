@@ -1,4 +1,4 @@
-🔹 Your Refined Web App Development Workflow
+🔹Web App Development Workflow
 1.User flows & feature list (what the app does).
 2.Architecture diagram (frontend, backend, DB, optional services).
 3.Database design + ER diagram → schemas.
@@ -6,4 +6,7 @@
 5.Non-functional requirements (scaling, security, performance).
 6.Deployment plan (DevOps basics).
 7.Scalability notes (future-proofing).
+8. Backend
+9. UI design
+10. Frontend
 
