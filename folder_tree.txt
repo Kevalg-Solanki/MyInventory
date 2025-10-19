@@ -12,7 +12,6 @@ D:.
 |   |   package.json
 |   |
 |   \---node_modules
-|   |
 |   |         
 |   \---src
 |       |   app.js
