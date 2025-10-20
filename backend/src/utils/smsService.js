@@ -6,7 +6,7 @@ const sendSms = async (type, destination, otp, expiryTime) => {
 		//set proper message
 		let message;
 
-        console.log(type);
+       
 		switch (type) {
 			case "verify-credential":
 				message = `Your verification OTP for MyInventory is ${otp}. It will expire in ${expiryTime} minutes. If you did not request this, please ignore.`;
@@ -44,7 +44,7 @@ const sendSmsService = async (destination, message) => {
             from: process.env.TWILIO_PHONE_NUMBER,
             to: `+91${destination}`
         })
-        console.log("twilio message",twilioResponse);
+      
         return {
             success:true,
             statusCode:200,

@@ -152,11 +152,11 @@ const loginUser = async (userData) => {
 
 		//if active 
 		//create access and refresh token
-		const payload = user.getUserInfo();
-
+		const payload = await user.getUserInfo();
+		
 		//generate access and refresh token
-		const accessToken = generateAccessToken();
-		const refreshToken = generateRefreshToken();
+		const accessToken = generateAccessToken(payload);
+		const refreshToken = generateRefreshToken(payload);
 
 
 		//return user info and token

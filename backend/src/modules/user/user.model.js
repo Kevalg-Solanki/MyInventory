@@ -83,7 +83,7 @@ class UserClass {
 	
 	constructor(userData)
 	{
-		Object.assign(this,userData) //copy DB fields into class
+		Object.assign(this,userData._doc) //copy DB fields into class
 	}
 
 	async getUserInfo()
@@ -109,6 +109,7 @@ class UserClass {
 	 * @return {boolean} - return password is matched or not
 	 */
 	async verifyPassword(password){
+		
 		return await bcrypt.compare(password,this.password);
 	}
 
