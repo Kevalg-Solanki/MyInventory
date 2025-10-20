@@ -80,11 +80,13 @@ const registrationSchema = Joi.object({
 		"string.max": "Last Name must not exceed 25 characters",
 	}),
 	type: Joi.string().valid("email", "mobile").required(),
-	email: Joi.string().email().when("type", {
-		is: "email",
-		then: Joi.required(),
-		otherwise: Joi.optional().allow(null),
-	}),
+	email: Joi.string()
+		.email()
+		.when("type", {
+			is: "email",
+			then: Joi.required(),
+			otherwise: Joi.optional().allow(null),
+		}),
 	mobile: Joi.string()
 		.pattern(/^[0-9]{10}$/)
 		.when("type", {
@@ -111,8 +113,40 @@ const registrationSchema = Joi.object({
 		}),
 });
 
+const loginSchema = Joi.object({
+	type: Joi.string().valid("email", "mobile").required().messages({
+		"any.only": "Type must be either email or mobile",
+		"string.empty": "Type is required",
+	}),
+	credential: Joi.alternatives()
+		.conditional("type", [
+			{
+				is: "email",
+				then: Joi.string()
+					.email({ tlds: { allow: false } })
+					.required(),
+			},
+			{
+				is: "mobile",
+				then: Joi.string()
+					.pattern(/^\d{10}$/)
+					.required()
+					.messages({
+						"string.pattern.base": "Mobile must be 10 digits",
+					}),
+			},
+		])
+		.required(),
+	password: Joi.string().required().messages({
+		"string.empty": "Password cannot be empty.",
+		"any.required": "Password is required.",
+	}),
+});
+
 module.exports = {
 	verifyCredentialSchema,
 	verifyOtpRegisterSchema,
 	registrationSchema,
+	loginSchema
 };
+

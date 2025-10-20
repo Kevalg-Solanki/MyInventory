@@ -4,11 +4,11 @@ const bcrypt = require("bcrypt");
 
 //models
 const otpModel = require("../otp/otp.model");
-const userModel = require("../user/user.model");
+const { UserModel, UserClass } = require("../user/user.model");
 
 //utils
 const { generateOtp } = require("../../utils/otpGenerator.js");
-const validateOtp = require("../../utils/validateOtp.js");
+const { generateAccessToken, generateRefreshToken } = require("../../utils/jwtTokenService.js");
 
 /**
  * -find user with credential in database
@@ -16,9 +16,9 @@ const validateOtp = require("../../utils/validateOtp.js");
  * @return {Object} - if user exist returns user info or if not then returns null
  */
 
-const checkUserExistWithCredential = async (credential) => {
+const findUserWithCredential = async (credential) => {
 	//find and return user
-	return await userModel.findOne({
+	return await UserModel.findOne({
 		$or: [{ email: credential }, { mobile: credential }],
 		isDeleted: false,
 	});
@@ -75,11 +75,11 @@ const getRegistrationOtp = async (destination) => {
  */
 const saveUserInDatabase = async (userData) => {
 	try {
-		//hash password
+		//1.hash password
 		const hashedPassword = await bcrypt.hash(userData?.password, 10);
 
-		//save user in database
-		const userToSave = new userModel({
+		//2.save user in database
+		const userToSave = new UserModel({
 			profilePicture: userData.profilePicture,
 			firstName: userData.firstName,
 			lastName: userData.lastName,
@@ -100,13 +100,88 @@ const saveUserInDatabase = async (userData) => {
 		return {
 			success: false,
 			statusCode: 500,
+			savedUser: null,
 			messages: "Failed to register please try again",
 		};
 	}
 };
 
+//login service
+const loginUser = async (userData) => {
+	try {
+		//1. find user in database
+		const userInDatabase = await findUserWithCredential(userData.credential);
+
+		//if user does not exist
+		if (!userInDatabase) {
+			return {
+				success: false,
+				statusCode: 404,
+				message: "User not found please signUp first",
+			};
+		}
+
+		//2. Create object of user
+		const user = new UserClass(userInDatabase);
+
+		//3. Verify user password
+		const isMatched = await user.verifyPassword(userData.password);
+
+		//if password does not match
+		if(!isMatched)
+		{
+			return {
+				success:false,
+				statusCode:401,
+				message:"Password incorrect"
+			}
+		}
+
+		//check user account is activate or not
+		const isActive = user.isUserAccountActive();
+
+		//if diactived user account
+		if(!isActive)
+		{
+			return {
+				success:false,
+				statusCode:403,
+				message:"Your account is deactivated. Please activate it using the email sent to you."
+			}
+		}
+
+		//if active 
+		//create access and refresh token
+		const payload = user.getUserInfo();
+
+		//generate access and refresh token
+		const accessToken = generateAccessToken();
+		const refreshToken = generateRefreshToken();
+
+
+		//return user info and token
+		return {
+			success:true,
+			statusCode:200,
+			data:{...payload},
+			accessToken,
+			refreshToken
+		}
+
+	} catch (error) {
+		console.error("Login failed Error At 'loginUser': ", error);
+
+		return {
+			success: false,
+			statusCode: 500,
+			message: "Unable to login please try again",
+		};
+	}
+};
+
 module.exports = {
-	checkUserExistWithCredential,
+	findUserWithCredential,
 	getRegistrationOtp,
 	saveUserInDatabase,
+	loginUser
 };

@@ -2,10 +2,10 @@
 const validateRequest = require("../../middlewares/validateRequest");
 
 //validations
-const { verifyCredentialSchema, verifyOtpRegisterSchema, registrationSchema } = require("./auth.validation.js");
+const { verifyCredentialSchema, verifyOtpRegisterSchema, registrationSchema, loginSchema } = require("./auth.validation.js");
 
 //controllers
-const { verifyCredentialAndSendOtp, verifyOtpForRegistration,register } = require("./auth.controller.js");
+const { verifyCredentialAndSendOtp, verifyOtpForRegistration,register, login } = require("./auth.controller.js");
 
 
 //create router
@@ -19,6 +19,9 @@ authRouter.post("/verify-credential",validateRequest(verifyCredentialSchema),ver
 
 authRouter.post("/verify-otp-register",validateRequest(verifyOtpRegisterSchema),verifyOtpForRegistration)
 
-authRouter.post("/register",validateRequest(registrationSchema),register)
+authRouter.post("/register",validateRequest(registrationSchema),register);
+
+authRouter.post("/login",validateRequest(loginSchema),login);
 
 module.exports = authRouter;
+

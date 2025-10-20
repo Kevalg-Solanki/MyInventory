@@ -6,13 +6,15 @@ const { sendOtp } = require("../otp/otp.service.js");
 
 //services
 const {
-	checkUserExistWithCredential,
+	findUserWithCredential,
 	getRegistrationOtp,
 	saveUserInDatabase,
+	loginUser
 } = require("./auth.service.js");
 
 //utils
 const validateOtp = require("../../utils/validateOtp.js");
+const { generateAccessToken, generateRefreshToken } = require("../../utils/jwtTokenService.js");
 
 //verify-credentials controller
 const verifyCredentialAndSendOtp = async (req, res) => {
@@ -21,7 +23,7 @@ const verifyCredentialAndSendOtp = async (req, res) => {
 		const { credential, type } = req.body;
 
 		//check if user exist
-		const existingUserInDatabase = await checkUserExistWithCredential(
+		const existingUserInDatabase = await findUserWithCredential(
 			credential
 		);
 
@@ -125,8 +127,8 @@ const register = async (req, res) => {
 		const credential =
 			req.body?.type == "email" ? req.body?.email : req.body?.mobile;
 
-		//check if user exist
-		const existingUserInDatabase = await checkUserExistWithCredential(
+		//1.check if user exist
+		const existingUserInDatabase = await findUserWithCredential(
 			credential
 		);
 
@@ -138,7 +140,7 @@ const register = async (req, res) => {
 			});
 		}
 
-		//first verify otp and user exist
+		//2.first verify otp and user exist
 		const validateOtpResponse = await validateOtp(
 			"registration",
 			credential,
@@ -155,11 +157,10 @@ const register = async (req, res) => {
 			});
 		}
 
-		//save user in database
+		//3. save user in database
 		const saveUserInDatabaseResponse = await saveUserInDatabase(req.body);
 
-		console.log(saveUserInDatabaseResponse);
-
+		//prepare payload
 		const {
 			_id,
 			profilePicture,
@@ -169,35 +170,23 @@ const register = async (req, res) => {
 			mobile,
 			isSuperAdmin,
 		} = saveUserInDatabaseResponse.savedUser;
-		//generate jwt token
-		const jwtToken = jwt.sign(
-			{
-				_id: _id,
-				profilePicture: profilePicture,
-				firstName: firstName,
-				lastName: lastName,
-				email: email,
-				mobile: mobile,
-				isSuperAdmin: isSuperAdmin,
-			},
-			process.env.JWT_SECRETE,
-			{ expiresIn: process.env.JWT_TOKEN_EXPIRY }
-		);
+		
+		const payload = {
+			_id,
+			profilePicture,
+			firstName,
+			lastName,
+			email,
+			mobile,
+			isSuperAdmin,
+		}
 
-		//generate refresh token
-		const jwtRefreshToken = jwt.sign(
-			{
-				_id: _id,
-				profilePicture: profilePicture,
-				firstName: firstName,
-				lastName: lastName,
-				email: email,
-				mobile: mobile,
-				isSuperAdmin: isSuperAdmin,
-			},
-			process.env.JWT_SECRETE,
-			{ expiresIn: process.env.JWT_REFRESH_TOKEN_EXPIRY }
-		);
+		//4. generate jwt token
+		const accessTokenToken = generateAccessToken(payload);
+
+		//4. generate refresh token
+		const refreshToken = generateRefreshToken(payload);
+
 
 		const userDataToSend = {
 			_id: _id,
@@ -212,25 +201,59 @@ const register = async (req, res) => {
 		return res.status(200).json({
 			success: true,
 			statusCode: 200,
-
 			message: "Registration Successfull",
-			data: userDataToSend,
-			accessToken: jwtToken,
-			refreshToken: jwtRefreshToken,
+			data:{
+				userData:{...userDataToSend},
+			},
+			accessToken: accessTokenToken,
+			refreshToken: refreshToken,
 		});
+
 	} catch (error) {
 		console.error("Registration Failed Error At 'register': ", error);
 		return res.status(500).json({
 			success: false,
 			statusCode: 500,
-
 			message: "Registration Failed Please try again",
 		});
 	}
 };
 
+//login
+const login = async(req,res)=>{
+
+	try
+	{
+		//call service function to login user
+		const loginUserResponse = await loginUser(req.body);
+
+
+		return res.status(loginUserResponse.statusCode).json({
+			success:loginUserResponse.success,
+			statusCode:loginUserResponse.statusCode,
+			message:loginUserResponse.message,
+			data:{
+				userData:{...loginUserResponse.data},
+			},
+			accessToken:loginUserResponse.accessToken,
+			refreshToken:loginUserResponse.refreshToken
+		})
+	}
+	catch(error)
+	{
+		return res.status(500).json({
+			success:false,
+			statusCode:500,
+			message:"Failed to login please try again"
+		})
+	}
+
+}
+
 module.exports = {
 	verifyCredentialAndSendOtp,
 	verifyOtpForRegistration,
 	register,
+	login
 };
+

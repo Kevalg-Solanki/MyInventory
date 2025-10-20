@@ -59,7 +59,7 @@ const sendOtp = async (type, method, destination, expiryTime = 5) => {
 		return {
 			success: false,
 			statusCode: 500,
-			error: error,
+			
 			message: "Failed to send otp",
 		};
 	}

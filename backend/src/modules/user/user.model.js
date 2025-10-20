@@ -1,5 +1,7 @@
 //External modules
 const mongoose = require("mongoose");
+const bcrypt = require("bcrypt");
+
 
 const userSchema = new mongoose.Schema(
 	{
@@ -71,4 +73,50 @@ userSchema.index({
 	mobile: "text",
 });
 
-module.exports = mongoose.model("User", userSchema);
+
+const UserModel = mongoose.model("User", userSchema);
+
+
+
+//User Class
+class UserClass {
+	
+	constructor(userData)
+	{
+		Object.assign(this,userData) //copy DB fields into class
+	}
+
+	async getUserInfo()
+	{
+		return {
+			_id:this._id,
+			firstName:this.firstName,
+			lastName:this.lastName,
+			email:this.email,
+			mobile:this.mobile,
+			isSuperAdmin:this.isSuperAdmin,
+		}
+	}
+
+	async isUserAccountActive()
+	{
+		return this.isActive?true:false;
+	}
+
+	
+	/**
+	 * @param {string} password - password to verify
+	 * @return {boolean} - return password is matched or not
+	 */
+	async verifyPassword(password){
+		return await bcrypt.compare(password,this.password);
+	}
+
+}
+
+
+module.exports = {
+	UserModel,
+	UserClass
+}
+
