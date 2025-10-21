@@ -2,7 +2,12 @@
 const validateRequest = require("../../middlewares/validateRequest");
 
 //validations
-const { verifyCredentialSchema, verifyOtpRegisterSchema, registrationSchema, loginSchema } = require("./auth.validation.js");
+const { verifyCredentialSchema, 
+        verifyOtpRegisterSchema, 
+        registrationSchema, 
+        loginSchema,
+        forgotPassRequestSchema
+    } = require("./auth.validation.js");
 
 //controllers
 const { verifyCredentialAndSendOtp, 
@@ -38,6 +43,12 @@ authRouter.post("/login",validateRequest(loginSchema),login);
 authRouter.post("/refresh-token",refreshToken)
 
 
+//**Forgot Password
+
+//step 1: 
+authRouter.post("/forgot-password-request",validateRequest(forgotPassRequestSchema),);
+
 
 module.exports = authRouter;
+
 

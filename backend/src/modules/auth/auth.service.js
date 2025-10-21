@@ -8,7 +8,11 @@ const { UserModel, UserClass } = require("../user/user.model");
 
 //utils
 const { generateOtp } = require("../../utils/otpGenerator.js");
-const { generateAccessToken, generateRefreshToken } = require("../../utils/jwtTokenService.js");
+const {
+	generateAccessToken,
+	generateRefreshToken,
+} = require("../../utils/jwtTokenService.js");
+const { sendOtp } = require("../otp/otp.service.js");
 
 /**
  * -find user with credential in database
@@ -112,7 +116,7 @@ const saveUserInDatabase = async (userData) => {
 };
 
 /**
- * 
+ *
  * @param {Object} userData - user data recieved in request
  * @returns - userDetails from database and tokens
  */
@@ -137,46 +141,43 @@ const loginUser = async (userData) => {
 		const isMatched = await user.verifyPassword(userData.password);
 
 		//if password does not match
-		if(!isMatched)
-		{
+		if (!isMatched) {
 			return {
-				success:false,
-				statusCode:401,
-				message:"Password incorrect"
-			}
+				success: false,
+				statusCode: 401,
+				message: "Password incorrect",
+			};
 		}
 
 		//check user account is activate or not
 		const isActive = user.isUserAccountActive();
 
 		//if diactived user account
-		if(!isActive)
-		{
+		if (!isActive) {
 			return {
-				success:false,
-				statusCode:403,
-				message:"Your account is deactivated. Please activate it using the email sent to you."
-			}
+				success: false,
+				statusCode: 403,
+				message:
+					"Your account is deactivated. Please activate it using the email sent to you.",
+			};
 		}
 
-		//if active 
+		//if active
 		//create access and refresh token
 		const payload = await user.getUserInfo();
-		
+
 		//generate access and refresh token
 		const accessToken = generateAccessToken(payload);
 		const refreshToken = generateRefreshToken(payload);
 
-
 		//return user info and token
 		return {
-			success:true,
-			statusCode:200,
-			data:{...payload},
+			success: true,
+			statusCode: 200,
+			data: { ...payload },
 			accessToken,
-			refreshToken
-		}
-
+			refreshToken,
+		};
 	} catch (error) {
 		console.error("Login failed Error At 'loginUser': ", error);
 
@@ -188,52 +189,45 @@ const loginUser = async (userData) => {
 	}
 };
 
-
 /**
  * @param {string} refreshToken - refresh token came in request with which new access token will generated
  * @return {Object} - new access token
  */
-const generateAccessTokenViaRefreshToken = async(refreshToken)=>{	
-
-	try
-	{
+const generateAccessTokenViaRefreshToken = async (refreshToken) => {
+	try {
 		//check refreshToken exist
-		if(!refreshToken)
-		{
+		if (!refreshToken) {
 			return {
-				success:false,
+				success: false,
 				statusCode: 400,
-				message:"Refresh token is required"
-			}
+				message: "Refresh token is required",
+			};
 		}
 
-
 		//verify and decod token
-		const decoded = jwt.verify(refreshToken,process.env.JWT_SECRETE);
-		
+		const decoded = jwt.verify(refreshToken, process.env.JWT_SECRETE);
+
 		//check if user exist and active
 		const userDataFromDatabase = await UserModel.findById(decoded._id);
 
 		//if user not found
-		if(!userDataFromDatabase || userDataFromDatabase.isDeleted)
-			{
-				return{
-				success:false,
-				statusCode:404,
-				message:"User not found please signUp first"
-			}
+		if (!userDataFromDatabase || userDataFromDatabase.isDeleted) {
+			return {
+				success: false,
+				statusCode: 404,
+				message: "User not found please signUp first",
+			};
 		}
-		
+
 		//check if user active
-		if(!userDataFromDatabase.isActive)
-			{
-				return {
-					success:false,
-					statusCode:403,
-					message:"Your account is deactivated."
-				}
-			}
-			
+		if (!userDataFromDatabase.isActive) {
+			return {
+				success: false,
+				statusCode: 403,
+				message: "Your account is deactivated.",
+			};
+		}
+
 		//create object of user class
 		const user = new UserClass(userDataFromDatabase);
 
@@ -244,31 +238,77 @@ const generateAccessTokenViaRefreshToken = async(refreshToken)=>{
 		const newAccessToken = generateAccessToken(payload);
 
 		return {
-			success:true,
-			statusCode:200,
-			message:"New session started",
-			newAccessToken
-		}
-
-	}
-	catch(error)
-	{
-		console.error("Failed to generate access token Error At 'generateAccessTokenByRefreshToken': ",error);
+			success: true,
+			statusCode: 200,
+			message: "New session started",
+			newAccessToken,
+		};
+	} catch (error) {
+		console.error(
+			"Failed to generate access token Error At 'generateAccessTokenByRefreshToken': ",
+			error
+		);
 		return {
-			success:false,
+			success: false,
 			statusCode: 500,
-			message:"Unable to start new session please login again."
-		}
+			message: "Unable to start new session please login again.",
+		};
 	}
+};
 
+/**
+ * @param {string} credential - example@gmail.com/999989898
+ * @param {string} type - email/mobile
+ * @return {Object} - response success/fail
+ */
 
-}
+const findUserAndSentOtp = async (credential, type) => {
+	try {
+		//find user
+		const userDataFromDatabase = findUserWithCredential(credential);
+
+		const user = new UserClass(userDataFromDatabase);
+
+		//if user doest not exist return
+		if (!userDataFromDatabase) {
+			return {
+				success: false,
+				statusCode: 404,
+				message: "User does not exist please signUp first",
+			};
+		}
+
+		//check if user active
+		if (!user.isUserAccountActive) {
+			return {
+				success: false,
+				statusCode: 403,
+				message: "Your account is deactivated.",
+			};
+		}
+		
+		//if user active then sent otp on credential
+		const sentOtpResponse = await sendOtp("forgot-password",type,credential);
+
+		
+	} catch (error) {
+		console.error(
+			"Failed to find user and sent otp Error At 'findUserAndSentOtp': ",
+			error
+		);
+		return {
+			success: false,
+			statusCode: 500,
+			message: "Unable to sent otp pleas try again",
+		};
+	}
+};
 
 module.exports = {
 	findUserWithCredential,
 	getRegistrationOtp,
 	saveUserInDatabase,
 	loginUser,
-	generateAccessTokenViaRefreshToken 
-	
+	generateAccessTokenViaRefreshToken,
 };
+

@@ -2,7 +2,6 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 
-
 const userSchema = new mongoose.Schema(
 	{
 		profilePicture: { type: String },
@@ -73,51 +72,43 @@ userSchema.index({
 	mobile: "text",
 });
 
-
 const UserModel = mongoose.model("User", userSchema);
-
-
 
 //User Class
 class UserClass {
-	
-	constructor(userData)
-	{
-		Object.assign(this,userData._doc) //copy DB fields into class
+	constructor(userData) {
+		Object.assign(this, userData._doc); //copy DB fields into class
 	}
 
-	async getUserInfo()
-	{
+	async getUserInfo() {
 		return {
-			_id:this._id,
-			firstName:this.firstName,
-			lastName:this.lastName,
-			email:this.email,
-			mobile:this.mobile,
-			isSuperAdmin:this.isSuperAdmin,
-		}
+			_id: this._id,
+			firstName: this.firstName,
+			lastName: this.lastName,
+			email: this.email,
+			mobile: this.mobile,
+			isSuperAdmin: this.isSuperAdmin,
+		};
 	}
 
-	async isUserAccountActive()
-	{
-		return this.isActive?true:false;
+	async isUserAccountActive() {
+		return this.isActive ? true : false;
 	}
 
 	
+
+
 	/**
 	 * @param {string} password - password to verify
 	 * @return {boolean} - return password is matched or not
 	 */
-	async verifyPassword(password){
-		
-		return await bcrypt.compare(password,this.password);
+	async verifyPassword(password) {
+		return await bcrypt.compare(password, this.password);
 	}
-
 }
-
 
 module.exports = {
 	UserModel,
-	UserClass
-}
+	UserClass,
+};
 

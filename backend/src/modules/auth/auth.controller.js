@@ -10,23 +10,24 @@ const {
 	getRegistrationOtp,
 	saveUserInDatabase,
 	loginUser,
-	generateAccessTokenViaRefreshToken
+	generateAccessTokenViaRefreshToken,
 } = require("./auth.service.js");
 
 //utils
 const validateOtp = require("../../utils/validateOtp.js");
-const { generateAccessToken, generateRefreshToken } = require("../../utils/jwtTokenService.js");
+const {
+	generateAccessToken,
+	generateRefreshToken,
+} = require("../../utils/jwtTokenService.js");
 
 //verify-credentials controller
-const verifyCredentialAndSendOtp = async (req, res) => { 
+const verifyCredentialAndSendOtp = async (req, res) => {
 	try {
 		//destruct
 		const { credential, type } = req.body;
 
 		//check if user exist
-		const existingUserInDatabase = await findUserWithCredential(
-			credential
-		);
+		const existingUserInDatabase = await findUserWithCredential(credential);
 
 		if (existingUserInDatabase) {
 			return res.status(409).json({
@@ -129,9 +130,7 @@ const register = async (req, res) => {
 			req.body?.type == "email" ? req.body?.email : req.body?.mobile;
 
 		//1.check if user exist
-		const existingUserInDatabase = await findUserWithCredential(
-			credential
-		);
+		const existingUserInDatabase = await findUserWithCredential(credential);
 
 		if (existingUserInDatabase) {
 			return res.status(409).json({
@@ -171,7 +170,7 @@ const register = async (req, res) => {
 			mobile,
 			isSuperAdmin,
 		} = saveUserInDatabaseResponse.savedUser;
-		
+
 		const payload = {
 			_id,
 			profilePicture,
@@ -180,14 +179,13 @@ const register = async (req, res) => {
 			email,
 			mobile,
 			isSuperAdmin,
-		}
+		};
 
 		//4. generate jwt token
 		const accessTokenToken = generateAccessToken(payload);
 
 		//4. generate refresh token
 		const refreshToken = generateRefreshToken(payload);
-
 
 		const userDataToSend = {
 			_id: _id,
@@ -203,13 +201,12 @@ const register = async (req, res) => {
 			success: true,
 			statusCode: 200,
 			message: "Registration Successfull",
-			data:{
-				userData:{...userDataToSend},
+			data: {
+				userData: { ...userDataToSend },
 			},
 			accessToken: accessTokenToken,
 			refreshToken: refreshToken,
 		});
-
 	} catch (error) {
 		console.error("Registration Failed Error At 'register': ", error);
 		return res.status(500).json({
@@ -221,66 +218,76 @@ const register = async (req, res) => {
 };
 
 //login
-const login = async(req,res)=>{
-
-	try
-	{
+const login = async (req, res) => {
+	try {
 		//call service function to login user
 		const loginUserResponse = await loginUser(req.body);
 
-
 		return res.status(loginUserResponse.statusCode).json({
-			success:loginUserResponse.success,
-			statusCode:loginUserResponse.statusCode,
-			message:loginUserResponse.message,
-			data:{
-				userData:{...loginUserResponse.data},
+			success: loginUserResponse.success,
+			statusCode: loginUserResponse.statusCode,
+			message: loginUserResponse.message,
+			data: {
+				userData: { ...loginUserResponse.data },
 			},
-			accessToken:loginUserResponse.accessToken,
-			refreshToken:loginUserResponse.refreshToken
-		})
-	}
-	catch(error)
-	{
+			accessToken: loginUserResponse.accessToken,
+			refreshToken: loginUserResponse.refreshToken,
+		});
+	} catch (error) {
 		console.error("Login Failed Error At 'login': ", error);
 		return res.status(500).json({
-			success:false,
-			statusCode:500,
-			message:"Failed to login please try again"
-		})
+			success: false,
+			statusCode: 500,
+			message: "Failed to login please try again",
+		});
 	}
-
-}
+};
 
 //fresh token
-const refreshToken = async(req,res)=>{
-	try
-	{
-		const {refreshToken} = req.body;
+const refreshToken = async (req, res) => {
+	try {
+		const { refreshToken } = req.body;
 
 		//generate new refresh token
-		const generatorResponse = await generateAccessTokenViaRefreshToken(refreshToken);
+		const generatorResponse = await generateAccessTokenViaRefreshToken(
+			refreshToken
+		);
 
-		
 		return res.status(generatorResponse.statusCode).json({
-			success:generatorResponse.success,
-			statusCode:generatorResponse.statusCode,
-			message:generatorResponse.message,
-			accessToken:generatorResponse.newAccessToken
-		})
-	}
-	catch(error)
-	{
+			success: generatorResponse.success,
+			statusCode: generatorResponse.statusCode,
+			message: generatorResponse.message,
+			accessToken: generatorResponse.newAccessToken,
+		});
+	} catch (error) {
 		console.error("Refreshing Token Failed Error At 'refreshToken': ", error);
 		return res.status(500).json({
-			success:false,
-			statusCode:500,
-			message:"Unable to start new session please login again"
-		})
+			success: false,
+			statusCode: 500,
+			message: "Unable to start new session please login again",
+		});
 	}
+};
 
-}
+//forgot password request
+const forgotPassReq = async (req, res) => {
+	try {
+		//extract data
+		const { credential, type } = req.body;
 
+		const forgotPassReq = await findUserAndSentOtp(credential, type);
+	} catch (error) {
+		console.error(
+			"Failed to complete forgot password request Error At 'forgotPassRequest': ",
+			error
+		);
+		return {
+			success: false,
+			statusCode: 500,
+			message: "Unable to complete request please try again",
+		};
+	}
+};
 
 module.exports = {
 	verifyCredentialAndSendOtp,
