@@ -9,7 +9,8 @@ const {
 	findUserWithCredential,
 	getRegistrationOtp,
 	saveUserInDatabase,
-	loginUser
+	loginUser,
+	generateAccessTokenViaRefreshToken
 } = require("./auth.service.js");
 
 //utils
@@ -17,7 +18,7 @@ const validateOtp = require("../../utils/validateOtp.js");
 const { generateAccessToken, generateRefreshToken } = require("../../utils/jwtTokenService.js");
 
 //verify-credentials controller
-const verifyCredentialAndSendOtp = async (req, res) => {
+const verifyCredentialAndSendOtp = async (req, res) => { 
 	try {
 		//destruct
 		const { credential, type } = req.body;
@@ -241,6 +242,7 @@ const login = async(req,res)=>{
 	}
 	catch(error)
 	{
+		console.error("Login Failed Error At 'login': ", error);
 		return res.status(500).json({
 			success:false,
 			statusCode:500,
@@ -250,10 +252,41 @@ const login = async(req,res)=>{
 
 }
 
+//fresh token
+const refreshToken = async(req,res)=>{
+	try
+	{
+		const {refreshToken} = req.body;
+
+		//generate new refresh token
+		const generatorResponse = await generateAccessTokenViaRefreshToken(refreshToken);
+
+		
+		return res.status(generatorResponse.statusCode).json({
+			success:generatorResponse.success,
+			statusCode:generatorResponse.statusCode,
+			message:generatorResponse.message,
+			accessToken:generatorResponse.newAccessToken
+		})
+	}
+	catch(error)
+	{
+		console.error("Refreshing Token Failed Error At 'refreshToken': ", error);
+		return res.status(500).json({
+			success:false,
+			statusCode:500,
+			message:"Unable to start new session please login again"
+		})
+	}
+
+}
+
+
 module.exports = {
 	verifyCredentialAndSendOtp,
 	verifyOtpForRegistration,
 	register,
-	login
+	login,
+	refreshToken,
 };
 

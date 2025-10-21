@@ -5,7 +5,12 @@ const validateRequest = require("../../middlewares/validateRequest");
 const { verifyCredentialSchema, verifyOtpRegisterSchema, registrationSchema, loginSchema } = require("./auth.validation.js");
 
 //controllers
-const { verifyCredentialAndSendOtp, verifyOtpForRegistration,register, login } = require("./auth.controller.js");
+const { verifyCredentialAndSendOtp, 
+        verifyOtpForRegistration,
+        register,
+        login,
+        refreshToken
+    } = require("./auth.controller.js");
 
 
 //create router
@@ -29,7 +34,8 @@ authRouter.post("/register",validateRequest(registrationSchema),register);
 authRouter.post("/login",validateRequest(loginSchema),login);
 
 
-
+//**Refresh Token
+authRouter.post("/refresh-token",refreshToken)
 
 
 

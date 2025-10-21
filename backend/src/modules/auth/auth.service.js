@@ -24,6 +24,11 @@ const findUserWithCredential = async (credential) => {
 	});
 };
 
+/**
+ * -find user with credential in database
+ * @param {string} destination - email/mobile of user who trying to register
+ * @return {Object} - returns newOtp
+ */
 const getRegistrationOtp = async (destination) => {
 	try {
 		//generate new otp for registration
@@ -106,7 +111,11 @@ const saveUserInDatabase = async (userData) => {
 	}
 };
 
-//login service
+/**
+ * 
+ * @param {Object} userData - user data recieved in request
+ * @returns - userDetails from database and tokens
+ */
 const loginUser = async (userData) => {
 	try {
 		//1. find user in database
@@ -179,9 +188,87 @@ const loginUser = async (userData) => {
 	}
 };
 
+
+/**
+ * @param {string} refreshToken - refresh token came in request with which new access token will generated
+ * @return {Object} - new access token
+ */
+const generateAccessTokenViaRefreshToken = async(refreshToken)=>{	
+
+	try
+	{
+		//check refreshToken exist
+		if(!refreshToken)
+		{
+			return {
+				success:false,
+				statusCode: 400,
+				message:"Refresh token is required"
+			}
+		}
+
+
+		//verify and decod token
+		const decoded = jwt.verify(refreshToken,process.env.JWT_SECRETE);
+		
+		//check if user exist and active
+		const userDataFromDatabase = await UserModel.findById(decoded._id);
+
+		//if user not found
+		if(!userDataFromDatabase || userDataFromDatabase.isDeleted)
+			{
+				return{
+				success:false,
+				statusCode:404,
+				message:"User not found please signUp first"
+			}
+		}
+		
+		//check if user active
+		if(!userDataFromDatabase.isActive)
+			{
+				return {
+					success:false,
+					statusCode:403,
+					message:"Your account is deactivated."
+				}
+			}
+			
+		//create object of user class
+		const user = new UserClass(userDataFromDatabase);
+
+		//create payload
+		const payload = await user.getUserInfo();
+
+		//generate new access token
+		const newAccessToken = generateAccessToken(payload);
+
+		return {
+			success:true,
+			statusCode:200,
+			message:"New session started",
+			newAccessToken
+		}
+
+	}
+	catch(error)
+	{
+		console.error("Failed to generate access token Error At 'generateAccessTokenByRefreshToken': ",error);
+		return {
+			success:false,
+			statusCode: 500,
+			message:"Unable to start new session please login again."
+		}
+	}
+
+
+}
+
 module.exports = {
 	findUserWithCredential,
 	getRegistrationOtp,
 	saveUserInDatabase,
-	loginUser
+	loginUser,
+	generateAccessTokenViaRefreshToken 
+	
 };
