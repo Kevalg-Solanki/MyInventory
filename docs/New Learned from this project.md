@@ -30,4 +30,7 @@ type: Joi.string().valid("email","mobile").required(),
 4.send sms with twilio
 5.first create branch then start working on that task/bug
 6.how to switch and create new branch
+7.how to save changes temporary using "git stash"
+8.how to switch branch using "git switch <branch-name>
+9.how to 
 
