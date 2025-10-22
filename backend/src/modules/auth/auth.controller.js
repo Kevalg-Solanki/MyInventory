@@ -11,6 +11,7 @@ const {
 	saveUserInDatabase,
 	loginUser,
 	generateAccessTokenViaRefreshToken,
+	findUserAndSentOtp
 } = require("./auth.service.js");
 
 //utils
@@ -49,7 +50,7 @@ const verifyCredentialAndSendOtp = async (req, res) => {
 
 		//if failed to sent otp
 		if (!sendOtpResult.success) {
-			throw new Error(sendOtpResult.error);
+			throw new Error(sendOtpResult?.message);
 		}
 
 		return res.status(200).json({
@@ -276,6 +277,13 @@ const forgotPassReq = async (req, res) => {
 		const { credential, type } = req.body;
 
 		const forgotPassReq = await findUserAndSentOtp(credential, type);
+
+		return res.status(forgotPassReq?.statusCode).json({
+			success:forgotPassReq?.success,
+			statusCode:forgotPassReq?.statusCode,
+			message:forgotPassReq?.message
+		})
+		
 	} catch (error) {
 		console.error(
 			"Failed to complete forgot password request Error At 'forgotPassRequest': ",

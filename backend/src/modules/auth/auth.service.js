@@ -290,6 +290,21 @@ const findUserAndSentOtp = async (credential, type) => {
 		//if user active then sent otp on credential
 		const sentOtpResponse = await sendOtp("forgot-password",type,credential);
 
+		//if there is erro 
+		if(!sentOtpResponse.success)
+		{
+			return {
+				success:sentOtpResponse?.success,
+				statusCode:sentOtpResponse?.statusCode,
+				message:sentOtpResponse?.message
+			}
+		}
+
+		return res.status(200).json({
+			success:true,
+			statusCode:200,
+			message:"Otp sent successfully"
+		})
 		
 	} catch (error) {
 		console.error(
@@ -299,7 +314,7 @@ const findUserAndSentOtp = async (credential, type) => {
 		return {
 			success: false,
 			statusCode: 500,
-			message: "Unable to sent otp pleas try again",
+			message: "Unable to sent otp please try again",
 		};
 	}
 };
@@ -310,5 +325,6 @@ module.exports = {
 	saveUserInDatabase,
 	loginUser,
 	generateAccessTokenViaRefreshToken,
+	findUserAndSentOtp
 };
 

@@ -81,7 +81,7 @@ const tranposter = nodemailer.createTransport({
  * @returns {Object} - response
  */
 
-const sendMailService = async ({ email, subject, text, htmlTemplate }) => {
+const 	sendMailService = async ({ email, subject, text, htmlTemplate }) => {
 	try {
 		//prepare object of email to send
 		const emailToSent = {
