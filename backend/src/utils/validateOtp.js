@@ -44,12 +44,13 @@ const validateOtp = async (type, credential, otp) => {
 			};
 		}
 
-		//if otp exist,not expired,valid then
+		//first clear otp for user
+		await otpModel.deleteMany({credential});
 
+		//if otp exist,not expired,valid then
 		return {
 			success: true,
 			statusCode: 200,
-
 			message: "Otp verification successfull",
 		};
 	} catch (error) {
@@ -63,3 +64,4 @@ const validateOtp = async (type, credential, otp) => {
 };
 
 module.exports = validateOtp;
+
