@@ -300,11 +300,11 @@ const findUserAndSentOtp = async (credential, type) => {
 			}
 		}
 
-		return res.status(200).json({
+		return{
 			success:true,
 			statusCode:200,
 			message:"Otp sent successfully"
-		})
+		}
 		
 	} catch (error) {
 		console.error(

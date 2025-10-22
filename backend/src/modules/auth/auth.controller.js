@@ -51,7 +51,7 @@ const verifyCredentialAndSendOtp = async (req, res) => {
 		//if failed to sent otp
 		if (!sendOtpResult.success) {
 			throw new Error(sendOtpResult?.message);
-		}
+		}	
 
 		return res.status(200).json({
 			success: true,
@@ -283,7 +283,7 @@ const forgotPassReq = async (req, res) => {
 			statusCode:forgotPassReq?.statusCode,
 			message:forgotPassReq?.message
 		})
-		
+
 	} catch (error) {
 		console.error(
 			"Failed to complete forgot password request Error At 'forgotPassRequest': ",
@@ -303,5 +303,6 @@ module.exports = {
 	register,
 	login,
 	refreshToken,
+	forgotPassReq
 };
 

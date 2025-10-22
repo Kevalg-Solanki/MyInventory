@@ -14,7 +14,8 @@ const { verifyCredentialAndSendOtp,
         verifyOtpForRegistration,
         register,
         login,
-        refreshToken
+        refreshToken,
+        forgotPassReq
     } = require("./auth.controller.js");
 
 
@@ -46,7 +47,10 @@ authRouter.post("/refresh-token",refreshToken)
 //**Forgot Password
 
 //step 1: 
-authRouter.post("/forgot-password-request",validateRequest(forgotPassRequestSchema),);
+authRouter.post("/forgot-password-request",validateRequest(forgotPassRequestSchema),forgotPassReq);
+
+//step 2:
+// authRouter.post("/verify-otp-forgot-password")
 
 
 module.exports = authRouter;
