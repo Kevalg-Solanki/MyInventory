@@ -21,8 +21,10 @@ const { verifyCredentialAndSendOtp,
         forgotPassReq,
         verifyOtpForForgotPass,
         forgotPassword,
-        resetPassword
+        resetPassword,
+        getUserDataById
     } = require("./auth.controller.js");
+const verifyToken = require("../../middlewares/verifyToken.js");
 
 
 //create router
@@ -63,6 +65,11 @@ authRouter.patch("/forgot-password",validateRequest(forgotPassSchema),forgotPass
 
 //**Reset Password
 authRouter.patch("/reset-password",validateRequest(resetPassSchema),resetPassword)
+
+
+//**get user data
+authRouter.get("/me",verifyToken,getUserDataById);
+
 
 module.exports = authRouter;
 

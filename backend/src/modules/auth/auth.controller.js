@@ -231,6 +231,21 @@ const resetPassword = async(req,res,next)=>{
 }
 
 
+//get user
+const getUserDataById= async(req,res,next)=>{
+	try
+	{
+		//destruct 
+		const userData = req.user;
+
+		return sendResponse(res,200,"User fetched successfully",{userData});
+	}
+	catch(error)
+	{
+		next(error);
+	}
+}
+
 module.exports = {
 	verifyCredentialAndSendOtp,
 	verifyOtpForRegistration,
@@ -240,5 +255,6 @@ module.exports = {
 	forgotPassReq,
 	verifyOtpForForgotPass,
 	forgotPassword,
-	resetPassword
+	resetPassword,
+	getUserDataById
 };
