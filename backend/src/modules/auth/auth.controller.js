@@ -46,7 +46,7 @@ const verifyCredentialAndSendOtp = async (req, res, next) => {
 			})
 		}
 		
-		const sendOtpResult = await sendVericationOtp(creential,type);
+		const sendOtpResult = await sendVericationOtp(credential,type);
 
 		if(!sendOtpResult.success)
 		{
