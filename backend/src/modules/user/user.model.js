@@ -95,14 +95,12 @@ class UserClass {
 		return this.isActive ? true : false;
 	}
 
-	
-
-
 	/**
 	 * @param {string} password - password to verify
 	 * @return {boolean} - return password is matched or not
 	 */
 	async verifyPassword(password) {
+		console.log(password,this.password);
 		return await bcrypt.compare(password, this.password);
 	}
 }
@@ -111,4 +109,3 @@ module.exports = {
 	UserModel,
 	UserClass,
 };
-

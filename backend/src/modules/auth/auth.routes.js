@@ -8,7 +8,8 @@ const { verifyCredentialSchema,
         loginSchema,
         forgotPassRequestSchema,
         verifyForgotPassOtpSchema,
-        forgotPassSchema
+        forgotPassSchema,
+        resetPassSchema
     } = require("./auth.validation.js");
 
 //controllers
@@ -19,7 +20,8 @@ const { verifyCredentialAndSendOtp,
         refreshToken,
         forgotPassReq,
         verifyOtpForForgotPass,
-        forgotPassword
+        forgotPassword,
+        resetPassword
     } = require("./auth.controller.js");
 
 
@@ -58,6 +60,9 @@ authRouter.post("/verify-otp-forgot-password",validateRequest(verifyForgotPassOt
 //step 3:
 authRouter.patch("/forgot-password",validateRequest(forgotPassSchema),forgotPassword);
 
+
+//**Reset Password
+authRouter.patch("/reset-password",validateRequest(resetPassSchema),resetPassword)
 
 module.exports = authRouter;
 

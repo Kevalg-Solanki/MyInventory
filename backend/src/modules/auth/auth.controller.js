@@ -13,6 +13,9 @@ const {
 	changeUserPassword,
 	checkUserExist,
 	sendVericationOtp,
+	findUserWithId,
+	checkUserWithIdExistAndActive,
+	resetUserPassword
 } = require("./auth.service.js");
 
 //utils
@@ -25,6 +28,7 @@ const sendResponse = require("../../utils/sendResponse.js");
 
 //constants
 const { OTP_TYPE, SESSION_OTP_TYPE } = require("../../constants/auth.js");
+const { UserClass } = require("../user/user.model.js");
 
 //verify-credentials controller
 const verifyCredentialAndSendOtp = async (req, res, next) => {
@@ -201,6 +205,32 @@ const forgotPassword = async (req, res, next) => {
 	}
 };
 
+//reset password
+const resetPassword = async(req,res,next)=>{
+
+	try
+	{
+		//destruct
+		const {userId,oldPassword,newPassword} = req.body;
+
+		//check user exist and active
+		const userInDatabase  = await checkUserWithIdExistAndActive(userId);
+
+		const user = new UserClass(userInDatabase);
+
+		//verify and chang user password
+		await resetUserPassword(user,oldPassword,newPassword);
+
+		return sendResponse(res,200,"Password changed successfully");
+	}
+	catch(error)
+	{
+		next(error);
+	}
+
+}
+
+
 module.exports = {
 	verifyCredentialAndSendOtp,
 	verifyOtpForRegistration,
@@ -210,4 +240,5 @@ module.exports = {
 	forgotPassReq,
 	verifyOtpForForgotPass,
 	forgotPassword,
+	resetPassword
 };

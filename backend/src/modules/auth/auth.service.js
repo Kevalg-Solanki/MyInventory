@@ -36,12 +36,46 @@ const findUserWithCredential = async (credential) => {
 };
 
 /**
+ * -find user with id in database
+ * @param {string} credential - id with find user
+ * @return {Object} - if user exist returns user info or if not then returns null
+ */
+
+const findUserWithId = async (userId) => {
+	return await UserModel.findOne({ _id: userId, isDeleted: false });
+};
+
+/**
  *
  * @param {string} credential - email/mobile
  * @returns {Object}
  */
 const checkUserExistAndActive = async (credential) => {
 	const userInDatabase = await findUserWithCredential(credential);
+
+	if (!userInDatabase) {
+		let error = ERROR.USER_NOT_FOUND;
+		throw new AppError(error?.message, error?.code, error?.httpStatus);
+	}
+
+	const user = new UserClass(userInDatabase);
+
+	//check user active
+	if (!user.isUserAccountActive()) {
+		let error = ERROR.USER_DEACTIVATED;
+		throw new AppError(error?.message, error?.code, error?.httpStatus);
+	}
+
+	return userInDatabase;
+};
+
+/**
+ *
+ * @param {string} userId - userId
+ * @returns {Object}
+ */
+const checkUserWithIdExistAndActive = async (userId) => {
+	const userInDatabase = await findUserWithId(userId);
 
 	if (!userInDatabase) {
 		let error = ERROR.USER_NOT_FOUND;
@@ -104,6 +138,25 @@ const setNewPassword = async (credential, newPassword) => {
 	//set new password
 	const updatedUser = await UserModel.findOneAndUpdate(
 		{ $or: [{ email: credential }, { mobile: credential }] },
+		{ $set: { password: hashedPassword } },
+		{ new: true, runValidators: true }
+	);
+
+	return updatedUser;
+};
+
+/**
+ * @param {ObjectId} userId - userId for finding user
+ * @param {string} newPassword - new password to set
+ * @return {Object} - updated user
+ */
+const setNewPasswordWithId = async (userId, newPassword) => {
+	console.log("user",newPassword)
+	//hash password
+	const hashedPassword = await bcrypt.hash(newPassword, 10);
+	//set new password
+	const updatedUser = await UserModel.findOneAndUpdate(
+		{ _id: userId },
 		{ $set: { password: hashedPassword } },
 		{ new: true, runValidators: true }
 	);
@@ -311,19 +364,24 @@ const findUserAndSentOtp = async (credential, type) => {
  */
 
 const verifyForgotPassOtp = async (credential, otp) => {
-		//first check user
-		await checkUserExistAndActive(credential);
+	//first check user
+	await checkUserExistAndActive(credential);
 
-		//validate forgot passoword otp
-		await validateOtp(OTP_TYPE.FORGOT_PASSWORD, credential, otp);
+	//validate forgot passoword otp
+	await validateOtp(OTP_TYPE.FORGOT_PASSWORD, credential, otp);
 
-		//sent new otp
-		const newOtp = await getNewOtp(credential, SESSION_OTP_TYPE.FORGOT_PASSWORD);
+	//sent new otp
+	const newOtp = await getNewOtp(credential, SESSION_OTP_TYPE.FORGOT_PASSWORD);
 
-		return newOtp;
-
+	return newOtp;
 };
 
+/**
+ *
+ * @param {string} credential - email/mobile
+ * @param {string} newPassword - new password to set
+ * @returns
+ */
 const changeUserPassword = async (credential, newPassword) => {
 	try {
 		//first check user
@@ -336,14 +394,35 @@ const changeUserPassword = async (credential, newPassword) => {
 		);
 
 		if (!setNewPasswordResponse) {
-			let error = ERROR.PASSWORD_RESET_FAILED;			
-			throw new AppError(error?.message,error?.code,error?.httpStatus);
+			let error = ERROR.PASSWORD_RESET_FAILED;
+			throw new AppError(error?.message, error?.code, error?.httpStatus);
 		}
 
 		return;
 	} catch (error) {
 		throw error;
 	}
+};
+
+const resetUserPassword = async (user, oldPassword, newPassword) => {
+	//check old password match
+	const isMatched = await user.verifyPassword(oldPassword);
+	console.log("user", user.getUserInfo())
+	console.log(oldPassword,newPassword);
+	console.log("is match",isMatched)
+	//if password does not match
+	if (!isMatched) {
+		let error = ERROR.PASSWORD_INCORRECT;
+		throw new AppError(error?.message, error?.code, error?.httpStatus);
+	}
+
+	const userData = await user.getUserInfo();
+	//if password matches change password
+	//set new password of user
+	const updatedUser = await setNewPasswordWithId(userData._id,newPassword);
+
+	//if password changed return 
+	return;
 };
 
 module.exports = {
@@ -357,4 +436,7 @@ module.exports = {
 	findUserAndSentOtp,
 	verifyForgotPassOtp,
 	changeUserPassword,
+	findUserWithId,
+	checkUserWithIdExistAndActive,
+	resetUserPassword,
 };

@@ -212,7 +212,6 @@ const verifyForgotPassOtpSchema = Joi.object({
 
 //forgot-password
 const forgotPassSchema = Joi.object({
-	
 	type: Joi.string().valid("email", "mobile").required(),
 	credential: Joi.alternatives()
 		.conditional("type", [
@@ -256,6 +255,30 @@ const forgotPassSchema = Joi.object({
 		}),
 });
 
+//reset-password
+const resetPassSchema = Joi.object({
+	userId: Joi.string().required(),
+	oldPassword: Joi.string()
+		.required()
+		.messages({
+			"string.empty": "Old password cannot be empty.",
+			"any.required": "Old password is required.",
+		}),
+	newPassword: Joi.string()
+		.pattern(
+			new RegExp(
+				"^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$"
+			)
+		)
+		.required()
+		.messages({
+			"string.pattern.base":
+				"Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character.",
+			"string.empty": "Password cannot be empty.",
+			"any.required": "Password is required.",
+		}),
+});
+
 module.exports = {
 	verifyCredentialSchema,
 	verifyOtpRegisterSchema,
@@ -263,7 +286,6 @@ module.exports = {
 	loginSchema,
 	forgotPassRequestSchema,
 	verifyForgotPassOtpSchema,
-	forgotPassSchema
+	forgotPassSchema,
+	resetPassSchema
 };
-
-
