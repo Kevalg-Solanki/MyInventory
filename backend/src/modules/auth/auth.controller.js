@@ -27,7 +27,7 @@ const {
 } = require("../../utils/jwtTokenService.js");
 
 //verify-credentials controller
-const verifyCredentialAndSendOtp = async (req, res) => {
+const verifyCredentialAndSendOtp = async (req, res, next) => {
 	try {
 		//destruct
 		const { credential, type } = req.body;
@@ -46,7 +46,7 @@ const verifyCredentialAndSendOtp = async (req, res) => {
 			})
 		}
 		
-		const sendOtpResult = await sendVericationOtp(credential,type);
+		const sendOtpResult = await sendVericationOtp(creential,type);
 
 		if(!sendOtpResult.success)
 		{
@@ -64,20 +64,13 @@ const verifyCredentialAndSendOtp = async (req, res) => {
 		});
 
 	} catch (error) {
-		console.error(
-			"Verify Credentials Failed Error At 'verifyCredentialAndSendOtp: ",
-			error
-		);
-		return res.status(500).json({
-			success: false,
-			statusCode: 500,
-			message: "Failed to send otp please try again",
-		});
+		//send error
+		next(error);
 	}
 };
 
 //verify-otp-register controller
-const verifyOtpForRegistration = async (req, res) => {
+const verifyOtpForRegistration = async (req, res, next) => {
 	try {
 		//destruct
 		const { credential, otp } = req.body;
@@ -115,21 +108,12 @@ const verifyOtpForRegistration = async (req, res) => {
 			messsage: "Otp verification successfull",
 		});
 	} catch (error) {
-		console.error(
-			"Otp Verification Failed Error At 'verifyOtpForRegistration': ",
-			error
-		);
-		return res.status(500).json({
-			success: false,
-			statusCode: 500,
-
-			message: "Otp Verfication Failed",
-		});
+		next(error);
 	}
 };
 
 //register controller
-const register = async (req, res) => {
+const register = async (req, res, next) => {
 	try {
 		const credential =
 			req.body?.type == "email" ? req.body?.email : req.body?.mobile;
@@ -213,17 +197,12 @@ const register = async (req, res) => {
 			refreshToken: refreshToken,
 		});
 	} catch (error) {
-		console.error("Registration Failed Error At 'register': ", error);
-		return res.status(500).json({
-			success: false,
-			statusCode: 500,
-			message: "Registration Failed Please try again",
-		});
+		next(error)
 	}
 };
 
 //login
-const login = async (req, res) => {
+const login = async (req, res, next) => {
 	try {
 		//call service function to login user
 		const loginUserResponse = await loginUser(req.body);
@@ -239,17 +218,12 @@ const login = async (req, res) => {
 			refreshToken: loginUserResponse.refreshToken,
 		});
 	} catch (error) {
-		console.error("Login Failed Error At 'login': ", error);
-		return res.status(500).json({
-			success: false,
-			statusCode: 500,
-			message: "Failed to login please try again",
-		});
+		next(error);
 	}
 };
 
 //fresh token
-const refreshToken = async (req, res) => {
+const refreshToken = async (req, res, next) => {
 	try {
 		const { refreshToken } = req.body;
 
@@ -265,17 +239,12 @@ const refreshToken = async (req, res) => {
 			accessToken: generatorResponse.newAccessToken,
 		});
 	} catch (error) {
-		console.error("Refreshing Token Failed Error At 'refreshToken': ", error);
-		return res.status(500).json({
-			success: false,
-			statusCode: 500,
-			message: "Unable to start new session please login again",
-		});
+		next(error);
 	}
 };
 
 //forgot password request
-const forgotPassReq = async (req, res) => {
+const forgotPassReq = async (req, res, next) => {
 	try {
 		//extract data
 		const { credential, type } = req.body;
@@ -288,20 +257,12 @@ const forgotPassReq = async (req, res) => {
 			message: forgotPassReq?.message,
 		});
 	} catch (error) {
-		console.error(
-			"Failed to complete forgot password request Error At 'forgotPassRequest': ",
-			error
-		);
-		return {
-			success: false,
-			statusCode: 500,
-			message: "Unable to complete request please try again",
-		};
+		next(error);
 	}
 };
 
 //verify forgot password
-const verifyOtpForForgotPass = async (req, res) => {
+const verifyOtpForForgotPass = async (req, res, next) => {
 	try {
 		//destruct
 		const { credential, otp } = req.body;
@@ -316,20 +277,12 @@ const verifyOtpForForgotPass = async (req, res) => {
 			newOtp: verifyOtpResponse?.newOtp?.newOtp,
 		});
 	} catch (error) {
-		console.error(
-			"Forgot password otp verification failed Error At 'verifyOtpForForgotPass': ",
-			error
-		);
-		return res.status(500).json({
-			success: false,
-			statusCode: 500,
-			message: "Failed to verify otp please try again",
-		});
+		next(error);
 	}
 };
 
 //forgot password
-const forgotPassword = async (req, res) => {
+const forgotPassword = async (req, res, next) => {
 	try {
 		//destruct
 		const { credential, otp, newPassword } = req.body;
@@ -363,15 +316,7 @@ const forgotPassword = async (req, res) => {
 			message: setNewPasswordResponse?.message,
 		});
 	} catch (error) {
-		console.error(
-			"Failed to forgot password Error At 'forgotPassword': ",
-			error
-		);
-		return res.status(500).json({
-			success: true,
-			statusCode: 500,
-			message: "Unable to set new password please try again",
-		});
+		next(error);
 	}
 };
 

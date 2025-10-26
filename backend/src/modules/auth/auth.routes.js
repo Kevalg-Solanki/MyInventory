@@ -30,8 +30,7 @@ const authRouter = require("express").Router();
 
 //**Registration Api**
 //step 1
-authRouter.post("/verify-credential",validateRequest(verifyCredentialSchema),verifyCredentialAndSendOtp
-);
+authRouter.post("/verify-credential",validateRequest(verifyCredentialSchema),verifyCredentialAndSendOtp);
 
 //step 2
 authRouter.post("/verify-otp-register",validateRequest(verifyOtpRegisterSchema),verifyOtpForRegistration)
