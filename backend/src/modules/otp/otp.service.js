@@ -4,7 +4,8 @@ const otpModel = require("./otp.model.js");
 //utils
 const { generateOtp } = require("../../utils/otpGenerator.js");
 const { sendMail } = require("../../utils/emailService.js");
-const {sendSms} = require("../../utils/smsService.js")
+const { sendSms } = require("../../utils/smsService.js");
+const AppError = require("../../utils/appErrorHandler.js");
 
 /**
  * -Function used to generate otp and send to destination email or mobile
@@ -18,7 +19,6 @@ const {sendSms} = require("../../utils/smsService.js")
 
 const sendOtp = async (type, method, destination, expiryTime = 5) => {
 	try {
-		
 		//clear all existing otp for user first
 		await otpModel.deleteMany({
 			destination,
@@ -45,23 +45,16 @@ const sendOtp = async (type, method, destination, expiryTime = 5) => {
 
 		//decide otp sent to email or mobile
 		if (method == "email") {
-		
 			result = await sendMail(type, destination, otp, expiryTime);
 		}
 
 		if (method == "mobile") {
-			result = await sendSms(type,destination,otp,expiryTime);
+			result = await sendSms(type, destination, otp, expiryTime);
 		}
 
 		return result;
 	} catch (error) {
-		console.error("Send Otp Failed Error At 'sendOtp': ", error);
-		return {
-			success: false,
-			statusCode: 500,
-			
-			message: "Failed to send otp",
-		};
+		throw error;
 	}
 };
 

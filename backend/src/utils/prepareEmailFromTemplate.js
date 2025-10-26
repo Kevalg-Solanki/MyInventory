@@ -11,38 +11,26 @@ const forgotPassOtpEmailTemplate = require("./templates/forgotPassOtpEmailTempla
  */
 
 const prepareVerifyCredentialEmailTemplate = async (email, otp, expireIn) => {
-	try {
-		//prepare html template for email to send
-		let htmlTemplate = verifyCredentialEmailTemplate.replace(
-			"[[verification-code]]",
-			otp
-		);
+	//prepare html template for email to send
+	let htmlTemplate = verifyCredentialEmailTemplate.replace(
+		"[[verification-code]]",
+		otp
+	);
 
-		htmlTemplate = htmlTemplate.replace("[[expireIn]]", expireIn);
+	htmlTemplate = htmlTemplate.replace("[[expireIn]]", expireIn);
 
-		return {
-			success: true,
-			email,
-			subject: "Verification Otp for MyInventory",
-			text: "Your Verification Otp",
-			htmlTemplate,
-		};
-	} catch (error) {
-		console.error(
-			"Prepare Email Template failed Error At 'prepareVerifyCredentialEmailTemplate: ",
-			error
-		);
-		return {
-			success: false,
-			statusCode: 500,
+	return {
+		success: true,
+		email,
+		subject: "Verification Otp for MyInventory",
+		text: "Your Verification Otp",
+		htmlTemplate,
+	};
 
-			message: "Failed to prepare email template",
-		};
-	}
 };
 
 const prepareForgotPassEmailTemplate = async (email, otp, expireIn) => {
-	try {
+
 		//prepare html template for email to send
 		let htmlTemplate = forgotPassOtpEmailTemplate.replace(
 			"[[verification-code]]",
@@ -58,21 +46,9 @@ const prepareForgotPassEmailTemplate = async (email, otp, expireIn) => {
 			text: "Your Forgot Password Verification Otp",
 			htmlTemplate,
 		};
-	} catch (error) {
-		console.error(
-			"Prepare Email Template failed Error At 'prepareForgotPassEmailTemplate: ",
-			error
-		);
-		return {
-			success: false,
-			statusCode: 500,
-
-			message: "Failed to prepare email template",
-		};
-	}
 };
 
 module.exports = {
 	prepareVerifyCredentialEmailTemplate,
-	prepareForgotPassEmailTemplate
+	prepareForgotPassEmailTemplate,
 };

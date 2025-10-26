@@ -1,8 +1,6 @@
 //external module
 const jwt = require("jsonwebtoken");
 
-//external moduel services
-const { sendOtp } = require("../otp/otp.service.js");
 
 //services
 const {
@@ -14,10 +12,10 @@ const {
 	findUserAndSentOtp,
 	verifyForgotPassOtp,
 	changeUserPassword,
-	verifyCredential,
 	checkUserExist,
 	sendVericationOtp,
 } = require("./auth.service.js");
+
 
 //utils
 const validateOtp = require("../../utils/validateOtp.js");
@@ -25,46 +23,27 @@ const {
 	generateAccessToken,
 	generateRefreshToken,
 } = require("../../utils/jwtTokenService.js");
+const sendResponse = require("../../utils/sendResponse.js");
+
+
+
 
 //verify-credentials controller
 const verifyCredentialAndSendOtp = async (req, res, next) => {
 	try {
-		//destruct
+		//1.destruct
 		const { credential, type } = req.body;
 
-		//verify credential
-		const result = await checkUserExist(credential);
+		//2.verify credential
+		await checkUserExist(credential);
 
-		
-		//if user exist 
-		if(!result.success)
-		{
-			return res.status(result.statusCode).json({
-				success:result.success,
-				statusCode:result.statusCode,
-				message:result.message
-			})
-		}
-		
-		const sendOtpResult = await sendVericationOtp(credential,type);
+		//3.send otp 
+		await sendVericationOtp(credential,type);
 
-		if(!sendOtpResult.success)
-		{
-			return res.status(sendOtpResult.statusCode).json({
-				success:sendOtpResult.success,
-				statusCode:sendOtpResult.statusCode,
-				message:sendOtpResult.message
-			})
-		}
-
-		return res.status(200).json({
-			success: true,
-			statusCode: 200,
-			message: `Otp sent successfully`,
-		});
+		//send response
+		return sendResponse(res,200,"Otp sent successfully");
 
 	} catch (error) {
-		//send error
 		next(error);
 	}
 };

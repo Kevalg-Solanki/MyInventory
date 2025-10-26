@@ -1,11 +1,16 @@
 //external module
 const nodemailer = require("nodemailer");
 
+//constants
+const ERROR = require("../constants/errors.js");
+
+
 //template prepare services
 const {
 	prepareVerifyCredentialEmailTemplate,
 	prepareForgotPassEmailTemplate,
 } = require("./prepareEmailFromTemplate.js");
+const AppError = require("./appErrorHandler.js");
 
 //sender mail
 const SENDER_EMAIL = process.env.EMAIL_USER;
@@ -41,29 +46,19 @@ const sendMail = async (type, destination, otp, expireIn) => {
 				);
 		}
 
+		//if there is not template for type of email
 		if (!preparedEmailTemplate) {
-			return {
-				success: false,
-				statusCode: 500,
-				message: "Template not found for type of email",
-			};
+
+			let error = ERROR.TEMPLATE_NOT_FOUND;
+			throw new AppError(error?.message,error?.code,error?.httpStatus);
 		}
 
-		//if failed to prepare template then return error returned by function
-		if (!preparedEmailTemplate.success) {
-			return preparedEmailTemplate;
-		}
 
 		//now send prepared email data to the sendEmailService
-		return sendMailService(preparedEmailTemplate);
-	} catch (error) {
-		console.error("Sending email failed Error At 'sendMail': ", error);
-		return {
-			success: false,
-			statusCode: 500,
+		return await sendMailService(preparedEmailTemplate);
 
-			message: "Unable to send OTP. Please try again later.",
-		};
+	} catch (error) {
+		throw error;
 	}
 };
 
@@ -88,7 +83,7 @@ const tranposter = nodemailer.createTransport({
  * @returns {Object} - response
  */
 
-const 	sendMailService = async ({ email, subject, text, htmlTemplate }) => {
+const sendMailService = async ({ email, subject, text, htmlTemplate }) => {
 	try {
 		//prepare object of email to send
 		const emailToSent = {
@@ -103,21 +98,10 @@ const 	sendMailService = async ({ email, subject, text, htmlTemplate }) => {
 		const info = await tranposter.sendMail(emailToSent);
 
 		console.log("Email sent: ", info.response);
+		return true;
 
-		return {
-			success: true,
-			statusCode: 200,
-
-			message: "Email sent successfully",
-		};
 	} catch (error) {
-		console.error("Sending email failed Error At 'sendMailService: ", error);
-		return {
-			success: false,
-			statusCode: 500,
-
-			message: "Failed to send email",
-		};
+		throw error
 	}
 };
 

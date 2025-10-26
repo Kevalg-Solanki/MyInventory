@@ -1,0 +1,17 @@
+module.exports = {
+	USER_EXISTS: {
+        code:"USER_EXISTS",
+		httpStatus: 409,
+		message: "User already exist with this credential.",
+	},
+	EMAIL_SEND_FAILED: {
+        code:"EMAI_SEND_FAILED",
+		httpStatus: 502,
+		message: "Failed to send email. Please try again later.",
+	},
+    TEMPLATE_NOT_FOUND:{
+        code:"TEMPLATE_NOT_FOUND",
+        httpStatus:500,
+        message:"Failed to send email. Please try again later."
+    }
+};

@@ -2,6 +2,10 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 
+//constants
+const ERROR = require("../../constants/errors.js");
+
+
 //models
 const otpModel = require("../otp/otp.model");
 const { UserModel, UserClass } = require("../user/user.model");
@@ -14,6 +18,10 @@ const {
 } = require("../../utils/jwtTokenService.js");
 const { sendOtp } = require("../otp/otp.service.js");
 const validateOtp = require("../../utils/validateOtp.js");
+const AppError = require("../../utils/appErrorHandler.js");
+
+
+
 
 /**
  * -find user with credential in database
@@ -187,37 +195,29 @@ const saveUserInDatabase = async (userData) => {
  * @param {string} type - "email" or "mobile"
  */
 const checkUserExist = async (credential) => {
-	try {
+
 		//check if user exist
 		const existingUserInDatabase = await findUserWithCredential(credential);
 
-		if (existingUserInDatabase) {
-			return {
-				success: false,
-				statusCode: 409,
-				message: "User already exist",
-			};
+		//if user exist in data base then throw error
+		if (existingUserInDatabase)
+		{
+			let error = ERROR.USER_EXISTS;
+			throw new AppError(error?.message, error?.code, error?.httpStatus);
 		}
 
-		return {
-			success:true
-		}
-	} catch (error) {
-		console.error(
-			"Verify Credentials Failed Error At 'verifyCredential: ",
-			error
-		);
-		return {
-			success: false,
-			statusCode: 500,
-			message: "Email/Mobile verification failed",
-		};
-	}
+		//if user does not exist return
 };
 
-const sendVericationOtp = async (credential,type)=>{
-	try
-	{
+/**
+ *
+ * @param {string} credential
+ * @param {string} type
+ * @returns
+ */
+
+const sendVericationOtp = async (credential, type) => {
+	try {
 		//send otp on the email/mobile.
 		const sendOtpResult = await sendOtp(
 			"verify-credential",
@@ -227,27 +227,17 @@ const sendVericationOtp = async (credential,type)=>{
 		);
 
 		//if failed to sent otp
-		if (!sendOtpResult.success) {
-			throw new Error(sendOtpResult?.message);
+		if (!sendOtpResult) {
+			let error = ERROR.EMAIL_SEND_FAILED;
+			throw new AppError(error?.message,error?.code,error?.httpStatus);
 		}
 
-		return {
-			success: sendOtpResult?.success,
-			statusCode: sendOtpResult?.statusCode,
-			message: sendOtpResult?.message,
-		};
-	}
-	catch(error)
-	{
-		console.error("Error At 'sendVerificationOtp: ",error)
-		return {
-			success:false,
-			message:"Internal Server Error"
-		}
-	}
-}
+		//if otp sent return
 
-
+	} catch (error) {
+		throw error;
+	}
+};
 
 /**
  *
