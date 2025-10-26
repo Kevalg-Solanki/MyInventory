@@ -6,7 +6,9 @@ const { verifyCredentialSchema,
         verifyOtpRegisterSchema, 
         registrationSchema, 
         loginSchema,
-        forgotPassRequestSchema
+        forgotPassRequestSchema,
+        verifyForgotPassOtpSchema,
+        forgotPassSchema
     } = require("./auth.validation.js");
 
 //controllers
@@ -14,7 +16,10 @@ const { verifyCredentialAndSendOtp,
         verifyOtpForRegistration,
         register,
         login,
-        refreshToken
+        refreshToken,
+        forgotPassReq,
+        verifyOtpForForgotPass,
+        forgotPassword
     } = require("./auth.controller.js");
 
 
@@ -46,7 +51,13 @@ authRouter.post("/refresh-token",refreshToken)
 //**Forgot Password
 
 //step 1: 
-authRouter.post("/forgot-password-request",validateRequest(forgotPassRequestSchema),);
+authRouter.post("/forgot-password-request",validateRequest(forgotPassRequestSchema),forgotPassReq);
+
+//step 2:
+authRouter.post("/verify-otp-forgot-password",validateRequest(verifyForgotPassOtpSchema),verifyOtpForForgotPass);
+
+//step 3:
+authRouter.patch("/forgot-password",validateRequest(forgotPassSchema),forgotPassword);
 
 
 module.exports = authRouter;

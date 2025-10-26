@@ -13,13 +13,13 @@ const validateOtp = async (type, credential, otp) => {
 		//1.first check otp exist or not
 		const existingOtpInDatabase = await otpModel.findOne({
 			destination: credential,
+			type:type
 		});
 
 		if (!existingOtpInDatabase) {
 			return {
 				success: false,
 				statusCode: 404,
-
 				message: "Otp does not exist please generate again",
 			};
 		}

@@ -4,6 +4,7 @@ const nodemailer = require("nodemailer");
 //template prepare services
 const {
 	prepareVerifyCredentialEmailTemplate,
+	prepareForgotPassEmailTemplate,
 } = require("./prepareEmailFromTemplate.js");
 
 //sender mail
@@ -31,13 +32,19 @@ const sendMail = async (type, destination, otp, expireIn) => {
 					otp,
 					expireIn
 				);
+			
+			case "forgot-password":
+				preparedEmailTemplate = await prepareForgotPassEmailTemplate(
+					destination,
+					otp,
+					expireIn
+				);
 		}
 
 		if (!preparedEmailTemplate) {
 			return {
 				success: false,
 				statusCode: 500,
-
 				message: "Template not found for type of email",
 			};
 		}
@@ -81,7 +88,7 @@ const tranposter = nodemailer.createTransport({
  * @returns {Object} - response
  */
 
-const sendMailService = async ({ email, subject, text, htmlTemplate }) => {
+const 	sendMailService = async ({ email, subject, text, htmlTemplate }) => {
 	try {
 		//prepare object of email to send
 		const emailToSent = {

@@ -7,10 +7,13 @@ const { sendOtp } = require("../otp/otp.service.js");
 //services
 const {
 	findUserWithCredential,
-	getRegistrationOtp,
+	getNewOtp,
 	saveUserInDatabase,
 	loginUser,
 	generateAccessTokenViaRefreshToken,
+	findUserAndSentOtp,
+	verifyForgotPassOtp,
+	changeUserPassword
 } = require("./auth.service.js");
 
 //utils
@@ -49,8 +52,8 @@ const verifyCredentialAndSendOtp = async (req, res) => {
 
 		//if failed to sent otp
 		if (!sendOtpResult.success) {
-			throw new Error(sendOtpResult.error);
-		}
+			throw new Error(sendOtpResult?.message);
+		}	
 
 		return res.status(200).json({
 			success: true,
@@ -94,7 +97,7 @@ const verifyOtpForRegistration = async (req, res) => {
 		}
 
 		//if otp is valid then generate otp for registration
-		const registrationOtpResponse = await getRegistrationOtp(credential);
+		const registrationOtpResponse = await getNewOtp(credential,"registration");
 
 		//if error on generating registraction otp
 		if (!registrationOtpResponse.success) {
@@ -105,7 +108,6 @@ const verifyOtpForRegistration = async (req, res) => {
 		return res.status(200).json({
 			success: true,
 			statusCode: 200,
-
 			registrationOtp: registrationOtpResponse.newOtp,
 			messsage: "Otp verification successfull",
 		});
@@ -276,6 +278,13 @@ const forgotPassReq = async (req, res) => {
 		const { credential, type } = req.body;
 
 		const forgotPassReq = await findUserAndSentOtp(credential, type);
+
+		return res.status(forgotPassReq?.statusCode).json({
+			success:forgotPassReq?.success,
+			statusCode:forgotPassReq?.statusCode,
+			message:forgotPassReq?.message
+		})
+
 	} catch (error) {
 		console.error(
 			"Failed to complete forgot password request Error At 'forgotPassRequest': ",
@@ -289,11 +298,92 @@ const forgotPassReq = async (req, res) => {
 	}
 };
 
+
+//verify forgot password
+const verifyOtpForForgotPass = async (req,res)=>{
+
+	try
+	{
+		//destruct
+		const {credential,otp} = req.body;
+
+		//verify otp
+		const verifyOtpResponse = await verifyForgotPassOtp(credential,otp);
+
+		return res.status(verifyOtpResponse?.statusCode).json({
+			success:verifyOtpResponse?.success,
+			statusCode:verifyOtpResponse?.statusCode,
+			message:verifyOtpResponse?.message,
+			newOtp:verifyOtpResponse?.newOtp?.newOtp
+		})
+
+	}
+	catch(error)
+	{
+		console.error("Forgot password otp verification failed Error At 'verifyOtpForForgotPass': ",error);
+		return res.status(500).json({
+			success:false,
+			statusCode:500,
+			message:"Failed to verify otp please try again"
+		})
+	}
+
+}
+
+
+//forgot password
+const forgotPassword = async (req,res)=>{
+	
+	try
+	{
+		//destruct
+		const {credential,otp,newPassword} = req.body;
+
+		//validate otp 
+		const validateOtpResponse = await validateOtp("forgot-password",credential,otp)
+
+		console.log(validateOtpResponse)
+		//if otp validation failed
+		if(!validateOtpResponse?.success)
+		{
+			return {
+				success:validateOtpResponse?.success,
+				statusCode:validateOtpResponse?.statusCode,
+				message:validateOtpResponse?.message 
+			}
+		}
+
+		//set new password for user
+		const setNewPasswordResponse = await changeUserPassword(credential,newPassword);
+
+
+		return res.status(setNewPasswordResponse?.statusCode).json({
+			success:setNewPasswordResponse?.success,
+			statusCode:setNewPasswordResponse?.statusCode,
+			message:setNewPasswordResponse?.message
+		})
+
+	}
+	catch(error)
+	{
+		console.error("Failed to forgot password Error At 'forgotPassword': ",error);
+		return res.status(500).json({
+			success:true,
+			statusCode:500,
+			message:"Unable to set new password please try again"
+		})
+	}
+}
+
+
 module.exports = {
 	verifyCredentialAndSendOtp,
 	verifyOtpForRegistration,
 	register,
 	login,
 	refreshToken,
+	forgotPassReq,
+	verifyOtpForForgotPass,
+	forgotPassword
 };
 

@@ -13,6 +13,7 @@ const {
 	generateRefreshToken,
 } = require("../../utils/jwtTokenService.js");
 const { sendOtp } = require("../otp/otp.service.js");
+const validateOtp = require("../../utils/validateOtp.js");
 
 /**
  * -find user with credential in database
@@ -29,11 +30,57 @@ const findUserWithCredential = async (credential) => {
 };
 
 /**
+ *
+ * @param {string} credential - email/mobile
+ * @returns {Object}
+ */
+const checkUserExistAndActive = async (credential) => {
+	try {
+		const userInDatabase = await findUserWithCredential(credential);
+
+		if (!userInDatabase) {
+			return {
+				success: false,
+				statusCode: 404,
+				message: "User does not exist please signup first",
+			};
+		}
+
+		const user = new UserClass(userInDatabase);
+
+		//check user active
+		if (!user.isUserAccountActive()) {
+			return {
+				success: false,
+				statusCode: 403,
+				message: "Your account is deactivated.",
+			};
+		}
+
+		return {
+			success: true,
+			userInDatabase,
+		};
+	} catch (error) {
+		console.error(
+			"Failed to check user exist and active Error At 'checkUserExistAndActive': ",
+			error
+		);
+		return {
+			success: false,
+			statusCode: 500,
+			message: "Something went wrong!",
+		};
+	}
+};
+
+/**
  * -find user with credential in database
  * @param {string} destination - email/mobile of user who trying to register
+ * @param {string} type - type of otp
  * @return {Object} - returns newOtp
  */
-const getRegistrationOtp = async (destination) => {
+const getNewOtp = async (destination, type) => {
 	try {
 		//generate new otp for registration
 		//clear all existing otp for user first
@@ -50,7 +97,7 @@ const getRegistrationOtp = async (destination) => {
 
 		//save otp to database
 		const otpToSaveInDatabase = new otpModel({
-			type: "registration",
+			type: type,
 			destination,
 			otp: newOtp,
 			expireIn: newExpireIn,
@@ -65,16 +112,37 @@ const getRegistrationOtp = async (destination) => {
 		};
 	} catch (error) {
 		console.error(
-			"Registration otp generation failed Error At 'getRegistrationOtp': ",
+			"Registration otp generation failed Error At 'getNewOtp': ",
 			error
 		);
 		return {
 			success: false,
 			statusCode: 500,
 
-			messages: "Failed to generate registration otp please try again",
+			messages: "Failed to generate new otp please try again",
 		};
 	}
+};
+
+/**
+ *
+ * @param {string} credential - email/mobile of user
+ * @param {string} newPassword - new hashed password
+ * @returns {Object} - response
+ */
+const setNewPassword = async (credential, newPassword) => {
+	//hash password
+	const hashedPassword = await bcrypt.hash(newPassword, 10);
+	console.log("set new passowrd")
+	//set new password
+	const updatedUser  = await UserModel.findOneAndUpdate(
+		{ $or:[{email:credential},{mobile:credential}] },
+		{ $set: { password: hashedPassword } },
+		{ new: true, runValidators: true }
+	);
+
+	return updatedUser;
+
 };
 
 /**
@@ -140,6 +208,7 @@ const loginUser = async (userData) => {
 		//3. Verify user password
 		const isMatched = await user.verifyPassword(userData.password);
 
+		console.log
 		//if password does not match
 		if (!isMatched) {
 			return {
@@ -264,33 +333,34 @@ const generateAccessTokenViaRefreshToken = async (refreshToken) => {
 
 const findUserAndSentOtp = async (credential, type) => {
 	try {
-		//find user
-		const userDataFromDatabase = findUserWithCredential(credential);
+		//first check user
+		const checkUser = await checkUserExistAndActive(credential);
 
-		const user = new UserClass(userDataFromDatabase);
-
-		//if user doest not exist return
-		if (!userDataFromDatabase) {
+		if (!checkUser.success) {
 			return {
 				success: false,
-				statusCode: 404,
-				message: "User does not exist please signUp first",
+				statusCode: checkUser?.statusCode,
+				message: checkUser?.message,
 			};
 		}
 
-		//check if user active
-		if (!user.isUserAccountActive) {
-			return {
-				success: false,
-				statusCode: 403,
-				message: "Your account is deactivated.",
-			};
-		}
-		
 		//if user active then sent otp on credential
-		const sentOtpResponse = await sendOtp("forgot-password",type,credential);
+		const sentOtpResponse = await sendOtp("forgot-password", type, credential);
 
-		
+		//if there is erro
+		if (!sentOtpResponse.success) {
+			return {
+				success: sentOtpResponse?.success,
+				statusCode: sentOtpResponse?.statusCode,
+				message: sentOtpResponse?.message,
+			};
+		}
+
+		return {
+			success: true,
+			statusCode: 200,
+			message: "Otp sent successfully",
+		};
 	} catch (error) {
 		console.error(
 			"Failed to find user and sent otp Error At 'findUserAndSentOtp': ",
@@ -299,16 +369,123 @@ const findUserAndSentOtp = async (credential, type) => {
 		return {
 			success: false,
 			statusCode: 500,
-			message: "Unable to sent otp pleas try again",
+			message: "Unable to sent otp please try again",
+		};
+	}
+};
+
+/**
+ * @param {string} credential - "credential to verify"
+ * @param {string} type - "email/mobile"
+ * @param {number} otp - "otp"
+ * @return {Object} - response
+ */
+
+const verifyForgotPassOtp = async (credential, otp) => {
+	try {
+		//first check user
+		const checkUser = await checkUserExistAndActive(credential);
+
+		if (!checkUser.success) {
+			return {
+				success: false,
+				statusCode: checkUser?.statusCode,
+				message: checkUser?.message,
+			};
+		}
+
+		//validate forgot passoword otp
+		const validateOtpResponse = await validateOtp(
+			"forgot-password",
+			credential,
+			otp
+		);
+
+		if (!validateOtpResponse?.success) {
+			return {
+				success: validateOtpResponse.success,
+				statusCode: validateOtpResponse.statusCode,
+				message: validateOtpResponse.message,
+			};
+		}
+
+		//sent new otp
+		const newOtp = await getNewOtp(credential, "forgot-password");
+
+		//if error on generating otp
+		if (!newOtp.success) {
+			throw new Error(registrationOtpResponse.error);
+		}
+
+		return {
+			success: validateOtpResponse.success,
+			statusCode: validateOtpResponse.statusCode,
+			message: validateOtpResponse.message,
+			newOtp,
+		};
+	} catch (error) {
+		console.error(
+			"Forgot Password Otp Validation failed Error At 'validateForgotPassOtp': ",
+			error
+		);
+		return {
+			success: false,
+			statusCode: 500,
+			message: "Failed to verify otp please try again",
+		};
+	}
+};
+
+const changeUserPassword = async (credential, newPassword) => {
+	try {
+		//first check user
+		const checkUser = await checkUserExistAndActive(credential);
+
+		if (!checkUser.success) {
+			return {
+				success: false,
+				statusCode: checkUser?.statusCode,
+				message: checkUser?.message,
+			};
+		}
+
+		//set new password of user
+		const setNewPasswordResponse = await setNewPassword(
+			credential,
+			newPassword
+		);
+
+		if(!setNewPasswordResponse)
+		{
+			throw new Error("Failed to set password");
+		}
+		
+
+		return {
+			success: true,
+			statusCode: 200,
+			message: "User password updated successfully",
+		};
+	} catch (error) {
+		console.error(
+			"Failed to change user password Error At 'changeUserPassword': ",
+			error
+		);
+		return {
+			success: false,
+			statusCode: 500,
+			message: "Unable to change user password",
 		};
 	}
 };
 
 module.exports = {
 	findUserWithCredential,
-	getRegistrationOtp,
+	getNewOtp,
 	saveUserInDatabase,
 	loginUser,
 	generateAccessTokenViaRefreshToken,
+	findUserAndSentOtp,
+	verifyForgotPassOtp,
+	changeUserPassword,
 };
-
