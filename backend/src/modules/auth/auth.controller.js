@@ -13,7 +13,10 @@ const {
 	generateAccessTokenViaRefreshToken,
 	findUserAndSentOtp,
 	verifyForgotPassOtp,
-	changeUserPassword
+	changeUserPassword,
+	verifyCredential,
+	checkUserExist,
+	sendVericationOtp,
 } = require("./auth.service.js");
 
 //utils
@@ -29,37 +32,37 @@ const verifyCredentialAndSendOtp = async (req, res) => {
 		//destruct
 		const { credential, type } = req.body;
 
-		//check if user exist
-		const existingUserInDatabase = await findUserWithCredential(credential);
+		//verify credential
+		const result = await checkUserExist(credential);
 
-		if (existingUserInDatabase) {
-			return res.status(409).json({
-				success: false,
-				statusCode: 409,
-
-				message: "User already exist",
-			});
+		
+		//if user exist 
+		if(!result.success)
+		{
+			return res.status(result.statusCode).json({
+				success:result.success,
+				statusCode:result.statusCode,
+				message:result.message
+			})
 		}
+		
+		const sendOtpResult = await sendVericationOtp(credential,type);
 
-		//if user does not exist than
-		//send otp on the email/mobile.
-		const sendOtpResult = await sendOtp(
-			"verify-credential",
-			type,
-			credential,
-			process.env.VERIFY_CRED_OTP_EXPIRY
-		);
-
-		//if failed to sent otp
-		if (!sendOtpResult.success) {
-			throw new Error(sendOtpResult?.message);
-		}	
+		if(!sendOtpResult.success)
+		{
+			return res.status(sendOtpResult.statusCode).json({
+				success:sendOtpResult.success,
+				statusCode:sendOtpResult.statusCode,
+				message:sendOtpResult.message
+			})
+		}
 
 		return res.status(200).json({
 			success: true,
 			statusCode: 200,
 			message: `Otp sent successfully`,
 		});
+
 	} catch (error) {
 		console.error(
 			"Verify Credentials Failed Error At 'verifyCredentialAndSendOtp: ",
@@ -97,7 +100,7 @@ const verifyOtpForRegistration = async (req, res) => {
 		}
 
 		//if otp is valid then generate otp for registration
-		const registrationOtpResponse = await getNewOtp(credential,"registration");
+		const registrationOtpResponse = await getNewOtp(credential, "registration");
 
 		//if error on generating registraction otp
 		if (!registrationOtpResponse.success) {
@@ -280,11 +283,10 @@ const forgotPassReq = async (req, res) => {
 		const forgotPassReq = await findUserAndSentOtp(credential, type);
 
 		return res.status(forgotPassReq?.statusCode).json({
-			success:forgotPassReq?.success,
-			statusCode:forgotPassReq?.statusCode,
-			message:forgotPassReq?.message
-		})
-
+			success: forgotPassReq?.success,
+			statusCode: forgotPassReq?.statusCode,
+			message: forgotPassReq?.message,
+		});
 	} catch (error) {
 		console.error(
 			"Failed to complete forgot password request Error At 'forgotPassRequest': ",
@@ -298,83 +300,80 @@ const forgotPassReq = async (req, res) => {
 	}
 };
 
-
 //verify forgot password
-const verifyOtpForForgotPass = async (req,res)=>{
-
-	try
-	{
+const verifyOtpForForgotPass = async (req, res) => {
+	try {
 		//destruct
-		const {credential,otp} = req.body;
+		const { credential, otp } = req.body;
 
 		//verify otp
-		const verifyOtpResponse = await verifyForgotPassOtp(credential,otp);
+		const verifyOtpResponse = await verifyForgotPassOtp(credential, otp);
 
 		return res.status(verifyOtpResponse?.statusCode).json({
-			success:verifyOtpResponse?.success,
-			statusCode:verifyOtpResponse?.statusCode,
-			message:verifyOtpResponse?.message,
-			newOtp:verifyOtpResponse?.newOtp?.newOtp
-		})
-
-	}
-	catch(error)
-	{
-		console.error("Forgot password otp verification failed Error At 'verifyOtpForForgotPass': ",error);
+			success: verifyOtpResponse?.success,
+			statusCode: verifyOtpResponse?.statusCode,
+			message: verifyOtpResponse?.message,
+			newOtp: verifyOtpResponse?.newOtp?.newOtp,
+		});
+	} catch (error) {
+		console.error(
+			"Forgot password otp verification failed Error At 'verifyOtpForForgotPass': ",
+			error
+		);
 		return res.status(500).json({
-			success:false,
-			statusCode:500,
-			message:"Failed to verify otp please try again"
-		})
+			success: false,
+			statusCode: 500,
+			message: "Failed to verify otp please try again",
+		});
 	}
-
-}
-
+};
 
 //forgot password
-const forgotPassword = async (req,res)=>{
-	
-	try
-	{
+const forgotPassword = async (req, res) => {
+	try {
 		//destruct
-		const {credential,otp,newPassword} = req.body;
+		const { credential, otp, newPassword } = req.body;
 
-		//validate otp 
-		const validateOtpResponse = await validateOtp("forgot-password",credential,otp)
+		//validate otp
+		const validateOtpResponse = await validateOtp(
+			"forgot-password",
+			credential,
+			otp
+		);
 
-		console.log(validateOtpResponse)
+		console.log(validateOtpResponse);
 		//if otp validation failed
-		if(!validateOtpResponse?.success)
-		{
+		if (!validateOtpResponse?.success) {
 			return {
-				success:validateOtpResponse?.success,
-				statusCode:validateOtpResponse?.statusCode,
-				message:validateOtpResponse?.message 
-			}
+				success: validateOtpResponse?.success,
+				statusCode: validateOtpResponse?.statusCode,
+				message: validateOtpResponse?.message,
+			};
 		}
 
 		//set new password for user
-		const setNewPasswordResponse = await changeUserPassword(credential,newPassword);
-
+		const setNewPasswordResponse = await changeUserPassword(
+			credential,
+			newPassword
+		);
 
 		return res.status(setNewPasswordResponse?.statusCode).json({
-			success:setNewPasswordResponse?.success,
-			statusCode:setNewPasswordResponse?.statusCode,
-			message:setNewPasswordResponse?.message
-		})
-
-	}
-	catch(error)
-	{
-		console.error("Failed to forgot password Error At 'forgotPassword': ",error);
+			success: setNewPasswordResponse?.success,
+			statusCode: setNewPasswordResponse?.statusCode,
+			message: setNewPasswordResponse?.message,
+		});
+	} catch (error) {
+		console.error(
+			"Failed to forgot password Error At 'forgotPassword': ",
+			error
+		);
 		return res.status(500).json({
-			success:true,
-			statusCode:500,
-			message:"Unable to set new password please try again"
-		})
+			success: true,
+			statusCode: 500,
+			message: "Unable to set new password please try again",
+		});
 	}
-}
-
+};
 
 module.exports = {
 	verifyCredentialAndSendOtp,
@@ -384,6 +383,5 @@ module.exports = {
 	refreshToken,
 	forgotPassReq,
 	verifyOtpForForgotPass,
-	forgotPassword
+	forgotPassword,
 };
-

@@ -133,16 +133,15 @@ const getNewOtp = async (destination, type) => {
 const setNewPassword = async (credential, newPassword) => {
 	//hash password
 	const hashedPassword = await bcrypt.hash(newPassword, 10);
-	console.log("set new passowrd")
+	console.log("set new passowrd");
 	//set new password
-	const updatedUser  = await UserModel.findOneAndUpdate(
-		{ $or:[{email:credential},{mobile:credential}] },
+	const updatedUser = await UserModel.findOneAndUpdate(
+		{ $or: [{ email: credential }, { mobile: credential }] },
 		{ $set: { password: hashedPassword } },
 		{ new: true, runValidators: true }
 	);
 
 	return updatedUser;
-
 };
 
 /**
@@ -184,6 +183,73 @@ const saveUserInDatabase = async (userData) => {
 };
 
 /**
+ * @param {string} credential - actual email/mobile
+ * @param {string} type - "email" or "mobile"
+ */
+const checkUserExist = async (credential) => {
+	try {
+		//check if user exist
+		const existingUserInDatabase = await findUserWithCredential(credential);
+
+		if (existingUserInDatabase) {
+			return {
+				success: false,
+				statusCode: 409,
+				message: "User already exist",
+			};
+		}
+
+		return {
+			success:true
+		}
+	} catch (error) {
+		console.error(
+			"Verify Credentials Failed Error At 'verifyCredential: ",
+			error
+		);
+		return {
+			success: false,
+			statusCode: 500,
+			message: "Email/Mobile verification failed",
+		};
+	}
+};
+
+const sendVericationOtp = async (credential,type)=>{
+	try
+	{
+		//send otp on the email/mobile.
+		const sendOtpResult = await sendOtp(
+			"verify-credential",
+			type,
+			credential,
+			process.env.VERIFY_CRED_OTP_EXPIRY
+		);
+
+		//if failed to sent otp
+		if (!sendOtpResult.success) {
+			throw new Error(sendOtpResult?.message);
+		}
+
+		return {
+			success: sendOtpResult?.success,
+			statusCode: sendOtpResult?.statusCode,
+			message: sendOtpResult?.message,
+		};
+	}
+	catch(error)
+	{
+		console.error("Error At 'sendVerificationOtp: ",error)
+		return {
+			success:false,
+			message:"Internal Server Error"
+		}
+	}
+}
+
+
+
+/**
  *
  * @param {Object} userData - user data recieved in request
  * @returns - userDetails from database and tokens
@@ -208,7 +274,7 @@ const loginUser = async (userData) => {
 		//3. Verify user password
 		const isMatched = await user.verifyPassword(userData.password);
 
-		console.log
+		console.log;
 		//if password does not match
 		if (!isMatched) {
 			return {
@@ -455,11 +521,9 @@ const changeUserPassword = async (credential, newPassword) => {
 			newPassword
 		);
 
-		if(!setNewPasswordResponse)
-		{
+		if (!setNewPasswordResponse) {
 			throw new Error("Failed to set password");
 		}
-		
 
 		return {
 			success: true,
@@ -481,6 +545,8 @@ const changeUserPassword = async (credential, newPassword) => {
 
 module.exports = {
 	findUserWithCredential,
+	checkUserExist,
+	sendVericationOtp,
 	getNewOtp,
 	saveUserInDatabase,
 	loginUser,
