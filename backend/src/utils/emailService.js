@@ -3,7 +3,7 @@ const nodemailer = require("nodemailer");
 
 //constants
 const ERROR = require("../constants/errors.js");
-
+const SENDER_EMAIL = process.env.EMAIL_USER;
 
 //template prepare services
 const {
@@ -11,9 +11,10 @@ const {
 	prepareForgotPassEmailTemplate,
 } = require("./prepareEmailFromTemplate.js");
 const AppError = require("./appErrorHandler.js");
+const { OTP_TYPE } = require("../constants/auth.js");
 
 //sender mail
-const SENDER_EMAIL = process.env.EMAIL_USER;
+
 
 /**
  * -function used for choose which template to prepare according to the type
@@ -31,14 +32,14 @@ const sendMail = async (type, destination, otp, expireIn) => {
 
 		//select which template to prepare
 		switch (type) {
-			case "verify-credential":
+			case OTP_TYPE.VERIFY_CREDENTIAL:
 				preparedEmailTemplate = await prepareVerifyCredentialEmailTemplate(
 					destination,
 					otp,
 					expireIn
 				);
 			
-			case "forgot-password":
+			case OTP_TYPE.FORGOT_PASSWORD:
 				preparedEmailTemplate = await prepareForgotPassEmailTemplate(
 					destination,
 					otp,

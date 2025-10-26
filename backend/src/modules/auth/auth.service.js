@@ -4,7 +4,7 @@ const bcrypt = require("bcrypt");
 
 //constants
 const ERROR = require("../../constants/errors.js");
-
+const { OTP_TYPE, SESSION_OTP_TYPE } = require("../../constants/auth.js");
 
 //models
 const otpModel = require("../otp/otp.model");
@@ -19,9 +19,7 @@ const {
 const { sendOtp } = require("../otp/otp.service.js");
 const validateOtp = require("../../utils/validateOtp.js");
 const AppError = require("../../utils/appErrorHandler.js");
-
-
-
+const sendResponse = require("../../utils/sendResponse.js");
 
 /**
  * -find user with credential in database
@@ -43,43 +41,22 @@ const findUserWithCredential = async (credential) => {
  * @returns {Object}
  */
 const checkUserExistAndActive = async (credential) => {
-	try {
-		const userInDatabase = await findUserWithCredential(credential);
+	const userInDatabase = await findUserWithCredential(credential);
 
-		if (!userInDatabase) {
-			return {
-				success: false,
-				statusCode: 404,
-				message: "User does not exist please signup first",
-			};
-		}
-
-		const user = new UserClass(userInDatabase);
-
-		//check user active
-		if (!user.isUserAccountActive()) {
-			return {
-				success: false,
-				statusCode: 403,
-				message: "Your account is deactivated.",
-			};
-		}
-
-		return {
-			success: true,
-			userInDatabase,
-		};
-	} catch (error) {
-		console.error(
-			"Failed to check user exist and active Error At 'checkUserExistAndActive': ",
-			error
-		);
-		return {
-			success: false,
-			statusCode: 500,
-			message: "Something went wrong!",
-		};
+	if (!userInDatabase) {
+		let error = ERROR.USER_NOT_FOUND;
+		throw new AppError(error?.message, error?.code, error?.httpStatus);
 	}
+
+	const user = new UserClass(userInDatabase);
+
+	//check user active
+	if (!user.isUserAccountActive()) {
+		let error = ERROR.USER_DEACTIVATED;
+		throw new AppError(error?.message, error?.code, error?.httpStatus);
+	}
+
+	return userInDatabase;
 };
 
 /**
@@ -89,47 +66,30 @@ const checkUserExistAndActive = async (credential) => {
  * @return {Object} - returns newOtp
  */
 const getNewOtp = async (destination, type) => {
-	try {
-		//generate new otp for registration
-		//clear all existing otp for user first
-		await otpModel.deleteMany({
-			destination,
-		});
+	//generate new otp for registration
+	//clear all existing otp for user first
+	await otpModel.deleteMany({
+		destination,
+	});
 
-		//generate otp
-		const newOtp = await generateOtp();
+	//generate otp
+	const newOtp = await generateOtp();
 
-		//set expiry time
-		const newExpireIn =
-			Date.now() + process.env.REGISTER_OTP_EXPIRY * 60 * 1000; //expire in min
+	//set expiry time
+	const newExpireIn = Date.now() + process.env.REGISTER_OTP_EXPIRY * 60 * 1000; //expire in min
 
-		//save otp to database
-		const otpToSaveInDatabase = new otpModel({
-			type: type,
-			destination,
-			otp: newOtp,
-			expireIn: newExpireIn,
-		});
+	//save otp to database
+	const otpToSaveInDatabase = new otpModel({
+		type: type,
+		destination,
+		otp: newOtp,
+		expireIn: newExpireIn,
+	});
 
-		//save to database
-		await otpToSaveInDatabase.save();
+	//save to database
+	await otpToSaveInDatabase.save();
 
-		return {
-			success: true,
-			newOtp,
-		};
-	} catch (error) {
-		console.error(
-			"Registration otp generation failed Error At 'getNewOtp': ",
-			error
-		);
-		return {
-			success: false,
-			statusCode: 500,
-
-			messages: "Failed to generate new otp please try again",
-		};
-	}
+	return newOtp;
 };
 
 /**
@@ -141,7 +101,6 @@ const getNewOtp = async (destination, type) => {
 const setNewPassword = async (credential, newPassword) => {
 	//hash password
 	const hashedPassword = await bcrypt.hash(newPassword, 10);
-	console.log("set new passowrd");
 	//set new password
 	const updatedUser = await UserModel.findOneAndUpdate(
 		{ $or: [{ email: credential }, { mobile: credential }] },
@@ -158,36 +117,23 @@ const setNewPassword = async (credential, newPassword) => {
  * @return {Object}- saved user data
  */
 const saveUserInDatabase = async (userData) => {
-	try {
-		//1.hash password
-		const hashedPassword = await bcrypt.hash(userData?.password, 10);
+	//1.hash password
+	const hashedPassword = await bcrypt.hash(userData?.password, 10);
 
-		//2.save user in database
-		const userToSave = new UserModel({
-			profilePicture: userData.profilePicture,
-			firstName: userData.firstName,
-			lastName: userData.lastName,
-			email: userData.email,
-			mobile: userData.mobile,
-			password: hashedPassword,
-		});
+	//2.save user in database
+	const userToSave = new UserModel({
+		profilePicture: userData.profilePicture,
+		firstName: userData.firstName,
+		lastName: userData.lastName,
+		email: userData.email,
+		mobile: userData.mobile,
+		password: hashedPassword,
+	});
 
-		//save and get saved user informations
-		const savedUser = await userToSave.save();
+	//save and get saved user informations
+	const savedUser = await userToSave.save();
 
-		return {
-			success: true,
-			savedUser,
-		};
-	} catch (error) {
-		console.error("Registration failed Error At 'saveUserInDatabase': ", error);
-		return {
-			success: false,
-			statusCode: 500,
-			savedUser: null,
-			messages: "Failed to register please try again",
-		};
-	}
+	return savedUser;
 };
 
 /**
@@ -195,18 +141,16 @@ const saveUserInDatabase = async (userData) => {
  * @param {string} type - "email" or "mobile"
  */
 const checkUserExist = async (credential) => {
+	//check if user exist
+	const existingUserInDatabase = await findUserWithCredential(credential);
 
-		//check if user exist
-		const existingUserInDatabase = await findUserWithCredential(credential);
+	//if user exist in data base then throw error
+	if (existingUserInDatabase) {
+		let error = ERROR.USER_EXISTS;
+		throw new AppError(error?.message, error?.code, error?.httpStatus);
+	}
 
-		//if user exist in data base then throw error
-		if (existingUserInDatabase)
-		{
-			let error = ERROR.USER_EXISTS;
-			throw new AppError(error?.message, error?.code, error?.httpStatus);
-		}
-
-		//if user does not exist return
+	//if user does not exist return
 };
 
 /**
@@ -220,7 +164,7 @@ const sendVericationOtp = async (credential, type) => {
 	try {
 		//send otp on the email/mobile.
 		const sendOtpResult = await sendOtp(
-			"verify-credential",
+			OTP_TYPE.VERIFY_CREDENTIAL,
 			type,
 			credential,
 			process.env.VERIFY_CRED_OTP_EXPIRY
@@ -229,11 +173,10 @@ const sendVericationOtp = async (credential, type) => {
 		//if failed to sent otp
 		if (!sendOtpResult) {
 			let error = ERROR.EMAIL_SEND_FAILED;
-			throw new AppError(error?.message,error?.code,error?.httpStatus);
+			throw new AppError(error?.message, error?.code, error?.httpStatus);
 		}
 
 		//if otp sent return
-
 	} catch (error) {
 		throw error;
 	}
@@ -245,73 +188,50 @@ const sendVericationOtp = async (credential, type) => {
  * @returns - userDetails from database and tokens
  */
 const loginUser = async (userData) => {
-	try {
-		//1. find user in database
-		const userInDatabase = await findUserWithCredential(userData.credential);
+	//1. find user in database
+	const userInDatabase = await findUserWithCredential(userData.credential);
 
-		//if user does not exist
-		if (!userInDatabase) {
-			return {
-				success: false,
-				statusCode: 404,
-				message: "User not found please signUp first",
-			};
-		}
-
-		//2. Create object of user
-		const user = new UserClass(userInDatabase);
-
-		//3. Verify user password
-		const isMatched = await user.verifyPassword(userData.password);
-
-		console.log;
-		//if password does not match
-		if (!isMatched) {
-			return {
-				success: false,
-				statusCode: 401,
-				message: "Password incorrect",
-			};
-		}
-
-		//check user account is activate or not
-		const isActive = user.isUserAccountActive();
-
-		//if diactived user account
-		if (!isActive) {
-			return {
-				success: false,
-				statusCode: 403,
-				message:
-					"Your account is deactivated. Please activate it using the email sent to you.",
-			};
-		}
-
-		//if active
-		//create access and refresh token
-		const payload = await user.getUserInfo();
-
-		//generate access and refresh token
-		const accessToken = generateAccessToken(payload);
-		const refreshToken = generateRefreshToken(payload);
-
-		//return user info and token
-		return {
-			success: true,
-			statusCode: 200,
-			data: { ...payload },
-			accessToken,
-			refreshToken,
-		};
-	} catch (error) {
-		console.error("Login failed Error At 'loginUser': ", error);
-
-		return {
-			success: false,
-			statusCode: 500,
-			message: "Unable to login please try again",
-		};
+	//if user does not exist
+	if (!userInDatabase) {
+		let error = ERROR.USER_NOT_FOUND;
+		throw new AppError(error?.message, error?.code, error?.httpStatus);
 	}
+
+	//2. Create object of user
+	const user = new UserClass(userInDatabase);
+
+	//3. Verify user password
+	const isMatched = await user.verifyPassword(userData.password);
+
+	//if password does not match
+	if (!isMatched) {
+		let error = ERROR.PASSWORD_INCORRECT;
+		throw new AppError(error?.message, error?.code, error?.httpStatus);
+	}
+
+	//check user account is activate or not
+	const isActive = user.isUserAccountActive();
+
+	//if diactived user account
+	if (!isActive) {
+		let error = ERROR.USER_DEACTIVATED;
+		throw new AppError(error?.message, error?.code, error?.httpStatus);
+	}
+
+	//if active
+	//create access and refresh token
+	const payload = await user.getUserInfo();
+
+	//generate access and refresh token
+	const accessToken = generateAccessToken(payload);
+	const refreshToken = generateRefreshToken(payload);
+
+	//return user info and token
+	return {
+		userData: { ...payload },
+		accessToken,
+		refreshToken,
+	};
 };
 
 /**
@@ -322,11 +242,8 @@ const generateAccessTokenViaRefreshToken = async (refreshToken) => {
 	try {
 		//check refreshToken exist
 		if (!refreshToken) {
-			return {
-				success: false,
-				statusCode: 400,
-				message: "Refresh token is required",
-			};
+			let error = ERROR.TOKEN_NOT_FOUND;
+			throw new AppError(error?.message, error?.code, error?.httpStatus);
 		}
 
 		//verify and decod token
@@ -337,20 +254,14 @@ const generateAccessTokenViaRefreshToken = async (refreshToken) => {
 
 		//if user not found
 		if (!userDataFromDatabase || userDataFromDatabase.isDeleted) {
-			return {
-				success: false,
-				statusCode: 404,
-				message: "User not found please signUp first",
-			};
+			let error = ERROR.USER_NOT_FOUND;
+			throw new AppError(error?.message, error?.code, error?.httpStatus);
 		}
 
 		//check if user active
 		if (!userDataFromDatabase.isActive) {
-			return {
-				success: false,
-				statusCode: 403,
-				message: "Your account is deactivated.",
-			};
+			let error = ERROR.USER_DEACTIVATED;
+			throw new AppError(error?.message, error?.code, error?.httpStatus);
 		}
 
 		//create object of user class
@@ -362,22 +273,13 @@ const generateAccessTokenViaRefreshToken = async (refreshToken) => {
 		//generate new access token
 		const newAccessToken = generateAccessToken(payload);
 
-		return {
-			success: true,
-			statusCode: 200,
-			message: "New session started",
-			newAccessToken,
-		};
+		return newAccessToken;
 	} catch (error) {
-		console.error(
-			"Failed to generate access token Error At 'generateAccessTokenByRefreshToken': ",
-			error
-		);
-		return {
-			success: false,
-			statusCode: 500,
-			message: "Unable to start new session please login again.",
-		};
+		if (error.name === "TokenExpiredError") {
+			let err = ERROR.TOKEN_EXPIRED;
+			throw new AppError(err?.message, err?.code, err?.httpStatus);
+		}
+		throw error;
 	}
 };
 
@@ -390,43 +292,14 @@ const generateAccessTokenViaRefreshToken = async (refreshToken) => {
 const findUserAndSentOtp = async (credential, type) => {
 	try {
 		//first check user
-		const checkUser = await checkUserExistAndActive(credential);
-
-		if (!checkUser.success) {
-			return {
-				success: false,
-				statusCode: checkUser?.statusCode,
-				message: checkUser?.message,
-			};
-		}
+		await checkUserExistAndActive(credential);
 
 		//if user active then sent otp on credential
-		const sentOtpResponse = await sendOtp("forgot-password", type, credential);
+		await sendOtp(OTP_TYPE.FORGOT_PASSWORD, type, credential);
 
-		//if there is erro
-		if (!sentOtpResponse.success) {
-			return {
-				success: sentOtpResponse?.success,
-				statusCode: sentOtpResponse?.statusCode,
-				message: sentOtpResponse?.message,
-			};
-		}
-
-		return {
-			success: true,
-			statusCode: 200,
-			message: "Otp sent successfully",
-		};
+		//if sent otp return
 	} catch (error) {
-		console.error(
-			"Failed to find user and sent otp Error At 'findUserAndSentOtp': ",
-			error
-		);
-		return {
-			success: false,
-			statusCode: 500,
-			message: "Unable to sent otp please try again",
-		};
+		throw error;
 	}
 };
 
@@ -438,72 +311,23 @@ const findUserAndSentOtp = async (credential, type) => {
  */
 
 const verifyForgotPassOtp = async (credential, otp) => {
-	try {
 		//first check user
-		const checkUser = await checkUserExistAndActive(credential);
-
-		if (!checkUser.success) {
-			return {
-				success: false,
-				statusCode: checkUser?.statusCode,
-				message: checkUser?.message,
-			};
-		}
+		await checkUserExistAndActive(credential);
 
 		//validate forgot passoword otp
-		const validateOtpResponse = await validateOtp(
-			"forgot-password",
-			credential,
-			otp
-		);
-
-		if (!validateOtpResponse?.success) {
-			return {
-				success: validateOtpResponse.success,
-				statusCode: validateOtpResponse.statusCode,
-				message: validateOtpResponse.message,
-			};
-		}
+		await validateOtp(OTP_TYPE.FORGOT_PASSWORD, credential, otp);
 
 		//sent new otp
-		const newOtp = await getNewOtp(credential, "forgot-password");
+		const newOtp = await getNewOtp(credential, SESSION_OTP_TYPE.FORGOT_PASSWORD);
 
-		//if error on generating otp
-		if (!newOtp.success) {
-			throw new Error(registrationOtpResponse.error);
-		}
+		return newOtp;
 
-		return {
-			success: validateOtpResponse.success,
-			statusCode: validateOtpResponse.statusCode,
-			message: validateOtpResponse.message,
-			newOtp,
-		};
-	} catch (error) {
-		console.error(
-			"Forgot Password Otp Validation failed Error At 'validateForgotPassOtp': ",
-			error
-		);
-		return {
-			success: false,
-			statusCode: 500,
-			message: "Failed to verify otp please try again",
-		};
-	}
 };
 
 const changeUserPassword = async (credential, newPassword) => {
 	try {
 		//first check user
-		const checkUser = await checkUserExistAndActive(credential);
-
-		if (!checkUser.success) {
-			return {
-				success: false,
-				statusCode: checkUser?.statusCode,
-				message: checkUser?.message,
-			};
-		}
+		await checkUserExistAndActive(credential);
 
 		//set new password of user
 		const setNewPasswordResponse = await setNewPassword(
@@ -512,24 +336,13 @@ const changeUserPassword = async (credential, newPassword) => {
 		);
 
 		if (!setNewPasswordResponse) {
-			throw new Error("Failed to set password");
+			let error = ERROR.PASSWORD_RESET_FAILED;			
+			throw new AppError(error?.message,error?.code,error?.httpStatus);
 		}
 
-		return {
-			success: true,
-			statusCode: 200,
-			message: "User password updated successfully",
-		};
+		return;
 	} catch (error) {
-		console.error(
-			"Failed to change user password Error At 'changeUserPassword': ",
-			error
-		);
-		return {
-			success: false,
-			statusCode: 500,
-			message: "Unable to change user password",
-		};
+		throw error;
 	}
 };
 

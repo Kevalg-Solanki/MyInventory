@@ -1,7 +1,6 @@
 //external module
 const jwt = require("jsonwebtoken");
 
-
 //services
 const {
 	findUserWithCredential,
@@ -16,7 +15,6 @@ const {
 	sendVericationOtp,
 } = require("./auth.service.js");
 
-
 //utils
 const validateOtp = require("../../utils/validateOtp.js");
 const {
@@ -25,8 +23,8 @@ const {
 } = require("../../utils/jwtTokenService.js");
 const sendResponse = require("../../utils/sendResponse.js");
 
-
-
+//constants
+const { OTP_TYPE, SESSION_OTP_TYPE } = require("../../constants/auth.js");
 
 //verify-credentials controller
 const verifyCredentialAndSendOtp = async (req, res, next) => {
@@ -37,12 +35,11 @@ const verifyCredentialAndSendOtp = async (req, res, next) => {
 		//2.verify credential
 		await checkUserExist(credential);
 
-		//3.send otp 
-		await sendVericationOtp(credential,type);
+		//3.send otp
+		await sendVericationOtp(credential, type);
 
 		//send response
-		return sendResponse(res,200,"Otp sent successfully");
-
+		return sendResponse(res, 200, "Otp sent successfully");
 	} catch (error) {
 		next(error);
 	}
@@ -55,37 +52,13 @@ const verifyOtpForRegistration = async (req, res, next) => {
 		const { credential, otp } = req.body;
 
 		//validate otp
-		const validateOtpResponse = await validateOtp(
-			"verify-credential",
-			credential,
-			otp
-		);
-
-		//if error on validation or invalid otp
-		if (!validateOtpResponse.success) {
-			return res.status(validateOtpResponse.statusCode).json({
-				success: validateOtpResponse.success,
-				statusCode: validateOtpResponse.statusCode,
-
-				message: validateOtpResponse.message,
-			});
-		}
+		await validateOtp(OTP_TYPE.VERIFY_CREDENTIAL, credential, otp);
 
 		//if otp is valid then generate otp for registration
-		const registrationOtpResponse = await getNewOtp(credential, "registration");
-
-		//if error on generating registraction otp
-		if (!registrationOtpResponse.success) {
-			throw new Error(registrationOtpResponse.error);
-		}
+		const newOtp = await getNewOtp(credential, SESSION_OTP_TYPE.REGISTRATION);
 
 		//if otp for registraction is generated then
-		return res.status(200).json({
-			success: true,
-			statusCode: 200,
-			registrationOtp: registrationOtpResponse.newOtp,
-			messsage: "Otp verification successfull",
-		});
+		return sendResponse(res, 200, "OTP verification successfull", { newOtp });
 	} catch (error) {
 		next(error);
 	}
@@ -98,50 +71,19 @@ const register = async (req, res, next) => {
 			req.body?.type == "email" ? req.body?.email : req.body?.mobile;
 
 		//1.check if user exist
-		const existingUserInDatabase = await findUserWithCredential(credential);
-
-		if (existingUserInDatabase) {
-			return res.status(409).json({
-				success: false,
-				statusCode: 409,
-				message: "User already exist",
-			});
-		}
+		await checkUserExist(credential);
 
 		//2.first verify otp and user exist
-		const validateOtpResponse = await validateOtp(
-			"registration",
-			credential,
-			req.body?.otp
-		);
-
-		//if error on validation or invalid otp
-		if (!validateOtpResponse?.success) {
-			return res.status(validateOtpResponse?.statusCode).json({
-				success: validateOtpResponse?.success,
-				statusCode: validateOtpResponse?.statusCode,
-
-				message: validateOtpResponse?.message,
-			});
-		}
+		await validateOtp(SESSION_OTP_TYPE.REGISTRATION, credential, req.body?.otp);
 
 		//3. save user in database
-		const saveUserInDatabaseResponse = await saveUserInDatabase(req.body);
+		const savedUser = await saveUserInDatabase(req.body);
 
 		//prepare payload
-		const {
-			_id,
-			profilePicture,
-			firstName,
-			lastName,
-			email,
-			mobile,
-			isSuperAdmin,
-		} = saveUserInDatabaseResponse.savedUser;
+		const { _id, firstName, lastName, email, mobile, isSuperAdmin } = savedUser;
 
 		const payload = {
 			_id,
-			profilePicture,
 			firstName,
 			lastName,
 			email,
@@ -152,12 +94,11 @@ const register = async (req, res, next) => {
 		//4. generate jwt token
 		const accessTokenToken = generateAccessToken(payload);
 
-		//4. generate refresh token
+		//5. generate refresh token
 		const refreshToken = generateRefreshToken(payload);
 
 		const userDataToSend = {
 			_id: _id,
-			profilePicture: profilePicture,
 			firstName: firstName,
 			lastName: lastName,
 			email: email,
@@ -165,18 +106,13 @@ const register = async (req, res, next) => {
 			isSuperAdmin: isSuperAdmin,
 		};
 
-		return res.status(200).json({
-			success: true,
-			statusCode: 200,
-			message: "Registration Successfull",
-			data: {
-				userData: { ...userDataToSend },
-			},
-			accessToken: accessTokenToken,
-			refreshToken: refreshToken,
+		return sendResponse(res, 200, "Registration successfull", {
+			userDataToSend,
+			refreshToken,
+			accessTokenToken,
 		});
 	} catch (error) {
-		next(error)
+		next(error);
 	}
 };
 
@@ -184,17 +120,12 @@ const register = async (req, res, next) => {
 const login = async (req, res, next) => {
 	try {
 		//call service function to login user
-		const loginUserResponse = await loginUser(req.body);
+		const { userData, refreshToken, accessToken } = await loginUser(req.body);
 
-		return res.status(loginUserResponse.statusCode).json({
-			success: loginUserResponse.success,
-			statusCode: loginUserResponse.statusCode,
-			message: loginUserResponse.message,
-			data: {
-				userData: { ...loginUserResponse.data },
-			},
-			accessToken: loginUserResponse.accessToken,
-			refreshToken: loginUserResponse.refreshToken,
+		return sendResponse(res, 200, "Login successfull", {
+			userData,
+			refreshToken,
+			accessToken,
 		});
 	} catch (error) {
 		next(error);
@@ -207,15 +138,12 @@ const refreshToken = async (req, res, next) => {
 		const { refreshToken } = req.body;
 
 		//generate new refresh token
-		const generatorResponse = await generateAccessTokenViaRefreshToken(
+		const newAccessToken = await generateAccessTokenViaRefreshToken(
 			refreshToken
 		);
 
-		return res.status(generatorResponse.statusCode).json({
-			success: generatorResponse.success,
-			statusCode: generatorResponse.statusCode,
-			message: generatorResponse.message,
-			accessToken: generatorResponse.newAccessToken,
+		return sendResponse(res, 200, "New session started", {
+			accessToken: newAccessToken,
 		});
 	} catch (error) {
 		next(error);
@@ -228,13 +156,9 @@ const forgotPassReq = async (req, res, next) => {
 		//extract data
 		const { credential, type } = req.body;
 
-		const forgotPassReq = await findUserAndSentOtp(credential, type);
+		await findUserAndSentOtp(credential, type);
 
-		return res.status(forgotPassReq?.statusCode).json({
-			success: forgotPassReq?.success,
-			statusCode: forgotPassReq?.statusCode,
-			message: forgotPassReq?.message,
-		});
+		return sendResponse(res, 200, "OTP sent successfully");
 	} catch (error) {
 		next(error);
 	}
@@ -246,15 +170,10 @@ const verifyOtpForForgotPass = async (req, res, next) => {
 		//destruct
 		const { credential, otp } = req.body;
 
-		//verify otp
-		const verifyOtpResponse = await verifyForgotPassOtp(credential, otp);
+		//verify otp and get new otp for set new password
+		const newOtp = await verifyForgotPassOtp(credential, otp);
 
-		return res.status(verifyOtpResponse?.statusCode).json({
-			success: verifyOtpResponse?.success,
-			statusCode: verifyOtpResponse?.statusCode,
-			message: verifyOtpResponse?.message,
-			newOtp: verifyOtpResponse?.newOtp?.newOtp,
-		});
+		return sendResponse(res, 200, "OTP verification complete", { newOtp });
 	} catch (error) {
 		next(error);
 	}
@@ -267,33 +186,16 @@ const forgotPassword = async (req, res, next) => {
 		const { credential, otp, newPassword } = req.body;
 
 		//validate otp
-		const validateOtpResponse = await validateOtp(
-			"forgot-password",
-			credential,
-			otp
-		);
-
-		console.log(validateOtpResponse);
-		//if otp validation failed
-		if (!validateOtpResponse?.success) {
-			return {
-				success: validateOtpResponse?.success,
-				statusCode: validateOtpResponse?.statusCode,
-				message: validateOtpResponse?.message,
-			};
-		}
+		await validateOtp(SESSION_OTP_TYPE.FORGOT_PASSWORD, credential, otp);
 
 		//set new password for user
-		const setNewPasswordResponse = await changeUserPassword(
+		await changeUserPassword(
 			credential,
 			newPassword
 		);
 
-		return res.status(setNewPasswordResponse?.statusCode).json({
-			success: setNewPasswordResponse?.success,
-			statusCode: setNewPasswordResponse?.statusCode,
-			message: setNewPasswordResponse?.message,
-		});
+		return sendResponse(res,200,"Password changed successfully.");
+		
 	} catch (error) {
 		next(error);
 	}
