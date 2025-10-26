@@ -57,12 +57,10 @@ const checkUserExistAndActive = async (credential) => {
 			};
 		}
 
-
 		return {
-			success:true,
-			userInDatabase
-		}
-
+			success: true,
+			userInDatabase,
+		};
 	} catch (error) {
 		console.error(
 			"Failed to check user exist and active Error At 'checkUserExistAndActive': ",
@@ -133,16 +131,18 @@ const getNewOtp = async (destination, type) => {
  * @returns {Object} - response
  */
 const setNewPassword = async (credential, newPassword) => {
-	
 	//hash password
-	const hashedPassword = await bcrypt.hash(newPassword,10);
-
+	const hashedPassword = await bcrypt.hash(newPassword, 10);
+	console.log("set new passowrd")
 	//set new password
-	return await UserModel.findOneAndUpdate(
-		{ credential },
+	const updatedUser  = await UserModel.findOneAndUpdate(
+		{ $or:[{email:credential},{mobile:credential}] },
 		{ $set: { password: hashedPassword } },
 		{ new: true, runValidators: true }
 	);
+
+	return updatedUser;
+
 };
 
 /**
@@ -208,6 +208,7 @@ const loginUser = async (userData) => {
 		//3. Verify user password
 		const isMatched = await user.verifyPassword(userData.password);
 
+		console.log
 		//if password does not match
 		if (!isMatched) {
 			return {
@@ -332,17 +333,15 @@ const generateAccessTokenViaRefreshToken = async (refreshToken) => {
 
 const findUserAndSentOtp = async (credential, type) => {
 	try {
-		
 		//first check user
 		const checkUser = await checkUserExistAndActive(credential);
 
-		if(!checkUser.success)
-		{
+		if (!checkUser.success) {
 			return {
-				success:false,
-				statusCode:checkUser?.statusCode,
-				message:checkUser?.message
-			}
+				success: false,
+				statusCode: checkUser?.statusCode,
+				message: checkUser?.message,
+			};
 		}
 
 		//if user active then sent otp on credential
@@ -387,13 +386,12 @@ const verifyForgotPassOtp = async (credential, otp) => {
 		//first check user
 		const checkUser = await checkUserExistAndActive(credential);
 
-		if(!checkUser.success)
-		{
+		if (!checkUser.success) {
 			return {
-				success:false,
-				statusCode:checkUser?.statusCode,
-				message:checkUser?.message
-			}
+				success: false,
+				statusCode: checkUser?.statusCode,
+				message: checkUser?.message,
+			};
 		}
 
 		//validate forgot passoword otp
@@ -402,6 +400,14 @@ const verifyForgotPassOtp = async (credential, otp) => {
 			credential,
 			otp
 		);
+
+		if (!validateOtpResponse?.success) {
+			return {
+				success: validateOtpResponse.success,
+				statusCode: validateOtpResponse.statusCode,
+				message: validateOtpResponse.message,
+			};
+		}
 
 		//sent new otp
 		const newOtp = await getNewOtp(credential, "forgot-password");
@@ -435,29 +441,31 @@ const changeUserPassword = async (credential, newPassword) => {
 		//first check user
 		const checkUser = await checkUserExistAndActive(credential);
 
-		if(!checkUser.success)
-		{
+		if (!checkUser.success) {
 			return {
-				success:false,
-				statusCode:checkUser?.statusCode,
-				message:checkUser?.message
-			}
+				success: false,
+				statusCode: checkUser?.statusCode,
+				message: checkUser?.message,
+			};
 		}
 
 		//set new password of user
-		const setNewPasswordResponse  = await setNewPassword(credential,newPassword);
+		const setNewPasswordResponse = await setNewPassword(
+			credential,
+			newPassword
+		);
 
-		if(!setNewPasswordResponse.success)
+		if(!setNewPasswordResponse)
 		{
-			throw new Error("Unable to change user password");
+			throw new Error("Failed to set password");
 		}
+		
 
 		return {
-			success:true,
-			statusCode:200,
-			message:"User password updated successfully"
-		}
-
+			success: true,
+			statusCode: 200,
+			message: "User password updated successfully",
+		};
 	} catch (error) {
 		console.error(
 			"Failed to change user password Error At 'changeUserPassword': ",
@@ -466,7 +474,7 @@ const changeUserPassword = async (credential, newPassword) => {
 		return {
 			success: false,
 			statusCode: 500,
-			message: "Unable to changer user password",
+			message: "Unable to change user password",
 		};
 	}
 };

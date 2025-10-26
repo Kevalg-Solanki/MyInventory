@@ -342,6 +342,17 @@ const forgotPassword = async (req,res)=>{
 		//validate otp 
 		const validateOtpResponse = await validateOtp("forgot-password",credential,otp)
 
+		console.log(validateOtpResponse)
+		//if otp validation failed
+		if(!validateOtpResponse?.success)
+		{
+			return {
+				success:validateOtpResponse?.success,
+				statusCode:validateOtpResponse?.statusCode,
+				message:validateOtpResponse?.message 
+			}
+		}
+
 		//set new password for user
 		const setNewPasswordResponse = await changeUserPassword(credential,newPassword);
 
