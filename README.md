@@ -47,6 +47,7 @@
 ---
 
 ## 📂 Folder Structure (Backend Example)
+```
 ├── backend
 |     ├── package-lock.json
 |     ├── package.json
@@ -85,6 +86,7 @@
 |     |     |     |     ├── verifyCredentialOtpEmailTemplate.js
 |     |     |     ├── validateOtp.js
 
+```
 ---
 
 ## ⚡ Getting Started
