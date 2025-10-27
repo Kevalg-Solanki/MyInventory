@@ -1,207 +1,108 @@
 //external module
 const jwt = require("jsonwebtoken");
 
-//external moduel services
-const { sendOtp } = require("../otp/otp.service.js");
-
 //services
 const {
-	checkUserExistWithCredential,
-	getRegistrationOtp,
+	findUserWithCredential,
+	getNewOtp,
 	saveUserInDatabase,
+	loginUser,
+	generateAccessTokenViaRefreshToken,
+	findUserAndSentOtp,
+	verifyForgotPassOtp,
+	changeUserPassword,
+	checkUserExist,
+	sendVericationOtp,
+	findUserWithId,
+	checkUserWithIdExistAndActive,
+	resetUserPassword
 } = require("./auth.service.js");
 
 //utils
 const validateOtp = require("../../utils/validateOtp.js");
+const {
+	generateAccessToken,
+	generateRefreshToken,
+} = require("../../utils/jwtTokenService.js");
+const sendResponse = require("../../utils/sendResponse.js");
+
+//constants
+const { OTP_TYPE, SESSION_OTP_TYPE } = require("../../constants/auth.js");
+const { UserClass } = require("../user/user.model.js");
 
 //verify-credentials controller
-const verifyCredentialAndSendOtp = async (req, res) => {
+const verifyCredentialAndSendOtp = async (req, res, next) => {
 	try {
-		//destruct
+		//1.destruct
 		const { credential, type } = req.body;
 
-		//check if user exist
-		const existingUserInDatabase = await checkUserExistWithCredential(
-			credential
-		);
+		//2.verify credential
+		await checkUserExist(credential);
 
-		if (existingUserInDatabase) {
-			return res.status(409).json({
-				success: false,
-				statusCode: 409,
+		//3.send otp
+		await sendVericationOtp(credential, type);
 
-				message: "User already exist",
-			});
-		}
-
-		//if user does not exist than
-		//send otp on the email/mobile.
-		const sendOtpResult = await sendOtp(
-			"verify-credential",
-			type,
-			credential,
-			process.env.VERIFY_CRED_OTP_EXPIRY
-		);
-
-		//if failed to sent otp
-		if (!sendOtpResult.success) {
-			throw new Error(sendOtpResult.error);
-		}
-
-		return res.status(200).json({
-			success: true,
-			statusCode: 200,
-			message: `Otp sent successfully`,
-		});
+		//send response
+		return sendResponse(res, 200, "Otp sent successfully");
 	} catch (error) {
-		console.error(
-			"Verify Credentials Failed Error At 'verifyCredentialAndSendOtp: ",
-			error
-		);
-		return res.status(500).json({
-			success: false,
-			statusCode: 500,
-			message: "Failed to send otp please try again",
-		});
+		next(error);
 	}
 };
 
 //verify-otp-register controller
-const verifyOtpForRegistration = async (req, res) => {
+const verifyOtpForRegistration = async (req, res, next) => {
 	try {
 		//destruct
 		const { credential, otp } = req.body;
 
 		//validate otp
-		const validateOtpResponse = await validateOtp(
-			"verify-credential",
-			credential,
-			otp
-		);
-
-		//if error on validation or invalid otp
-		if (!validateOtpResponse.success) {
-			return res.status(validateOtpResponse.statusCode).json({
-				success: validateOtpResponse.success,
-				statusCode: validateOtpResponse.statusCode,
-
-				message: validateOtpResponse.message,
-			});
-		}
+		await validateOtp(OTP_TYPE.VERIFY_CREDENTIAL, credential, otp);
 
 		//if otp is valid then generate otp for registration
-		const registrationOtpResponse = await getRegistrationOtp(credential);
-
-		//if error on generating registraction otp
-		if (!registrationOtpResponse.success) {
-			throw new Error(registrationOtpResponse.error);
-		}
+		const newOtp = await getNewOtp(credential, SESSION_OTP_TYPE.REGISTRATION);
 
 		//if otp for registraction is generated then
-		return res.status(200).json({
-			success: true,
-			statusCode: 200,
-
-			registrationOtp: registrationOtpResponse.newOtp,
-			messsage: "Otp verification successfull",
-		});
+		return sendResponse(res, 200, "OTP verification successfull", { newOtp });
 	} catch (error) {
-		console.error(
-			"Otp Verification Failed Error At 'verifyOtpForRegistration': ",
-			error
-		);
-		return res.status(500).json({
-			success: false,
-			statusCode: 500,
-
-			message: "Otp Verfication Failed",
-		});
+		next(error);
 	}
 };
 
 //register controller
-const register = async (req, res) => {
+const register = async (req, res, next) => {
 	try {
 		const credential =
 			req.body?.type == "email" ? req.body?.email : req.body?.mobile;
 
-		//check if user exist
-		const existingUserInDatabase = await checkUserExistWithCredential(
-			credential
-		);
+		//1.check if user exist
+		await checkUserExist(credential);
 
-		if (existingUserInDatabase) {
-			return res.status(409).json({
-				success: false,
-				statusCode: 409,
-				message: "User already exist",
-			});
-		}
+		//2.first verify otp and user exist
+		await validateOtp(SESSION_OTP_TYPE.REGISTRATION, credential, req.body?.otp);
 
-		//first verify otp and user exist
-		const validateOtpResponse = await validateOtp(
-			"registration",
-			credential,
-			req.body?.otp
-		);
+		//3. save user in database
+		const savedUser = await saveUserInDatabase(req.body);
 
-		//if error on validation or invalid otp
-		if (!validateOtpResponse?.success) {
-			return res.status(validateOtpResponse?.statusCode).json({
-				success: validateOtpResponse?.success,
-				statusCode: validateOtpResponse?.statusCode,
+		//prepare payload
+		const { _id, firstName, lastName, email, mobile, isSuperAdmin } = savedUser;
 
-				message: validateOtpResponse?.message,
-			});
-		}
-
-		//save user in database
-		const saveUserInDatabaseResponse = await saveUserInDatabase(req.body);
-
-		console.log(saveUserInDatabaseResponse);
-
-		const {
+		const payload = {
 			_id,
-			profilePicture,
 			firstName,
 			lastName,
 			email,
 			mobile,
 			isSuperAdmin,
-		} = saveUserInDatabaseResponse.savedUser;
-		//generate jwt token
-		const jwtToken = jwt.sign(
-			{
-				_id: _id,
-				profilePicture: profilePicture,
-				firstName: firstName,
-				lastName: lastName,
-				email: email,
-				mobile: mobile,
-				isSuperAdmin: isSuperAdmin,
-			},
-			process.env.JWT_SECRETE,
-			{ expiresIn: process.env.JWT_TOKEN_EXPIRY }
-		);
+		};
 
-		//generate refresh token
-		const jwtRefreshToken = jwt.sign(
-			{
-				_id: _id,
-				profilePicture: profilePicture,
-				firstName: firstName,
-				lastName: lastName,
-				email: email,
-				mobile: mobile,
-				isSuperAdmin: isSuperAdmin,
-			},
-			process.env.JWT_SECRETE,
-			{ expiresIn: process.env.JWT_REFRESH_TOKEN_EXPIRY }
-		);
+		//4. generate jwt token
+		const accessTokenToken = generateAccessToken(payload);
+
+		//5. generate refresh token
+		const refreshToken = generateRefreshToken(payload);
 
 		const userDataToSend = {
 			_id: _id,
-			profilePicture: profilePicture,
 			firstName: firstName,
 			lastName: lastName,
 			email: email,
@@ -209,28 +110,151 @@ const register = async (req, res) => {
 			isSuperAdmin: isSuperAdmin,
 		};
 
-		return res.status(200).json({
-			success: true,
-			statusCode: 200,
-
-			message: "Registration Successfull",
-			data: userDataToSend,
-			accessToken: jwtToken,
-			refreshToken: jwtRefreshToken,
+		return sendResponse(res, 200, "Registration successfull", {
+			userDataToSend,
+			refreshToken,
+			accessTokenToken,
 		});
 	} catch (error) {
-		console.error("Registration Failed Error At 'register': ", error);
-		return res.status(500).json({
-			success: false,
-			statusCode: 500,
-
-			message: "Registration Failed Please try again",
-		});
+		next(error);
 	}
 };
+
+//login
+const login = async (req, res, next) => {
+	try {
+		//call service function to login user
+		const { userData, refreshToken, accessToken } = await loginUser(req.body);
+
+		return sendResponse(res, 200, "Login successfull", {
+			userData,
+			refreshToken,
+			accessToken,
+		});
+	} catch (error) {
+		next(error);
+	}
+};
+
+//fresh token
+const refreshToken = async (req, res, next) => {
+	try {
+		const { refreshToken } = req.body;
+
+		//generate new refresh token
+		const newAccessToken = await generateAccessTokenViaRefreshToken(
+			refreshToken
+		);
+
+		return sendResponse(res, 200, "New session started", {
+			accessToken: newAccessToken,
+		});
+	} catch (error) {
+		next(error);
+	}
+};
+
+//forgot password request
+const forgotPassReq = async (req, res, next) => {
+	try {
+		//extract data
+		const { credential, type } = req.body;
+
+		await findUserAndSentOtp(credential, type);
+
+		return sendResponse(res, 200, "OTP sent successfully");
+	} catch (error) {
+		next(error);
+	}
+};
+
+//verify forgot password
+const verifyOtpForForgotPass = async (req, res, next) => {
+	try {
+		//destruct
+		const { credential, otp } = req.body;
+
+		//verify otp and get new otp for set new password
+		const newOtp = await verifyForgotPassOtp(credential, otp);
+
+		return sendResponse(res, 200, "OTP verification complete", { newOtp });
+	} catch (error) {
+		next(error);
+	}
+};
+
+//forgot password
+const forgotPassword = async (req, res, next) => {
+	try {
+		//destruct
+		const { credential, otp, newPassword } = req.body;
+
+		//validate otp
+		await validateOtp(SESSION_OTP_TYPE.FORGOT_PASSWORD, credential, otp);
+
+		//set new password for user
+		await changeUserPassword(
+			credential,
+			newPassword
+		);
+
+		return sendResponse(res,200,"Password changed successfully.");
+		
+	} catch (error) {
+		next(error);
+	}
+};
+
+//reset password
+const resetPassword = async(req,res,next)=>{
+
+	try
+	{
+		//destruct
+		const {userId,oldPassword,newPassword} = req.body;
+
+		//check user exist and active
+		const userInDatabase  = await checkUserWithIdExistAndActive(userId);
+
+		const user = new UserClass(userInDatabase);
+
+		//verify and chang user password
+		await resetUserPassword(user,oldPassword,newPassword);
+
+		return sendResponse(res,200,"Password changed successfully");
+	}
+	catch(error)
+	{
+		next(error);
+	}
+
+}
+
+
+//get user
+const getUserDataById= async(req,res,next)=>{
+	try
+	{
+		//destruct 
+		const userData = req.user;
+
+		return sendResponse(res,200,"User fetched successfully",{userData});
+	}
+	catch(error)
+	{
+		next(error);
+	}
+}
 
 module.exports = {
 	verifyCredentialAndSendOtp,
 	verifyOtpForRegistration,
 	register,
+	login,
+	refreshToken,
+	forgotPassReq,
+	verifyOtpForForgotPass,
+	forgotPassword,
+	resetPassword,
+	getUserDataById
 };

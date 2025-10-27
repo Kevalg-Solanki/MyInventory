@@ -23,12 +23,13 @@ app.use(
 app.use("/api/v1/auth", authRouter);
 
 //Error handler
-app.use((err, req, res, next) => {
-	console.error(err.stack);
-	res.status(500).json({
+app.use((error, req, res, next) => {
+	console.error("Error : ", error);
+	res.status(error.httpStatus || 500).json({
 		success: false,
-		statusCode: 500,
-		message: "Something went wrong!",
+		statusCode: error.httpStatus || 500,
+		message: error.httpStatus >= 500 || !error.httpStatus?  "Internal Server Error" : error.message||"Internal Server Error",
+		code: error.code || "SERVER_ERROR",
 	});
 });
 
