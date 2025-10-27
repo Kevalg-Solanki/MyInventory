@@ -109,7 +109,7 @@ npm install
 Create a `.env` file in the `server` folder:
 
 ```env
-MONGODB_URI = "mongodb+srv://kevalg1950:kevalg19502005@cluster69.thbe6hs.mongodb.net/MyInventory?retryWrites=true&w=majority&appName=Cluster69"
+MONGODB_URI = "mongodb_connection_string"
 
 PORT = 5000
 
