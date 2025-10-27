@@ -21,7 +21,6 @@ const tenantSchema = new mongoose.Schema(
 		},
 		tenantSlogan: {
 			type: String,
-			required: true,
 			maxlength: [200, "Maximum length of tenant slogan exceeded"],
 		},
 		tenantCategory: {
