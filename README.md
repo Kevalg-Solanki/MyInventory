@@ -47,7 +47,43 @@
 ---
 
 ## 📂 Folder Structure (Backend Example)
-
+├── backend
+|     ├── package-lock.json
+|     ├── package.json
+|     ├── src
+|     |     ├── app.js
+|     |     ├── config
+|     |     |     ├── connectToDb.js
+|     |     ├── constants
+|     |     |     ├── auth.js
+|     |     |     ├── errors.js
+|     |     ├── middlewares
+|     |     |     ├── validateRequest.js
+|     |     |     ├── verifyToken.js
+|     |     ├── modules
+|     |     |     ├── auth
+|     |     |     |     ├── auth.controller.js
+|     |     |     |     ├── auth.routes.js
+|     |     |     |     ├── auth.service.js
+|     |     |     |     ├── auth.validation.js
+|     |     |     ├── otp
+|     |     |     |     ├── otp.model.js
+|     |     |     |     ├── otp.service.js
+|     |     |     ├── user
+|     |     |     |     ├── user.model.js
+|     |     ├── server.js
+|     |     ├── utils
+|     |     |     ├── appErrorHandler.js
+|     |     |     ├── emailService.js
+|     |     |     ├── jwtTokenService.js
+|     |     |     ├── otpGenerator.js
+|     |     |     ├── prepareEmailFromTemplate.js
+|     |     |     ├── sendResponse.js
+|     |     |     ├── smsService.js
+|     |     |     ├── templates
+|     |     |     |     ├── forgotPassOtpEmailTemplate.js
+|     |     |     |     ├── verifyCredentialOtpEmailTemplate.js
+|     |     |     ├── validateOtp.js
 
 ---
 
