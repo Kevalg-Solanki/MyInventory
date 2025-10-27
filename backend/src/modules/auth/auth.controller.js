@@ -110,7 +110,7 @@ const register = async (req, res, next) => {
 			isSuperAdmin: isSuperAdmin,
 		};
 
-		return sendResponse(res, 200, "Registration successfull", {
+		return sendResponse(res, 201, "Registration successfull", {
 			userDataToSend,
 			refreshToken,
 			accessTokenToken,
@@ -162,7 +162,7 @@ const forgotPassReq = async (req, res, next) => {
 
 		await findUserAndSentOtp(credential, type);
 
-		return sendResponse(res, 200, "OTP sent successfully");
+		return sendResponse(res, 201, "OTP sent successfully");
 	} catch (error) {
 		next(error);
 	}

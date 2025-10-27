@@ -263,7 +263,7 @@ const loginUser = async (userData) => {
 	}
 
 	//check user account is activate or not
-	const isActive = user.isUserAccountActive();
+	const isActive = await user.isUserAccountActive();
 
 	//if diactived user account
 	if (!isActive) {
@@ -330,6 +330,11 @@ const generateAccessTokenViaRefreshToken = async (refreshToken) => {
 	} catch (error) {
 		if (error.name === "TokenExpiredError") {
 			let err = ERROR.TOKEN_EXPIRED;
+			throw new AppError(err?.message, err?.code, err?.httpStatus);
+		}
+		else if(error.name ==="JsonWebTokenError")
+		{
+			let err = ERROR.TOKEN_INVALID;
 			throw new AppError(err?.message, err?.code, err?.httpStatus);
 		}
 		throw error;
