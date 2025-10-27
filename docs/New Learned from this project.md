@@ -32,5 +32,14 @@ type: Joi.string().valid("email","mobile").required(),
 6.how to switch and create new branch
 7.how to save changes temporary using "git stash"
 8.how to switch branch using "git switch <branch-name>
-9.how to 
+9.write clear code that any team member can understand
+10.Don't reapet code if code reapete wrap it in the function 
+11.Always write bussines logic,data base query in the services not in controller
+12.controller should only call service functin and handle http response
+13.All response should have consistant structure
+14.how to merge branches
+15.how to delete branches after pushing from local and remote
+16.Keep README updated
+17.One function should only to one thing
+18.Modulrization
 
