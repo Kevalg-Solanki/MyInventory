@@ -1,7 +1,6 @@
 const Joi = require("joi");
 
 const createTenantSchema = Joi.object({
-	ownerId: Joi.string().required(),
 	tenantLogo: Joi.string().optional().allow(null),
 	tenantName: Joi.string().required().min(2).max(100).messages({
         "string.empty": "Tenant name is required",

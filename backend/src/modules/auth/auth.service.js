@@ -426,6 +426,7 @@ const resetUserPassword = async (user, oldPassword, newPassword) => {
 	//set new password of user
 	const updatedUser = await setNewPasswordWithId(userData._id,newPassword);
 
+	
 	//if password changed return 
 	return;
 };

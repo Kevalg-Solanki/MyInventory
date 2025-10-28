@@ -8,12 +8,12 @@ const userSchema = new mongoose.Schema(
 		firstName: {
 			type: String,
 			required: true,
-			
+			maxlength: 50,
 		},
 		lastName: {
 			type: String,
 			required: true,
-			
+			maxlength: 50,
 		},
 		email: {
 			type: String,
@@ -21,7 +21,7 @@ const userSchema = new mongoose.Schema(
 			lowercase: true,
 			unique: true,
 			sparse: true,
-			index: "text",
+
 			maxlength: 254,
 		},
 		mobile: {
@@ -29,14 +29,11 @@ const userSchema = new mongoose.Schema(
 			trim: true,
 			unique: true,
 			sparse: true,
-			index: "text",
 		},
 		tenants: [
 			{
-				tenantId: {
-					type: mongoose.Schema.Types.ObjectId,
-					ref: "Tenant",
-				},
+				type: mongoose.Schema.Types.ObjectId,
+				ref: "Tenant",
 			},
 		],
 		password: {
@@ -65,43 +62,30 @@ const userSchema = new mongoose.Schema(
 );
 
 //keep email/mobile unique ignore deleted
-userSchema.index(
-	{ email: 1 },
-	{
-		unique: true,
-		partialFilterExpression: {
-			isDeleted: { $ne: true },
-			email: { $type: "string" },
-		},
-	}
-);
-userSchema.index(
-	{ mobile: 1 },
-	{
-		unique: true,
-		partialFilterExpression: {
-			isDeleted: { $ne: true },
-			mobile: { $type: "string" },
-		},
-	}
-);
-
-//Remove Duplicate tenant id in tenants
-userSchema.path('tenants').validate({
-	validator:arr =>{
-		const ids = arr.map(i => String(i.tenantId));
-		return ids.length === new Set(ids).size;
+userSchema.index({
+	unique: true,
+	partialFilterExpression: {
+		isDeleted: { $ne: true },
+		email: { $type: "string" },
 	},
-	message:'Duplicate tenantId in tenants array'
-})
+});
+userSchema.index({
+	unique: true,
+	partialFilterExpression: {
+		isDeleted: { $ne: true },
+		mobile: { $type: "string" },
+	},
+});
+
+
 //Indexing
-userSchema.index({ "tenants.tenantId": 1 });
+userSchema.index({ tenants: 1 });
 
 //Strip fields/remove fields
 userSchema.set("toJSON", {
 	transform(doc, ret) {
 		delete ret.__v;
-		delete ret.isDeleted
+		delete ret.isDeleted;
 		return ret;
 	},
 });

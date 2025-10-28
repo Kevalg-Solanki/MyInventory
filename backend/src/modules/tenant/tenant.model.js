@@ -97,10 +97,10 @@ const tenantSchema = new mongoose.Schema(
 );
 
 //keep tenant name unquie but ignore deleted tenants
-tenantSchema.index(
-	{ tenantName: 1 },
-	{ unique: true, partialFilterExpression: { isDeleted: { $ne: true } } }
-);
+tenantSchema.index({
+	unique: true,
+	partialFilterExpression: { isDeleted: { $ne: true } },
+});
 
 tenantSchema.index({ ownerId: 1 });
 
@@ -114,5 +114,5 @@ tenantSchema.set("toJSON", {
 const TenantModel = mongoose.model("Tenant", tenantSchema);
 
 module.exports = {
-	TenantModel,    
+	TenantModel,
 };
