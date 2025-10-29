@@ -9,6 +9,11 @@ module.exports = {
         code:"TENANT_ALREADY_CONNECTED_USER",
         httpStatus:409,
         message:"User already connected to this tenant."
+    },
+    TENANT_INVALID_ID:{
+        code:'TENANT_INVALID_ID',
+        httpStatus:400,
+        message:"Invalid tenant id. May be server error."
     }
 
 }

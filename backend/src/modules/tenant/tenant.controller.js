@@ -2,46 +2,78 @@
 const sendResponse = require("../../utils/sendResponse");
 
 //service
-const { checkTenantNameTaken,
-	 saveNewTenantInDatabaseByUserId,
-	 addTenantIdInUser,
-	 setupDefaultTenantRoleAndAssignToUser,
-	 setupDefaultTanantRoles
-	} = require("./tenant.service");
-
-
+const {
+	createAndSetupTenantForUser,
+	getTenantDataById,
+	getTenantsConnectedToUserById,
+} = require("./tenant.service");
 
 //tenant/
-const createTenant = async (req, res, next) => {
+async function createTenant(req, res, next) {
 	try {
-		//destruct
-		const { tenantName } = req.body;
 
-		//check any tenant with same name exist
-		await checkTenantNameTaken(tenantName);
+		const tenantId = await createAndSetupTenantForUser(req.user, req.body);
 
-		//if tenant name is not taken then
-        
-        //create tenant
-        const savedTenant = await saveNewTenantInDatabaseByUserId(req.user._id,req.body);
-        
-		//save tenant id in user document
-		await addTenantIdInUser(req.user,savedTenant?._id);
-
-		//create default tenant role "Owner" and assign to user 
-		await setupDefaultTenantRoleAndAssignToUser(req.user,savedTenant?._id);
-
-		//create other preloaded roles 
-		await setupDefaultTanantRoles(savedTenant?._id);
-
-		return sendResponse(res,200,"New tenant opened successfully",{tenantId:savedTenant?._id});
-
+		return sendResponse(res, 200, "New tenant opened successfully", {
+			tenantId: tenantId,
+		});
 	} catch (error) {
 		next(error);
 	}
-};
+}
+
+//tenant/:tenantId
+async function getTenantData(req, res, next) {
+	try {
+		console.log("get tenant data")
+		//destruct
+		const { tenantId } = req.params;
+
+		
+		const tenantData = await getTenantDataById(tenantId);
+
+		return sendResponse(res, 200, "Tenant fetched successfully", {
+			tenantData
+		});
+	} catch (error) {
+		next(error);
+	}
+}
+
+//tenant/mine
+async function getTenantsConnectedToUser(req, res, next) {
+	console.log("controller")
+	try {	
+		console.log("controller")
+		const allTenants = await getTenantsConnectedToUserById(req.user);
+
+		return sendResponse(res, 200, "All tenants fetched successfully", {allTenants});
+
+	} catch (error) {
+		console.log("in catch")
+		next(error);
+	}
+}
+
+//tenant/login
+async function loginInTenant(req, res, next){
+	try
+	{
+		const {tenantId} = req.body;
+		const userId = req.user._id;
+
+		
+	}
+	catch(error)
+	{
+		next(error);
+	}
+}
 
 
 module.exports = {
-    createTenant
-}
+	createTenant,
+	getTenantData,
+	getTenantsConnectedToUser,
+	loginInTenant
+};

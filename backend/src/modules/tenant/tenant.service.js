@@ -1,5 +1,10 @@
+//external modules
+const mongoose = require("mongoose");
 //models
 const { TenantModel } = require("./tenant.model");
+const { UserModel } = require("../user/user.model.js");
+const { TenantRoleModel } = require("../tenantRole/tenantRole.model.js");
+const { TenantMemberModel } = require("../tenantMember/tenantMember.model.js");
 
 //constants
 const ERROR = require("../../constants/tenant.js");
@@ -7,51 +12,40 @@ const ROLE_PRESETS = require("../../constants/rolesPresets.js");
 
 //utiles
 const AppError = require("../../utils/appErrorHandler");
-const { UserModel } = require("../user/user.model.js");
-const { findByIdAndUpdate } = require("../otp/otp.model.js");
-const { TenantRoleModel } = require("../tenantRole/tenantRole.model.js");
-const { TenantMemberModel } = require("../tenantMember/tenantMember.model.js");
 
 //global variable
 let error;
 
 /**
- *
  * @param {string} tenantName - Name of tenant to find
  * @returns {Object} - object or null if not found
  */
-const findTenantByName = async (tenantName) => {
+async function findTenantByName(tenantName) {
 	return await TenantModel.findOne({
-		tenantName: tenantName,
+		tenantName,
 		isDeleted: false,
 	});
-};
-
-// /**
-//  *
-//  * @param {string} userId - Id of user to update
-//  * @param {Object} updateData - Data to update
-//  * @returns {Object} - User data if updated
-//  */
-
-// const updateUserById = async (userId, updateData) => {
-// 	const updatedUser = await UserModel.findByIdAndUpdate(
-// 		{ _id: userId },
-// 		{ $set: updateData },
-// 		{ new: true, runValidators: true }
-// 	);
-
-// 	return updatedUser;
-// };
+}
 
 /**
- *
+ * @param {string} tenantId - id of tenant to get data
+ * @returns
+ */
+async function getTenantDataById(tenantId) {
+	if (!tenantId.match(/^[0-9a-fA-F]{24}$/)) {
+		error = ERROR.TENANT_INVALID_ID;
+		throw new AppError(error?.message, error?.code, error?.httpStatus);
+	}
+	return await TenantModel.findById(tenantId);
+}
+
+/**
  * @param {string} tenantName - tenant name to check
  * @returns - throw error or return true
  */
 
 //create tenant service
-const checkTenantNameTaken = async (tenantName) => {
+async function checkTenantNameTaken(tenantName) {
 	//find tenant
 	const tenantInDatabase = await findTenantByName(tenantName);
 
@@ -63,15 +57,18 @@ const checkTenantNameTaken = async (tenantName) => {
 
 	//if does not exist then return
 	return false;
-};
+}
 
 /**
- *
+ * Create tenant service
+ * save new tenant with user id in database
  * @param {string} userId - user id of owner
  * @param {Object} tenantData - tenant data to save
+ * @param {Object} session - DB session
  * @returns {Object} - saved tenant id
  */
-const saveNewTenantInDatabaseByUserId = async (userId, tenantData) => {
+
+async function saveNewTenantInDatabaseByUserId(userId, tenantData, session) {
 	//create tenant model object to save
 	const tenantModelToSave = new TenantModel({
 		ownerId: userId,
@@ -92,27 +89,21 @@ const saveNewTenantInDatabaseByUserId = async (userId, tenantData) => {
 	});
 
 	//save tenant in database
-	const savedTenantInDatabase = await tenantModelToSave.save();
-
-	return savedTenantInDatabase;
-};
+	//passs session to the Db save query
+	return await tenantModelToSave.save({ session });
+}
 
 /**
- *
+ * Create tenant service
+ * push new tenant id into user
  * @param {Object} userData - data of user to assing tenant
  * @param {ObjectId} tenantId - id to add to user
  * @returns {Object} - updated user data
  */
 
-const addTenantIdInUser = async (userData, tenantId) => {
-	let tenants = userData.tenants;
-	let tenantIdFound = false;
-
-	//check user already have tenantId
-	tenantIdFound = tenants.includes(tenantId);
-
+async function addTenantIdInUser(userData, tenantId, session) {
 	//return error if have
-	if (tenantIdFound) {
+	if (userData.tenants?.includes(tenantId)) {
 		error = ERROR.TENANT_ALREADY_CONNECTED_USER;
 		throw new AppError(error?.message, error?.code, error?.httpStatus);
 	}
@@ -120,20 +111,25 @@ const addTenantIdInUser = async (userData, tenantId) => {
 	//if not tenant id not exist than add to user
 	const updatedUser = await UserModel.findByIdAndUpdate(
 		{ _id: userData._id },
-		{ $set: { tenants: [...tenants, tenantId] } },
-		{ new: true, runValidators: true }
+		{ $addToSet: { tenants: tenantId } },
+		{ new: true, runValidators: true, session }
 	);
 
 	return updatedUser;
-};
+}
 
 /**
+ * Create tenant service
  *
  * @param {Object} userData - requester user data
  * @param {ObjectId} tenantId - tenant id to setup default role
  * @returns - throw error or return true
  */
-const setupDefaultTenantRoleAndAssignToUser = async (userData, tenantId) => {
+async function setupDefaultTenantRoleAndAssignToUser(
+	userData,
+	tenantId,
+	session
+) {
 	//create role for tenan
 	const roleToSave = new TenantRoleModel({
 		tenantId,
@@ -142,7 +138,7 @@ const setupDefaultTenantRoleAndAssignToUser = async (userData, tenantId) => {
 	});
 
 	//save to database
-	const savedOwnerRole = await roleToSave.save();
+	const savedOwnerRole = await roleToSave.save({ session });
 
 	//create tenant member and assign role if of Owner role which is just created.
 	const tenantMemberToSave = new TenantMemberModel({
@@ -152,18 +148,18 @@ const setupDefaultTenantRoleAndAssignToUser = async (userData, tenantId) => {
 		roles: [savedOwnerRole?._id],
 	});
 
-	const savedMember = await tenantMemberToSave.save();
+	const savedMember = await tenantMemberToSave.save({ session });
 
-	return true;
-};
-
-
+	return { savedOwnerRole, savedMember };
+}
 
 /**
+ * Create tenant service
+ * create default roles for tenants
  * @param {ObjectId} tenantId - id of tenant to create default role for it
  * @returns - throw error or return true
  */
-const setupDefaultTanantRoles = async (tenantId) => {
+async function setupDefaultTanantRoles(tenantId, session) {
 	try {
 		//create role for tenan
 		const defaultRoleToSave1 = new TenantRoleModel({
@@ -179,20 +175,174 @@ const setupDefaultTanantRoles = async (tenantId) => {
 		});
 
 		//save to database
-		await Promise.all([
-			defaultRoleToSave1.save(),
-			defaultRoleToSave2.save()
+		const [savedRole1, savedRole2] = await Promise.all([
+			defaultRoleToSave1.save({ session }),
+			defaultRoleToSave2.save({ session }),
 		]);
 
-		return true;
+		return { savedRole1, savedRole2 };
 	} catch (error) {
 		throw error;
 	}
-};
+}
+
+//-----------------------------------------
+//Create tenant and its defaults
+async function createAndSetupTenantForUser(userData, tenantData) {
+	//start session
+	//session will used for executting all the db operation ensurring all success full or
+	//if one fails then all previously save undo which avoid issues
+	//session will pass to all db write query
+	const session = await mongoose.startSession();
+	try {
+		const result = await session.withTransaction(async () => {
+			//check any tenant with same name exist
+			await checkTenantNameTaken(tenantData?.tenantName);
+
+			//if tenant name is not taken then
+			//create tenant
+			const savedTenant = await saveNewTenantInDatabaseByUserId(
+				userData._id,
+				tenantData,
+				session
+			);
+
+			//save tenant id in user document
+			await addTenantIdInUser(userData, savedTenant?._id, session);
+
+			//create default tenant role "Owner" and assign to user
+			await setupDefaultTenantRoleAndAssignToUser(
+				userData,
+				savedTenant?._id,
+				session
+			);
+
+			//create other preloaded roles
+			await setupDefaultTanantRoles(savedTenant?._id, session);
+
+			return savedTenant?._id;
+		});
+
+		//if everything done then returen tenantId
+		return result;
+	} catch (error) {
+		throw error;
+	} finally {
+		await session.endSession();
+	}
+}
+
+//GET tenant/mine--------------------------
+
+async function getUserConnectedTenantsAndRoleData(userId, tenantIds) {
+	try {
+		const pipeline = [
+			//first get tenants using tenant ids
+			{ $match: { _id: { $in: tenantIds }, isDeleted: false } },
+			//filter only needed fields
+			{
+				$project: {
+					tenantName: 1,
+					tenantLogo: 1,
+					tenantCategory: 1,
+					city: 1,
+					state: 1,
+					country: 1,
+					isActive: 1,
+				},
+			},
+			{
+				$lookup: {
+					from: "tenant-members",
+					let: { tenantId: "$_id" },
+					pipeline: [
+						{
+							$match: {
+								$expr: {
+									$and: [
+										{ $eq: ["$tenantId", "$$tenantId"] },
+										{ $eq: ["$userId", userId] },
+									],
+								},
+							},
+						},
+						{
+							$project: { roles: 1, _id: 0 },
+						},
+					],
+					as: "membership",
+				},
+			},
+			{
+				$unwind: { path: "$membership", preserveNullAndEmptyArrays: true },
+			},
+			{
+				$lookup: {
+					from: "tenant-roles",
+					localField: "membership.roles",
+					foreignField: "_id",
+					as: "roleDocs",
+				},
+			},
+			{
+				$project: {
+					tenantId: "$_id",
+					tenantName: 1,
+					city: 1,
+					state: 1,
+					country: 1,
+					tenantLogo: 1,
+					roles: {
+						$cond: [
+							{ $gt: [{ $size: "$roleDocs" }, 0] },//condition (gt = greater than)
+							{//if
+								$map: {
+									input: "$roleDocs",
+									as: "r",
+									in: "$$r.roleName",
+								},
+							},
+							[],//else
+						],
+					},
+				},
+			},
+		];
+
+		return await TenantModel.aggregate(pipeline);
+	} catch (error) {
+		throw error;
+	}
+}
+
+//Get tenant data by id
+async function getTenantsConnectedToUserById(userData) {
+	//get tenants id stored in user document
+	console.log("user Data", userData);
+	const tenantIds = userData?.tenants;
+	console.log("tenant ids", tenantIds);
+	const tenantLists = await getUserConnectedTenantsAndRoleData(
+		userData?._id,
+		tenantIds
+	);
+
+	return tenantLists;
+}
+
+
+//Login user into tenant
+async function loginUserIntoTenant(userId,tenantId){
+	
+	 
+}
+
 module.exports = {
 	checkTenantNameTaken,
 	saveNewTenantInDatabaseByUserId,
 	addTenantIdInUser,
 	setupDefaultTenantRoleAndAssignToUser,
-	setupDefaultTanantRoles
+	setupDefaultTanantRoles,
+	createAndSetupTenantForUser,
+	getTenantDataById,
+	getTenantsConnectedToUserById,
 };

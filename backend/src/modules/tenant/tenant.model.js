@@ -1,6 +1,6 @@
 //External modules
 const mongoose = require("mongoose");
-const bcrypt = require("bcrypt");
+
 
 const tenantSchema = new mongoose.Schema(
 	{
