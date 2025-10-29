@@ -1,5 +1,10 @@
-// src/constants/permissions.js
+
 const PERMS = {
+
+  //all perms
+  TENANT_OWNER_PERMS:'TENANT_OWNER_PERMS',
+  
+
   // Tenant
   TENANT_GET_ALL_DATA: 'TENANT_GET_ALL_DATA',
   TENANT_GET_MODERATED_DATA:'TENANT_GET_MODERATED_DATA',

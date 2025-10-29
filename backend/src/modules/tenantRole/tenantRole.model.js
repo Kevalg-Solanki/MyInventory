@@ -46,6 +46,8 @@ tenantRoleSchema.index(
     {unique:true, partialFilterExpression:{isDeleted:{$ne:true}}}
 );
 
+tenantRoleSchema.index({tenantId:1,isDeleted:1});
+
 
 const TenantRoleModel = mongoose.model("Tenant-Role", tenantRoleSchema);
 

@@ -4,7 +4,9 @@ const sendResponse = require("../../utils/sendResponse");
 //service
 const { checkTenantNameTaken,
 	 saveNewTenantInDatabaseByUserId,
-	 addTenantIdInUser
+	 addTenantIdInUser,
+	 setupDefaultTenantRoleAndAssignToUser,
+	 setupDefaultTanantRoles
 	} = require("./tenant.service");
 
 
@@ -27,9 +29,12 @@ const createTenant = async (req, res, next) => {
 		await addTenantIdInUser(req.user,savedTenant?._id);
 
 		//create default tenant role "Owner" and assign to user 
-		await setupDefaultTenantRoleAndAssignToUser(req.user._id,savedTenant?._id);
+		await setupDefaultTenantRoleAndAssignToUser(req.user,savedTenant?._id);
 
-		return sendResponse(res,200,"New tenant opened successfully");
+		//create other preloaded roles 
+		await setupDefaultTanantRoles(savedTenant?._id);
+
+		return sendResponse(res,200,"New tenant opened successfully",{tenantId:savedTenant?._id});
 
 	} catch (error) {
 		next(error);
