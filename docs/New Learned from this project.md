@@ -34,3 +34,6 @@ type: Joi.string().valid("email","mobile").required(),
 8.how to switch branch using "git switch <branch-name>
 9.how to 
 
+19.start session with mongoose for multiple write to ensure proper work of api by all write completions and avoding
+one write fails and other all completed which created issues
+
