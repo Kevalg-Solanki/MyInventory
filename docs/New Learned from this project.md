@@ -43,3 +43,6 @@ type: Joi.string().valid("email","mobile").required(),
 17.One function should only to one thing
 18.Modulrization
 
+19.start session with mongoose for multiple write to ensure proper work of api by all write completions and avoding
+one write fails and other all completed which created issues
+
