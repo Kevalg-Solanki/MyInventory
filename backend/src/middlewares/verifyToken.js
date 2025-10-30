@@ -54,11 +54,20 @@ const verifyToken = async (req, res, next) => {
 		}
 
 		//if token valid
+		console.log("token is valid")
 		next();
 	} catch (error) {
 		console.error(error);
 		if (error?.name === "JsonWebTokenError") {
 			let err = ERROR.TOKEN_INVALID;
+			return res.status(err?.httpStatus).json({
+				success: false,
+				statusCode: err.httpStatus,
+				message: err.message,
+				code: err?.code,
+			});
+		} else if (error?.name === "TokenExpiredError") {
+			let err = ERROR.TOKEN_EXPIRED;
 			return res.status(err?.httpStatus).json({
 				success: false,
 				statusCode: err.httpStatus,
@@ -71,6 +80,7 @@ const verifyToken = async (req, res, next) => {
 			success: false,
 			statusCode: 500,
 			message: "Internal Server Error",
+			code:"SERVER_ERROR"
 		});
 	}
 };

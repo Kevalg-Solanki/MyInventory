@@ -27,7 +27,7 @@ const {
 const sendResponse = require("../../utils/sendResponse.js");
 
 //constants
-const { OTP_TYPE, SESSION_OTP_TYPE } = require("../../constants/auth.js");
+const { OTP_TYPE, SESSION_OTP_TYPE } = require("../../constants/emailAndSms.js");
 const { UserClass } = require("../user/user.model.js");
 
 //verify-credentials controller

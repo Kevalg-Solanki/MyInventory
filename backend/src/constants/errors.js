@@ -1,4 +1,6 @@
 module.exports = {
+
+	//**USER
 	USER_EXISTS: {
 		code: "USER_EXISTS",
 		httpStatus: 409,
@@ -15,6 +17,8 @@ module.exports = {
 		message:
 			"Your account is deactivated. Please activate it using the email sent to you.",
 	},
+
+	//**PASSWORD
 	PASSWORD_INCORRECT: {
 		code: "PASSWORD_INCORRECT",
 		httpStatus: 401,
@@ -25,6 +29,9 @@ module.exports = {
 		httpStatus: 401,
 		message: "Failed to change password.",
 	},
+
+
+	//**TOKEN 
 	TOKEN_NOT_FOUND: {
 		code: "TOKEN_NOT_FOUND",
 		httpStatus: 400,
@@ -41,6 +48,7 @@ module.exports = {
 		message: "Token is expired.",
 	},
 
+	//**MAIL
 	EMAIL_SEND_FAILED: {
 		code: "EMAI_SEND_FAILED",
 		httpStatus: 502,
@@ -51,26 +59,46 @@ module.exports = {
 		httpStatus: 502,
 		message: "Failed to send OTP. Please try again later.",
 	},
-
 	TEMPLATE_NOT_FOUND: {
 		code: "TEMPLATE_NOT_FOUND",
 		httpStatus: 500,
 		message: "Failed to send email. Please try again later.",
 	},
 
+	//**OTP */
 	OTP_NOT_AVAILABLE: {
 		code: "OTP_NOT_AVAILABLE",
-		httStatus: 404,
+		httpStatus: 404,
 		message: "OTP not available. Please generate again.",
 	},
 	OTP_EXPIRED: {
 		code: "OTP_EXPIRED",
-		httStatus: 410,
+		httpStatus: 410,
 		message: "OTP has expired. Please generate new one.",
 	},
 	OTP_INVALID: {
 		code: "OTP_INVALID",
-		httStatus: 401,
+		httpStatus: 401,
 		message: "Invalid OTP",
 	},
+
+	//**OTHER */
+	OBJECTID_INVALID:{
+		code:"OBJECTID_INVALID",
+		httpStatus:400,
+		message:"Id is invalid."
+	},
+	UPDATABLE_FIELDS_MISSING:{
+		code:'UPDATABLE_FIELDS_MISSING',
+		httpStatus:400,
+		message:"Not updatable fields found"
+	},
+
+	//**AUTH */
+	UNAUTHORIZED_ACCESS:{
+		code:'UNAUTHORIZED_ACCESS',
+		httpStatus:401,
+		message:"Unauthorized access."
+	}
+
 };

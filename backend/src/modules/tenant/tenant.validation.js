@@ -1,5 +1,6 @@
 const Joi = require("joi");
 
+
 const createTenantSchema = Joi.object({
 	tenantLogo: Joi.string().optional().allow(null),
 	tenantName: Joi.string().required().min(2).max(100).messages({
@@ -11,7 +12,7 @@ const createTenantSchema = Joi.object({
 	tenantCategory: Joi.string().required().messages({
          "string.empty": "Category is required",
     }),
-	businessEmail: Joi.string().max(254).optional().allow(null).messages({
+	businessEmail: Joi.string().email().max(254).optional().allow(null).messages({
         "string.max":"Email character limit exceeded"
     }),
 	gstNumber: Joi.string().optional().allow(null),
@@ -50,6 +51,14 @@ const createTenantSchema = Joi.object({
 });
 
 
+//Frock of schema for patch
+const updateTenantSchema = createTenantSchema.fork(
+	Object.keys(createTenantSchema.describe().keys),
+	(schema)=>schema.optional()
+)
+
+
 module.exports = {
-    createTenantSchema
+    createTenantSchema,
+	updateTenantSchema
 }

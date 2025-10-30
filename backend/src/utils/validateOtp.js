@@ -22,19 +22,19 @@ const validateOtp = async (type, credential, otp) => {
 
 		if (!existingOtpInDatabase) {
 			let error = ERROR.OTP_NOT_AVAILABLE;
-			throw new AppError(error?.message,error?.code,error?.httStatus);
+			throw new AppError(error?.message,error?.code,error?.httpStatus);
 		}
 
 		//2.check otp is expired or not
 		if (Date.now() > existingOtpInDatabase.expireIn) {
 			let error = ERROR.OTP_EXPIRED;
-			throw new AppError(error?.message,error?.code,error?.httStatus);
+			throw new AppError(error?.message,error?.code,error?.httpStatus);
 		}
 
 		//3.check otp is correct or not
 		if (existingOtpInDatabase.otp != otp) {
 			let error = ERROR.OTP_INVALID;
-			throw new AppError(error?.message,error?.code,error?.httStatus);
+			throw new AppError(error?.message,error?.code,error?.httpStatus);
 		}
 
 		//first clear otp for user

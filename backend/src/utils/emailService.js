@@ -4,29 +4,33 @@ const nodemailer = require("nodemailer");
 //constants
 const ERROR = require("../constants/errors.js");
 const SENDER_EMAIL = process.env.EMAIL_USER;
+const { OTP_TYPE,MESSAGE_TYPE } = require("../constants/emailAndSms.js");
 
 //template prepare services
 const {
 	prepareVerifyCredentialEmailTemplate,
 	prepareForgotPassEmailTemplate,
+	prepareTenantDeactivationEmailTemplate,
+	prepareTenantDeleteEmailTemplate
 } = require("./prepareEmailFromTemplate.js");
+
+//utils
 const AppError = require("./appErrorHandler.js");
-const { OTP_TYPE } = require("../constants/auth.js");
+
 
 //sender mail
-
 
 /**
  * -function used for choose which template to prepare according to the type
  *
  * @param {string} type - type of otp (e.g verify-credential, forgot-password)
  * @param {string} destination - email
- * @param {number} otp - otp
- * @param {number} expireIn - time set to expire Otp (In Minutes) default - 5 Minutes
+ * @param {Object} metadata - data to include in email
  * @return {Object} - otp sent success or fail and error
  */
 
-const sendMail = async (type, destination, otp, expireIn) => {
+const 
+sendMail = async (type, destination, metadata = {}) => {
 	try {
 		let preparedEmailTemplate;
 
@@ -35,25 +39,33 @@ const sendMail = async (type, destination, otp, expireIn) => {
 			case OTP_TYPE.VERIFY_CREDENTIAL:
 				preparedEmailTemplate = await prepareVerifyCredentialEmailTemplate(
 					destination,
-					otp,
-					expireIn
+					metadata
 				);
-			
+
 			case OTP_TYPE.FORGOT_PASSWORD:
 				preparedEmailTemplate = await prepareForgotPassEmailTemplate(
 					destination,
-					otp,
-					expireIn
+					metadata
+				);
+
+			case MESSAGE_TYPE.TENANT_DEACTIVATED_MSG:
+				preparedEmailTemplate = await prepareTenantDeactivationEmailTemplate(
+					destination,
+					metadata
+				);
+
+			case MESSAGE_TYPE.TENANT_DELETED_MSG:
+					preparedEmailTemplate = await prepareTenantDeleteEmailTemplate(
+					destination,
+					metadata
 				);
 		}
 
 		//if there is not template for type of email
 		if (!preparedEmailTemplate) {
-
 			let error = ERROR.TEMPLATE_NOT_FOUND;
-			throw new AppError(error?.message,error?.code,error?.httpStatus);
+			throw new AppError(error?.message, error?.code, error?.httpStatus);
 		}
-
 
 		//now send prepared email data to the sendEmailService
 		return await sendMailService(preparedEmailTemplate);
@@ -100,9 +112,8 @@ const sendMailService = async ({ email, subject, text, htmlTemplate }) => {
 
 		console.log("Email sent: ", info.response);
 		return true;
-
 	} catch (error) {
-		throw error
+		throw error;
 	}
 };
 

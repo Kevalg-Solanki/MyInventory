@@ -1,5 +1,8 @@
 //external modules
 const mongoose = require("mongoose");
+const { ObjectId } = require("mongodb");
+const { DateTime } = require("luxon");
+
 //models
 const { TenantModel } = require("./tenant.model");
 const { UserModel } = require("../user/user.model.js");
@@ -8,10 +11,14 @@ const { TenantMemberModel } = require("../tenantMember/tenantMember.model.js");
 
 //constants
 const ERROR = require("../../constants/tenant.js");
+const {MESSAGE_TYPE} = require("../../constants/emailAndSms.js");
+const GLOBAL_ERROR = require("../../constants/errors.js");
 const ROLE_PRESETS = require("../../constants/rolesPresets.js");
 
 //utiles
 const AppError = require("../../utils/appErrorHandler");
+const { sendMail } = require("../../utils/emailService.js");
+const { sendSms } = require("../../utils/smsService.js");
 
 //global variable
 let error;
@@ -28,6 +35,19 @@ async function findTenantByName(tenantName) {
 }
 
 /**
+ *
+ * @param {string} strId - id as string to convert
+ * @returns {ObjectId} - converted ObjectId
+ */
+async function convertStrToObjectId(strId) {
+	if (!ObjectId.isValid(strId)) {
+		error = GLOBAL_ERROR.OBJECTID_INVALID;
+		throw new AppError(error?.message, error?.code, error?.httpStatus);
+	}
+	return new ObjectId(strId);
+}
+
+/**
  * @param {string} tenantId - id of tenant to get data
  * @returns
  */
@@ -37,6 +57,17 @@ async function getTenantDataById(tenantId) {
 		throw new AppError(error?.message, error?.code, error?.httpStatus);
 	}
 	return await TenantModel.findById(tenantId);
+}
+
+function removeRestrictedFields(restrictedFields, data) {
+	//check is it restricted field
+	for (const field of Object.keys(data)) {
+		if (restrictedFields.has(field)) {
+			//remove that field if it is
+			delete data[field];
+		}
+	}
+	return data;
 }
 
 /**
@@ -288,21 +319,110 @@ async function getUserConnectedTenantsAndRoleData(userId, tenantIds) {
 				$project: {
 					tenantId: "$_id",
 					tenantName: 1,
+					tenantCategory: 1,
 					city: 1,
 					state: 1,
 					country: 1,
 					tenantLogo: 1,
 					roles: {
 						$cond: [
-							{ $gt: [{ $size: "$roleDocs" }, 0] },//condition (gt = greater than)
-							{//if
+							{ $gt: [{ $size: "$roleDocs" }, 0] }, //condition (gt = greater than)
+							{
+								//if
 								$map: {
 									input: "$roleDocs",
 									as: "r",
 									in: "$$r.roleName",
 								},
 							},
-							[],//else
+							[], //else
+						],
+					},
+				},
+			},
+		];
+
+		return await TenantModel.aggregate(pipeline);
+	} catch (error) {
+		throw error;
+	}
+}
+
+async function getUserTenantAndRoleDataById(userId, tenantId) {
+	try {
+		console.log("user id", userId);
+		console.log("tenant id", tenantId);
+		const pipeline = [
+			//first get tenants using tenant ids
+			{ $match: { _id: tenantId, isDeleted: false, isActive: true } },
+			//filter only needed fields
+			{
+				$project: {
+					tenantName: 1,
+					tenantLogo: 1,
+					tenantCategory: 1,
+					tenantSlogan: 1,
+					city: 1,
+					state: 1,
+					country: 1,
+					isActive: 1,
+				},
+			},
+			{
+				$lookup: {
+					from: "tenant-members",
+					let: { tenantId: "$_id" },
+					pipeline: [
+						{
+							$match: {
+								$expr: {
+									$and: [
+										{ $eq: ["$tenantId", "$$tenantId"] },
+										{ $eq: ["$userId", userId] },
+									],
+								},
+							},
+						},
+						{
+							$project: { nickName: 1, isActive: 1, roles: 1, _id: 0 },
+						},
+					],
+					as: "membership",
+				},
+			},
+			{
+				$unwind: { path: "$membership", preserveNullAndEmptyArrays: true },
+			},
+			{
+				$lookup: {
+					from: "tenant-roles",
+					localField: "membership.roles",
+					foreignField: "_id",
+					as: "roleDocs",
+				},
+			},
+			{
+				$project: {
+					tenantId: "$_id",
+					tenantName: 1,
+					tenantLogo: 1,
+					tenantCategory: 1,
+					tenantSlogan: 1,
+					city: 1,
+					state: 1,
+					country: 1,
+					roles: {
+						$cond: [
+							{ $gt: [{ $size: "$roleDocs" }, 0] }, //condition (gt = greater than)
+							{
+								//if
+								$map: {
+									input: "$roleDocs",
+									as: "r",
+									in: "$$r.roleName",
+								},
+							},
+							[], //else
 						],
 					},
 				},
@@ -329,11 +449,171 @@ async function getTenantsConnectedToUserById(userData) {
 	return tenantLists;
 }
 
-
 //Login user into tenant
-async function loginUserIntoTenant(userId,tenantId){
-	
-	 
+async function loginUserIntoTenant(userId, tenantId) {
+	//convert tenant id to Ojbect id
+	const convertedId = await convertStrToObjectId(tenantId);
+
+	//get tenant basic data and user's membership details and roles id
+	const tenantAndRoleData = await getUserTenantAndRoleDataById(
+		userId,
+		convertedId
+	);
+
+	console.log(tenantAndRoleData);
+	//if no tenant found by id
+	if (tenantAndRoleData.length < 1) {
+		error = ERROR.TENANT_NOT_FOUND;
+		throw new AppError(error?.message, error?.code, error?.httpStatus);
+	}
+
+	return tenantAndRoleData;
+}
+
+//Update tenant data
+async function updateTenantData(tenantId, tenantData) {
+	//remove restricted fields
+	const restrictedFields = new Set([
+		"_id",
+		"ownerId",
+		"createdAt",
+		"updatedAt",
+		"isDeleted",
+		"isActive",
+	]);
+
+	const newTenantData = await removeRestrictedFields(
+		restrictedFields,
+		tenantData
+	);
+
+	console.log(newTenantData);
+
+	if (Object.keys(newTenantData).length === 0) {
+		error = GLOBAL_ERROR.UPDATABLE_FIELDS_MISSING;
+		throw new AppError(error?.message, error?.code, error?.httpStatus);
+	}
+
+	//update
+	const updatedTenant = await TenantModel.findByIdAndUpdate(
+		{ _id: tenantId, isDeleted: false, isActive: true },
+		{ $set: newTenantData },
+		{ new: true }
+	);
+	console.log(updatedTenant);
+	if (Object.keys(updatedTenant).length === 0) {
+		error = ERROR.TENANT_NOT_FOUND;
+		throw new AppError(error?.message, error?.code, error?.httpStatus);
+	}
+
+	console.log(updatedTenant);
+	return updatedTenant;
+}
+
+//deactivate tenant and notify owner
+async function deactivateTenantAndNotifyOwner(tenanId, userData) {
+	try {
+		//check tenant deactivated
+		const tenantData = await getTenantDataById(tenanId);
+
+		if (!tenantData?.isActive) {
+			error = ERROR.TENANT_DEACTIVATED;
+			throw new AppError(error?.message, error?.code, error?.httpStatus);
+		}
+
+		//check requested by owner
+		console.log(tenantData.ownerId, userData._id);
+		if (tenantData.ownerId.toString() != userData._id.toString()) {
+			error = GLOBAL_ERROR.UNAUTHORIZED_ACCESS;
+			throw new AppError(error?.message, error?.code, error?.httpStatus);
+		}
+
+		//deactivate tenant
+		tenantData.isActive = false;
+		await tenantData.save();
+		// [[tenantName]], [[tenantId]], [[reason]], [[actedByName]], [[actedByEmail]], [[deactivatedAt]], [[reactivationWindowHours]]
+
+		const { tenantName, tenantId } = tenantData;
+
+		const actedByName = `${userData.firstName} ${userData.lastName}`;
+		const actedByEmail = userData?.email ? userData?.email : "-";
+		const actedByMobile = userData?.mobile ? userData?.mobile : "-";
+		const deactivatedAt = DateTime.now()
+			.setZone("Asia/Kolkata")
+			.toFormat("h:mm a MM/dd/yyyy");
+		const reactivationWindowHours = "(No limit)";
+
+		//notify owner for deactivations
+		if (userData?.email) {
+			await sendMail(MESSAGE_TYPE.TENANT_DEACTIVATED_MSG, userData?.email, {
+				tenantName,
+				tenantId,
+				actedByName,
+				actedByEmail,
+				actedByMobile,
+				deactivatedAt,
+				reactivationWindowHours,
+			});
+		} else if (userData?.mobile) {
+			await sendSms(MESSAGE_TYPE.TENANT_DEACTIVATED_MSG, userData?.mobile, {
+				tenantName,
+			});
+		}
+	} catch (error) {
+		throw error;
+	}
+}
+
+async function deleteTenantAndNotifyOwner(tenanId, userData) {
+	try {
+		//check tenant deactivated
+		const tenantData = await getTenantDataById(tenanId);
+
+		if (tenantData?.isDeleted) {
+			error = ERROR.TENANT_DELETED;
+			throw new AppError(error?.message, error?.code, error?.httpStatus);
+		}
+
+		//check requested by owner
+		if (tenantData.ownerId.toString() != userData._id.toString()) {
+			error = GLOBAL_ERROR.UNAUTHORIZED_ACCESS;
+			throw new AppError(error?.message, error?.code, error?.httpStatus);
+		}
+
+		//delete tenant
+		tenantData.isDeleted = true;
+		await tenantData.save();
+		// [[tenantName]], [[tenantId]], [[reason]], [[actedByName]], [[actedByEmail]], [[deactivatedAt]], [[reactivationWindowHours]]
+
+		const { tenantName, _id } = tenantData;
+
+		const actedByName = `${userData.firstName} ${userData.lastName}`;
+		const actedByEmail = userData?.email ? userData?.email : "-";
+		const actedByMobile = userData?.mobile ? userData?.mobile : "-";
+		const deletedAt = DateTime.now()
+			.setZone("Asia/Kolkata")
+			.toFormat("h:mm a MM/dd/yyyy");
+		const reactivationWindowHours = "(Currently Not limited)";
+
+		//notify owner for deactivations
+		if (userData?.email) {
+			await sendMail(MESSAGE_TYPE.TENANT_DELETED_MSG, userData?.email, {
+				tenantName,
+				tenantId:_id,
+				actedByName,
+				actedByEmail,
+				actedByMobile,
+				deletedAt,
+				reactivationWindowHours,
+			});
+		} else if (userData?.mobile) {
+			await sendSms(MESSAGE_TYPE.TENANT_DELETED_MSG, userData?.mobile, {
+				tenantName,
+			});
+		}
+	} catch (error) {
+		throw error;
+	}
 }
 
 module.exports = {
@@ -345,4 +625,8 @@ module.exports = {
 	createAndSetupTenantForUser,
 	getTenantDataById,
 	getTenantsConnectedToUserById,
+	loginUserIntoTenant,
+	updateTenantData,
+	deactivateTenantAndNotifyOwner,
+	deleteTenantAndNotifyOwner
 };

@@ -45,11 +45,11 @@ const sendOtp = async (type, method, destination, expiryTime = 5) => {
 
 		//decide otp sent to email or mobile
 		if (method == "email") {
-			result = await sendMail(type, destination, otp, expiryTime);
+			result = await sendMail(type, destination,{otp, expiryTime});
 		}
 
 		if (method == "mobile") {
-			result = await sendSms(type, destination, otp, expiryTime);
+			result = await sendSms(type, destination,{otp, expiryTime});
 		}
 
 		return result;
