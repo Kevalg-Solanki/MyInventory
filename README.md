@@ -47,8 +47,46 @@
 ---
 
 ## 📂 Folder Structure (Backend Example)
+```
+├── backend
+|     ├── package-lock.json
+|     ├── package.json
+|     ├── src
+|     |     ├── app.js
+|     |     ├── config
+|     |     |     ├── connectToDb.js
+|     |     ├── constants
+|     |     |     ├── auth.js
+|     |     |     ├── errors.js
+|     |     ├── middlewares
+|     |     |     ├── validateRequest.js
+|     |     |     ├── verifyToken.js
+|     |     ├── modules
+|     |     |     ├── auth
+|     |     |     |     ├── auth.controller.js
+|     |     |     |     ├── auth.routes.js
+|     |     |     |     ├── auth.service.js
+|     |     |     |     ├── auth.validation.js
+|     |     |     ├── otp
+|     |     |     |     ├── otp.model.js
+|     |     |     |     ├── otp.service.js
+|     |     |     ├── user
+|     |     |     |     ├── user.model.js
+|     |     ├── server.js
+|     |     ├── utils
+|     |     |     ├── appErrorHandler.js
+|     |     |     ├── emailService.js
+|     |     |     ├── jwtTokenService.js
+|     |     |     ├── otpGenerator.js
+|     |     |     ├── prepareEmailFromTemplate.js
+|     |     |     ├── sendResponse.js
+|     |     |     ├── smsService.js
+|     |     |     ├── templates
+|     |     |     |     ├── forgotPassOtpEmailTemplate.js
+|     |     |     |     ├── verifyCredentialOtpEmailTemplate.js
+|     |     |     ├── validateOtp.js
 
-
+```
 ---
 
 ## ⚡ Getting Started
@@ -71,9 +109,28 @@ npm install
 Create a `.env` file in the `server` folder:
 
 ```env
-PORT=5000
-MONGO_URI=your_mongo_connection
-JWT_SECRET=your_secret_key
+MONGODB_URI = "mongodb_connection_string"
+
+PORT = 5000
+
+#JWT
+JWT_SECRETE = "<jwt_secrete>"
+JWT_ACCESS_TOKEN_EXPIRY = "24h"
+JWT_REFRESH_TOKEN_EXPIRY = "7d"
+
+#Expiry in minutes
+VERIFY_CRED_OTP_EXPIRY = 5
+REGISTER_OTP_EXPIRY = 5 
+
+
+# Email
+EMAIL_USER = <your_email>
+EMAIL_APP_PASS = <email_app_password>
+
+# SMS 
+TWILIO_ACCOUNT_SID = <Twilio_Account_SID>
+TWILIO_AUTH_TOKEN = <Twilio_Auth_Token>
+TWILIO_PHONE_NUMBER = <Twilio_Phone_Number
 ```
 
 ### 4.Start server
