@@ -95,10 +95,22 @@ module.exports = {
 	},
 
 	//**AUTH */
+	REQUEST_INVALID:{
+		code:"REQUEST_INVALID",
+		httpStatus:400,
+		message:"Invalid request. Please try to login again."
+	},
+
 	UNAUTHORIZED_ACCESS:{
 		code:'UNAUTHORIZED_ACCESS',
 		httpStatus:401,
 		message:"Unauthorized access."
+	},
+
+	ACCESS_DENIED:{
+		code:"ACCESS_DENIED",
+		httpStatus:403,
+		message:"Access denied."
 	}
 
 };

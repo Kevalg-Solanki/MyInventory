@@ -29,6 +29,11 @@ module.exports = {
         code:"TENANT_DELETED",
         httpStatus:410,
         message:"Tenant you trying to access is deleted or removed. Please visit recovery page by clicking recover tenant/account in singUp page."
+    },
+    TENANT_UNRECOGNIZED:{
+        code:"TENANT_UNRECOGNIZED",
+        httpStatus:404,
+        message:"Tenant not found"
     }
 
 }

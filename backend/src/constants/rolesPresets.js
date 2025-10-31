@@ -4,12 +4,13 @@ const PERMS = require("./permission.js");
 //preset
 const ROLE_PRESETS = {
 	OWNER: [PERMS.TENANT_OWNER_PERMS],
-	CO_OWNER:[PERMS.TENANT_OWNER_PERMS],
+	CO_OWNER:[PERMS.TENANT_CO_OWNER_PERMS],
 
 	ADMIN: [
 		// Tenant (no deactivate/delete by default)
 		PERMS.TENANT_GET_ALL_DATA,
 		PERMS.TENANT_UPDATE,
+		PERMS.TENANT_LOGIN,
 
 		// Role (manage but no delete by default; adjust if you want)
 		PERMS.ROLE_GET_ALL,
@@ -72,6 +73,7 @@ const ROLE_PRESETS = {
 	STAFF: [
 		// Tenant: view only
 		PERMS.TENANT_GET_MODERATED_DATA,
+		PERMS.TENANT_LOGIN,
 
 		// Roles: view
 		PERMS.ROLE_GET_USER_ROLE,
@@ -109,7 +111,8 @@ const ROLE_PRESETS = {
 	
 	MEMBER:[
 		PERMS.TENANT_GET_MODERATED_DATA,
-		PERMS.ROLE_GET_MODERATED_DETAILS
+		PERMS.ROLE_GET_MODERATED_DETAILS,
+		PERMS.TENANT_LOGIN
 	]
 };
 
