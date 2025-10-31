@@ -28,7 +28,7 @@ const sendOtp = async (type, method, destination, expiryTime = 5) => {
 		const otp = await generateOtp();
 
 		//set expiry time
-		const expireIn = Date.now() + expiryTime * 60 * 1000; //expire in min
+		const expireIn = Date.now() + Number(expiryTime)  * 60 * 1000; //expire in min
 
 		//save otp to database
 		const otpToSaveInDatabase = new otpModel({

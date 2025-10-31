@@ -4,7 +4,10 @@ const bcrypt = require("bcrypt");
 
 //constants
 const ERROR = require("../../constants/errors.js");
-const { OTP_TYPE, SESSION_OTP_TYPE } = require("../../constants/emailAndSms.js");
+const {
+	OTP_TYPE,
+	SESSION_OTP_TYPE,
+} = require("../../constants/emailAndSms.js");
 
 //models
 const otpModel = require("../otp/otp.model");
@@ -19,7 +22,6 @@ const {
 const { sendOtp } = require("../otp/otp.service.js");
 const validateOtp = require("../../utils/validateOtp.js");
 const throwAppError = require("../../utils/throwAppError.js");
-const sendResponse = require("../../utils/sendResponse.js");
 
 /**
  * -find user with credential in database
@@ -27,7 +29,7 @@ const sendResponse = require("../../utils/sendResponse.js");
  * @return {Object} - if user exist returns user info or if not then returns null
  */
 
-const findUserWithCredential = async (credential) => {
+const findUserByCredential = async (credential) => {
 	//find and return user
 	return await UserModel.findOne({
 		$or: [{ email: credential }, { mobile: credential }],
@@ -41,7 +43,7 @@ const findUserWithCredential = async (credential) => {
  * @return {Object} - if user exist returns user info or if not then returns null
  */
 
-const findUserWithId = async (userId) => {
+const findUserById = async (userId) => {
 	return await UserModel.findOne({ _id: userId, isDeleted: false });
 };
 
@@ -50,8 +52,8 @@ const findUserWithId = async (userId) => {
  * @param {string} credential - email/mobile
  * @returns {Object}
  */
-const checkUserExistAndActive = async (credential) => {
-	const userInDatabase = await findUserWithCredential(credential);
+const assertUserDoesNotExistByCredentialAndActiveByCredential = async (credential) => {
+	const userInDatabase = await findUserByCredential(credential);
 
 	if (!userInDatabase) {
 		throwAppError(ERROR.USER_NOT_FOUND);
@@ -61,7 +63,7 @@ const checkUserExistAndActive = async (credential) => {
 
 	//check user active
 	if (!user.isUserAccountActive()) {
-		throwAppError(ERROR.USER_DEACTIVATED)
+		throwAppError(ERROR.USER_DEACTIVATED);
 	}
 
 	return userInDatabase;
@@ -72,19 +74,18 @@ const checkUserExistAndActive = async (credential) => {
  * @param {string} userId - userId
  * @returns {Object}
  */
-const checkUserWithIdExistAndActive = async (userId) => {
-	const userInDatabase = await findUserWithId(userId);
+const checkUseExistAndActiveById = async (userId) => {
+	const userInDatabase = await findUserById(userId);
 
 	if (!userInDatabase) {
-		throwAppError(ERROR.USER_NOT_FOUND)
-		
+		throwAppError(ERROR.USER_NOT_FOUND);
 	}
 
 	const user = new UserClass(userInDatabase);
 
 	//check user active
 	if (!user.isUserAccountActive()) {
-		throwAppError(ERROR.USER_DEACTIVATED)
+		throwAppError(ERROR.USER_DEACTIVATED);
 	}
 
 	return userInDatabase;
@@ -147,7 +148,7 @@ const setNewPassword = async (credential, newPassword) => {
  * @param {string} newPassword - new password to set
  * @return {Object} - updated user
  */
-const setNewPasswordWithId = async (userId, newPassword) => {
+const setNewPasswordById = async (userId, newPassword) => {
 	//hash password
 	const hashedPassword = await bcrypt.hash(newPassword, 10);
 	//set new password
@@ -189,14 +190,13 @@ const saveUserInDatabase = async (userData) => {
  * @param {string} credential - actual email/mobile
  * @param {string} type - "email" or "mobile"
  */
-const checkUserExist = async (credential) => {
+const assertUserDoesNotExistByCredential = async (credential) => {
 	//check if user exist
-	const existingUserInDatabase = await findUserWithCredential(credential);
+	const existingUserInDatabase = await findUserByCredential(credential);
 
 	//if user exist in data base then throw error
 	if (existingUserInDatabase) {
-		throwAppError(ERROR.USER_EXISTS)
-		
+		throwAppError(ERROR.USER_EXISTS);
 	}
 
 	//if user does not exist return
@@ -237,7 +237,7 @@ const sendVericationOtp = async (credential, type) => {
  */
 const loginUser = async (userData) => {
 	//1. find user in database
-	const userInDatabase = await findUserWithCredential(userData.credential);
+	const userInDatabase = await findUserByCredential(userData.credential);
 
 	//if user does not exist
 	if (!userInDatabase) {
@@ -253,7 +253,6 @@ const loginUser = async (userData) => {
 	//if password does not match
 	if (!isMatched) {
 		throwAppError(ERROR.PASSWORD_INCORRECT);
-		
 	}
 
 	//check user account is activate or not
@@ -262,7 +261,6 @@ const loginUser = async (userData) => {
 	//if diactived user account
 	if (!isActive) {
 		throwAppError(ERROR.USER_DEACTIVATED);
-		
 	}
 
 	//if active
@@ -289,47 +287,31 @@ const generateAccessTokenViaRefreshToken = async (refreshToken) => {
 	try {
 		//check refreshToken exist
 		if (!refreshToken) {
-			let error = ERROR.TOKEN_NOT_FOUND;
-			
+			throwAppError(ERROR.TOKEN_NOT_FOUND);
 		}
 
 		//verify and decod token
 		const decoded = jwt.verify(refreshToken, process.env.JWT_SECRETE);
 
 		//check if user exist and active
-		const userDataFromDatabase = await UserModel.findById(decoded._id);
-
-		//if user not found
-		if (!userDataFromDatabase || userDataFromDatabase.isDeleted) {
-			throwAppError(ERROR.USER_NOT_FOUND);
+		const userDataFromDatabase = await checkUseExistAndActiveById(decoded._id);
 		
-		}
-
-		//check if user active
-		if (!userDataFromDatabase.isActive) {
-			throwAppError(ERROR.USER_DEACTIVATED);
-			
-		}
-
 		//create object of user class
 		const user = new UserClass(userDataFromDatabase);
 
+
 		//create payload
 		const payload = await user.getUserInfo();
-
+	
 		//generate new access token
 		const newAccessToken = generateAccessToken(payload);
 
 		return newAccessToken;
 	} catch (error) {
 		if (error.name === "TokenExpiredError") {
-			throwAppError(ERROR.TOKEN_EXPIRED)
-		
-		}
-		else if(error.name ==="JsonWebTokenError")
-		{
-			throwAppError(ERROR.TOKEN_INVALID)
-		
+			throwAppError(ERROR.TOKEN_EXPIRED);
+		} else if (error.name === "JsonWebTokenError") {
+			throwAppError(ERROR.TOKEN_INVALID);
 		}
 		throw error;
 	}
@@ -344,7 +326,7 @@ const generateAccessTokenViaRefreshToken = async (refreshToken) => {
 const findUserAndSentOtp = async (credential, type) => {
 	try {
 		//first check user
-		await checkUserExistAndActive(credential);
+		await assertUserDoesNotExistByCredentialAndActiveByCredential(credential);
 
 		//if user active then sent otp on credential
 		await sendOtp(OTP_TYPE.FORGOT_PASSWORD, type, credential);
@@ -364,7 +346,7 @@ const findUserAndSentOtp = async (credential, type) => {
 
 const verifyForgotPassOtp = async (credential, otp) => {
 	//first check user
-	await checkUserExistAndActive(credential);
+	await assertUserDoesNotExistByCredentialAndActiveByCredential(credential);
 
 	//validate forgot passoword otp
 	await validateOtp(OTP_TYPE.FORGOT_PASSWORD, credential, otp);
@@ -384,7 +366,7 @@ const verifyForgotPassOtp = async (credential, otp) => {
 const changeUserPassword = async (credential, newPassword) => {
 	try {
 		//first check user
-		await checkUserExistAndActive(credential);
+		await assertUserDoesNotExistByCredentialAndActiveByCredential(credential);
 
 		//set new password of user
 		const setNewPasswordResponse = await setNewPassword(
@@ -393,8 +375,7 @@ const changeUserPassword = async (credential, newPassword) => {
 		);
 
 		if (!setNewPasswordResponse) {
-			throwAppError(ERROR.PASSWORD_RESET_FAILED)
-			
+			throwAppError(ERROR.PASSWORD_RESET_FAILED);
 		}
 
 		return;
@@ -409,23 +390,21 @@ const resetUserPassword = async (user, oldPassword, newPassword) => {
 
 	//if password does not match
 	if (!isMatched) {
-		throwAppError(ERROR.PASSWORD_INCORRECT)
-		
+		throwAppError(ERROR.PASSWORD_INCORRECT);
 	}
 
 	const userData = await user.getUserInfo();
 	//if password matches change password
 	//set new password of user
-	const updatedUser = await setNewPasswordWithId(userData._id,newPassword);
+	const updatedUser = await setNewPasswordById(userData._id, newPassword);
 
-	
-	//if password changed return 
+	//if password changed return
 	return;
 };
 
 module.exports = {
-	findUserWithCredential,
-	checkUserExist,
+	findUserByCredential,
+	assertUserDoesNotExistByCredential,
 	sendVericationOtp,
 	getNewOtp,
 	saveUserInDatabase,
@@ -434,7 +413,7 @@ module.exports = {
 	findUserAndSentOtp,
 	verifyForgotPassOtp,
 	changeUserPassword,
-	findUserWithId,
-	checkUserWithIdExistAndActive,
+	findUserById,
+	checkUseExistAndActiveById,
 	resetUserPassword,
 };

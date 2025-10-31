@@ -3,7 +3,7 @@ const jwt = require("jsonwebtoken");
 
 //services
 const {
-	findUserWithCredential,
+	findUserByCredential,
 	getNewOtp,
 	saveUserInDatabase,
 	loginUser,
@@ -11,10 +11,10 @@ const {
 	findUserAndSentOtp,
 	verifyForgotPassOtp,
 	changeUserPassword,
-	checkUserExist,
+	assertUserDoesNotExistByCredential,
 	sendVericationOtp,
-	findUserWithId,
-	checkUserWithIdExistAndActive,
+	findUserById,
+	checkUseExistAndActiveById,
 	resetUserPassword
 } = require("./auth.service.js");
 
@@ -37,13 +37,14 @@ const verifyCredentialAndSendOtp = async (req, res, next) => {
 		const { credential, type } = req.body;
 
 		//2.verify credential
-		await checkUserExist(credential);
+		await assertUserDoesNotExistByCredential(credential);
 
 		//3.send otp
 		await sendVericationOtp(credential, type);
 
 		//send response
 		return sendResponse(res, 200, "Otp sent successfully");
+
 	} catch (error) {
 		next(error);
 	}
@@ -75,7 +76,7 @@ const register = async (req, res, next) => {
 			req.body?.type == "email" ? req.body?.email : req.body?.mobile;
 
 		//1.check if user exist
-		await checkUserExist(credential);
+		await assertUserDoesNotExistByCredential(credential);
 
 		//2.first verify otp and user exist
 		await validateOtp(SESSION_OTP_TYPE.REGISTRATION, credential, req.body?.otp);
@@ -96,7 +97,7 @@ const register = async (req, res, next) => {
 		};
 
 		//4. generate jwt token
-		const accessTokenToken = generateAccessToken(payload);
+		const accessToken = generateAccessToken(payload);
 
 		//5. generate refresh token
 		const refreshToken = generateRefreshToken(payload);
@@ -113,7 +114,7 @@ const register = async (req, res, next) => {
 		return sendResponse(res, 201, "Registration successfull", {
 			userDataToSend,
 			refreshToken,
-			accessTokenToken,
+			accessToken,
 		});
 	} catch (error) {
 		next(error);
@@ -214,7 +215,7 @@ const resetPassword = async(req,res,next)=>{
 		const {userId,oldPassword,newPassword} = req.body;
 
 		//check user exist and active
-		const userInDatabase  = await checkUserWithIdExistAndActive(userId);
+		const userInDatabase  = await checkUseExistAndActiveById(userId);
 
 		const user = new UserClass(userInDatabase);
 
