@@ -5,7 +5,7 @@
  */
 const generateOtp = async (length = 6) => {
 	let Otp = Math.floor(10000 + Math.random() * 900000);
-	console.log(Otp.length)
+	
 	if(Otp <= 99999)
 		Otp = Math.floor(10000 + Math.random() * 900000);
 

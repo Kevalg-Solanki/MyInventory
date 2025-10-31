@@ -28,7 +28,7 @@ async function createTenant(req, res, next) {
 //tenants/:tenantId GET
 async function getTenantData(req, res, next) {
 	try {
-		console.log("get tenant data");
+	
 		//destruct
 		const { tenantId } = req.params;
 
@@ -44,16 +44,15 @@ async function getTenantData(req, res, next) {
 
 //tenants/mine
 async function getTenantsConnectedToUser(req, res, next) {
-	console.log("controller");
+
 	try {
-		console.log("controller");
+
 		const allTenants = await getTenantsConnectedToUserById(req.user);
 
 		return sendResponse(res, 200, "All tenants fetched successfully", {
 			allTenants,
 		});
 	} catch (error) {
-		console.log("in catch");
 		next(error);
 	}
 }

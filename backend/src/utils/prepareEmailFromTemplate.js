@@ -78,7 +78,6 @@ async function prepareTenantDeactivationEmailTemplate(email, metadata) {
 		"[[reactivationWindowHours]]": reactivationWindowHours,
 	});
 
-	console.log(htmlTemplate);
 	return {
 		success: true,
 		email,
@@ -113,7 +112,6 @@ async function prepareTenantDeleteEmailTemplate(email,metadata) {
 		"[[graceWindowHours]]": reactivationWindowHours,
 	});
 
-	console.log(htmlTemplate);
 	return {
 		success: true,
 		email,

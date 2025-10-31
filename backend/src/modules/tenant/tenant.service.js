@@ -11,7 +11,7 @@ const { TenantMemberModel } = require("../tenantMember/tenantMember.model.js");
 
 //constants
 const ERROR = require("../../constants/tenant.js");
-const {MESSAGE_TYPE} = require("../../constants/emailAndSms.js");
+const { MESSAGE_TYPE } = require("../../constants/emailAndSms.js");
 const GLOBAL_ERROR = require("../../constants/errors.js");
 const ROLE_PRESETS = require("../../constants/rolesPresets.js");
 
@@ -42,7 +42,6 @@ async function findTenantByName(tenantName) {
 async function convertStrToObjectId(strId) {
 	if (!ObjectId.isValid(strId)) {
 		throwAppError(GLOBAL_ERROR.OBJECTID_INVALID);
-		
 	}
 	return new ObjectId(strId);
 }
@@ -54,7 +53,6 @@ async function convertStrToObjectId(strId) {
 async function getTenantDataById(tenantId) {
 	if (!tenantId.match(/^[0-9a-fA-F]{24}$/)) {
 		throwAppError(ERROR.TENANT_INVALID_ID);
-		
 	}
 	return await TenantModel.findById(tenantId);
 }
@@ -82,8 +80,7 @@ async function checkTenantNameTaken(tenantName) {
 
 	//if tenant found in databaes
 	if (tenantInDatabase) {
-		throwAppError(ERROR.TENANT_NAME_TAKEN)
-	
+		throwAppError(ERROR.TENANT_NAME_TAKEN);
 	}
 
 	//if does not exist then return
@@ -135,8 +132,7 @@ async function saveNewTenantInDatabaseByUserId(userId, tenantData, session) {
 async function addTenantIdInUser(userData, tenantId, session) {
 	//return error if have
 	if (userData.tenants?.includes(tenantId)) {
-		throwAppError(ERROR.TENANT_ALREADY_CONNECTED_USER)
-		
+		throwAppError(ERROR.TENANT_ALREADY_CONNECTED_USER);
 	}
 
 	//if not tenant id not exist than add to user
@@ -350,8 +346,7 @@ async function getUserConnectedTenantsAndRoleData(userId, tenantIds) {
 
 async function getUserTenantAndRoleDataById(userId, tenantId) {
 	try {
-		console.log("user id", userId);
-		console.log("tenant id", tenantId);
+
 		const pipeline = [
 			//first get tenants using tenant ids
 			{ $match: { _id: tenantId, isDeleted: false, isActive: true } },
@@ -438,9 +433,9 @@ async function getUserTenantAndRoleDataById(userId, tenantId) {
 //Get tenant data by id
 async function getTenantsConnectedToUserById(userData) {
 	//get tenants id stored in user document
-	console.log("user Data", userData);
+
 	const tenantIds = userData?.tenants;
-	console.log("tenant ids", tenantIds);
+
 	const tenantLists = await getUserConnectedTenantsAndRoleData(
 		userData?._id,
 		tenantIds
@@ -460,11 +455,10 @@ async function loginUserIntoTenant(userId, tenantId) {
 		convertedId
 	);
 
-	console.log(tenantAndRoleData);
+
 	//if no tenant found by id
 	if (tenantAndRoleData.length < 1) {
 		throwAppError(ERROR.TENANT_NOT_FOUND);
-
 	}
 
 	return tenantAndRoleData;
@@ -487,11 +481,9 @@ async function updateTenantData(tenantId, tenantData) {
 		tenantData
 	);
 
-	console.log(newTenantData);
 
 	if (Object.keys(newTenantData).length === 0) {
 		throwAppError(GLOBAL_ERROR.UPDATABLE_FIELDS_MISSING);
-		
 	}
 
 	//update
@@ -500,13 +492,12 @@ async function updateTenantData(tenantId, tenantData) {
 		{ $set: newTenantData },
 		{ new: true }
 	);
-	console.log(updatedTenant);
+
 	if (Object.keys(updatedTenant).length === 0) {
-		throwAppError(ERROR.TENANT_NOT_FOUND)
-		
+		throwAppError(ERROR.TENANT_NOT_FOUND);
 	}
 
-	console.log(updatedTenant);
+
 	return updatedTenant;
 }
 
@@ -521,10 +512,8 @@ async function deactivateTenantAndNotifyOwner(tenanId, userData) {
 		}
 
 		//check requested by owner
-		console.log(tenantData.ownerId, userData._id);
 		if (tenantData.ownerId.toString() != userData._id.toString()) {
 			throwAppError(GLOBAL_ERROR.UNAUTHORIZED_ACCESS);
-			
 		}
 
 		//deactivate tenant
@@ -570,13 +559,11 @@ async function deleteTenantAndNotifyOwner(tenanId, userData) {
 
 		if (tenantData?.isDeleted) {
 			throwAppError(ERROR.TENANT_DELETED);
-			
 		}
 
 		//check requested by owner
 		if (tenantData.ownerId.toString() != userData._id.toString()) {
 			throwAppError(GLOBAL_ERROR.UNAUTHORIZED_ACCESS);
-			
 		}
 
 		//delete tenant
@@ -598,7 +585,7 @@ async function deleteTenantAndNotifyOwner(tenanId, userData) {
 		if (userData?.email) {
 			await sendMail(MESSAGE_TYPE.TENANT_DELETED_MSG, userData?.email, {
 				tenantName,
-				tenantId:_id,
+				tenantId: _id,
 				actedByName,
 				actedByEmail,
 				actedByMobile,
@@ -627,5 +614,5 @@ module.exports = {
 	loginUserIntoTenant,
 	updateTenantData,
 	deactivateTenantAndNotifyOwner,
-	deleteTenantAndNotifyOwner
+	deleteTenantAndNotifyOwner,
 };

@@ -148,7 +148,6 @@ const setNewPassword = async (credential, newPassword) => {
  * @return {Object} - updated user
  */
 const setNewPasswordWithId = async (userId, newPassword) => {
-	console.log("user",newPassword)
 	//hash password
 	const hashedPassword = await bcrypt.hash(newPassword, 10);
 	//set new password
@@ -407,9 +406,7 @@ const changeUserPassword = async (credential, newPassword) => {
 const resetUserPassword = async (user, oldPassword, newPassword) => {
 	//check old password match
 	const isMatched = await user.verifyPassword(oldPassword);
-	console.log("user", user.getUserInfo())
-	console.log(oldPassword,newPassword);
-	console.log("is match",isMatched)
+
 	//if password does not match
 	if (!isMatched) {
 		throwAppError(ERROR.PASSWORD_INCORRECT)

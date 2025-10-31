@@ -54,7 +54,6 @@ const verifyToken = async (req, res, next) => {
 		}
 
 		//if token valid
-		console.log("token is valid")
 		next();
 	} catch (error) {
 		console.error(error);
