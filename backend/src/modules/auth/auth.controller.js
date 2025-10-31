@@ -15,7 +15,7 @@ const {
 	sendVericationOtp,
 	findUserById,
 	checkUseExistAndActiveById,
-	resetUserPassword
+	verifyOldPassAndSetNewPass,
 } = require("./auth.service.js");
 
 //utils
@@ -27,24 +27,22 @@ const {
 const sendResponse = require("../../utils/sendResponse.js");
 
 //constants
-const { OTP_TYPE, SESSION_OTP_TYPE } = require("../../constants/emailAndSms.js");
+const {
+	OTP_TYPE,
+	SESSION_OTP_TYPE,
+} = require("../../constants/emailAndSms.js");
 const { UserClass } = require("../user/user.model.js");
 
 //verify-credentials controller
 const verifyCredentialAndSendOtp = async (req, res, next) => {
 	try {
-		//1.destruct
 		const { credential, type } = req.body;
 
-		//2.verify credential
 		await assertUserDoesNotExistByCredential(credential);
 
-		//3.send otp
 		await sendVericationOtp(credential, type);
 
-		//send response
 		return sendResponse(res, 200, "Otp sent successfully");
-
 	} catch (error) {
 		next(error);
 	}
@@ -53,16 +51,12 @@ const verifyCredentialAndSendOtp = async (req, res, next) => {
 //verify-otp-register controller
 const verifyOtpForRegistration = async (req, res, next) => {
 	try {
-		//destruct
 		const { credential, otp } = req.body;
 
-		//validate otp
 		await validateOtp(OTP_TYPE.VERIFY_CREDENTIAL, credential, otp);
 
-		//if otp is valid then generate otp for registration
 		const newOtp = await getNewOtp(credential, SESSION_OTP_TYPE.REGISTRATION);
 
-		//if otp for registraction is generated then
 		return sendResponse(res, 200, "OTP verification successfull", { newOtp });
 	} catch (error) {
 		next(error);
@@ -75,16 +69,12 @@ const register = async (req, res, next) => {
 		const credential =
 			req.body?.type == "email" ? req.body?.email : req.body?.mobile;
 
-		//1.check if user exist
 		await assertUserDoesNotExistByCredential(credential);
 
-		//2.first verify otp and user exist
 		await validateOtp(SESSION_OTP_TYPE.REGISTRATION, credential, req.body?.otp);
 
-		//3. save user in database
 		const savedUser = await saveUserInDatabase(req.body);
 
-		//prepare payload
 		const { _id, firstName, lastName, email, mobile, isSuperAdmin } = savedUser;
 
 		const payload = {
@@ -96,10 +86,8 @@ const register = async (req, res, next) => {
 			isSuperAdmin,
 		};
 
-		//4. generate jwt token
 		const accessToken = generateAccessToken(payload);
 
-		//5. generate refresh token
 		const refreshToken = generateRefreshToken(payload);
 
 		const userDataToSend = {
@@ -111,7 +99,7 @@ const register = async (req, res, next) => {
 			isSuperAdmin: isSuperAdmin,
 		};
 
-		return sendResponse(res, 201, "Registration successfull", {
+		return sendResponse(res, 201, "Registration successful", {
 			userDataToSend,
 			refreshToken,
 			accessToken,
@@ -124,10 +112,9 @@ const register = async (req, res, next) => {
 //login
 const login = async (req, res, next) => {
 	try {
-		//call service function to login user
 		const { userData, refreshToken, accessToken } = await loginUser(req.body);
 
-		return sendResponse(res, 200, "Login successfull", {
+		return sendResponse(res, 200, "Login successful", {
 			userData,
 			refreshToken,
 			accessToken,
@@ -137,7 +124,7 @@ const login = async (req, res, next) => {
 	}
 };
 
-//fresh token
+//refresh token
 const refreshToken = async (req, res, next) => {
 	try {
 		const { refreshToken } = req.body;
@@ -158,12 +145,11 @@ const refreshToken = async (req, res, next) => {
 //forgot password request
 const forgotPassReq = async (req, res, next) => {
 	try {
-		//extract data
 		const { credential, type } = req.body;
 
 		await findUserAndSentOtp(credential, type);
 
-		return sendResponse(res, 201, "OTP sent successfully");
+		return sendResponse(res, 201, "If an account exists, an OTP has been sent");
 	} catch (error) {
 		next(error);
 	}
@@ -172,7 +158,6 @@ const forgotPassReq = async (req, res, next) => {
 //verify forgot password
 const verifyOtpForForgotPass = async (req, res, next) => {
 	try {
-		//destruct
 		const { credential, otp } = req.body;
 
 		//verify otp and get new otp for set new password
@@ -187,65 +172,46 @@ const verifyOtpForForgotPass = async (req, res, next) => {
 //forgot password
 const forgotPassword = async (req, res, next) => {
 	try {
-		//destruct
 		const { credential, otp, newPassword } = req.body;
 
-		//validate otp
 		await validateOtp(SESSION_OTP_TYPE.FORGOT_PASSWORD, credential, otp);
 
-		//set new password for user
-		await changeUserPassword(
-			credential,
-			newPassword
-		);
+		await changeUserPassword(credential, newPassword);
 
-		return sendResponse(res,200,"Password changed successfully.");
-		
+		return sendResponse(res, 200, "Password changed successfully.");
 	} catch (error) {
 		next(error);
 	}
 };
 
 //reset password
-const resetPassword = async(req,res,next)=>{
-
-	try
-	{
-		//destruct
-		const {userId,oldPassword,newPassword} = req.body;
+const resetPassword = async (req, res, next) => {
+	try {
+		const { userId, oldPassword, newPassword } = req.body;
 
 		//check user exist and active
-		const userInDatabase  = await checkUseExistAndActiveById(userId);
+		const userInDatabase = await checkUseExistAndActiveById(userId);
 
 		const user = new UserClass(userInDatabase);
 
-		//verify and chang user password
-		await resetUserPassword(user,oldPassword,newPassword);
+		await verifyOldPassAndSetNewPass(user, oldPassword, newPassword);
 
-		return sendResponse(res,200,"Password changed successfully");
-	}
-	catch(error)
-	{
+		return sendResponse(res, 200, "Password changed successfully");
+	} catch (error) {
 		next(error);
 	}
-
-}
-
+};
 
 //get user
-const getUserDataById= async(req,res,next)=>{
-	try
-	{
-		//destruct 
+const getUserDataById = async (req, res, next) => {
+	try {
 		const userData = req.user;
 
-		return sendResponse(res,200,"User fetched successfully",{userData});
-	}
-	catch(error)
-	{
+		return sendResponse(res, 200, "User fetched successfully", { userData });
+	} catch (error) {
 		next(error);
 	}
-}
+};
 
 module.exports = {
 	verifyCredentialAndSendOtp,
@@ -257,5 +223,5 @@ module.exports = {
 	verifyOtpForForgotPass,
 	forgotPassword,
 	resetPassword,
-	getUserDataById
+	getUserDataById,
 };

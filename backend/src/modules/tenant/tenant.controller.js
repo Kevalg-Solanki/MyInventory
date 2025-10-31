@@ -9,7 +9,7 @@ const {
 	loginUserIntoTenant,
 	updateTenantData,
 	deactivateTenantAndNotifyOwner,
-	deleteTenantAndNotifyOwner
+	deleteTenantAndNotifyOwner,
 } = require("./tenant.service");
 
 //tenants/ POST
@@ -28,8 +28,6 @@ async function createTenant(req, res, next) {
 //tenants/:tenantId GET
 async function getTenantData(req, res, next) {
 	try {
-	
-		//destruct
 		const { tenantId } = req.params;
 
 		const tenantData = await getTenantDataById(tenantId);
@@ -44,9 +42,7 @@ async function getTenantData(req, res, next) {
 
 //tenants/mine
 async function getTenantsConnectedToUser(req, res, next) {
-
 	try {
-
 		const allTenants = await getTenantsConnectedToUserById(req.user);
 
 		return sendResponse(res, 200, "All tenants fetched successfully", {
@@ -90,11 +86,11 @@ async function updateTenant(req, res, next) {
 //tenants/deactivate/:tenantId PATCH
 async function deactivateTenant(req, res, next) {
 	try {
-		const {tenantId} = req.params;
+		const { tenantId } = req.params;
 
-		await deactivateTenantAndNotifyOwner(tenantId,req.user);
+		await deactivateTenantAndNotifyOwner(tenantId, req.user);
 
-		return sendResponse(res,200,"Deactivated tenant successfully.");
+		return sendResponse(res, 200, "Deactivated tenant successfully.");
 	} catch (error) {
 		next(error);
 	}
@@ -102,20 +98,16 @@ async function deactivateTenant(req, res, next) {
 
 //tenants/:tenantId DELETE
 async function deleteTenant(req, res, next) {
-	try
-	{
-		const {tenantId} = req.params;
+	try {
+		const { tenantId } = req.params;
 
-		await deleteTenantAndNotifyOwner(tenantId,req.user);
+		await deleteTenantAndNotifyOwner(tenantId, req.user);
 
-		return sendResponse(res,200,"Deleted tenant successfully.");
-	}
-	catch(error)
-	{
+		return sendResponse(res, 200, "Deleted tenant successfully.");
+	} catch (error) {
 		next(error);
 	}
 }
-
 
 module.exports = {
 	createTenant,
@@ -124,5 +116,5 @@ module.exports = {
 	loginInTenant,
 	updateTenant,
 	deactivateTenant,
-	deleteTenant
+	deleteTenant,
 };

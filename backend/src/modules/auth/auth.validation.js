@@ -257,7 +257,7 @@ const forgotPassSchema = Joi.object({
 
 //reset-password
 const resetPassSchema = Joi.object({
-	userId: Joi.string().required(),
+	userId: Joi.string().hex().length(24).required(),
 	oldPassword: Joi.string()
 		.required()
 		.messages({

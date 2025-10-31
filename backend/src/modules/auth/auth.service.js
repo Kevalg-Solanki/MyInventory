@@ -52,7 +52,9 @@ const findUserById = async (userId) => {
  * @param {string} credential - email/mobile
  * @returns {Object}
  */
-const assertUserDoesNotExistByCredentialAndActiveByCredential = async (credential) => {
+const assertUserDoesNotExistByCredentialAndActiveByCredential = async (
+	credential
+) => {
 	const userInDatabase = await findUserByCredential(credential);
 
 	if (!userInDatabase) {
@@ -132,7 +134,10 @@ const getNewOtp = async (destination, type) => {
  */
 const setNewPassword = async (credential, newPassword) => {
 	//hash password
-	const hashedPassword = await bcrypt.hash(newPassword, 10);
+	const hashedPassword = await bcrypt.hash(
+		newPassword,
+		Number(process.env.HASH_COST_FACTOR)
+	);
 	//set new password
 	const updatedUser = await UserModel.findOneAndUpdate(
 		{ $or: [{ email: credential }, { mobile: credential }] },
@@ -150,7 +155,10 @@ const setNewPassword = async (credential, newPassword) => {
  */
 const setNewPasswordById = async (userId, newPassword) => {
 	//hash password
-	const hashedPassword = await bcrypt.hash(newPassword, 10);
+	const hashedPassword = await bcrypt.hash(
+		newPassword,
+		Number(process.env.HASH_COST_FACTOR)
+	);
 	//set new password
 	const updatedUser = await UserModel.findOneAndUpdate(
 		{ _id: userId },
@@ -168,7 +176,10 @@ const setNewPasswordById = async (userId, newPassword) => {
  */
 const saveUserInDatabase = async (userData) => {
 	//1.hash password
-	const hashedPassword = await bcrypt.hash(userData?.password, 10);
+	const hashedPassword = await bcrypt.hash(
+		userData?.password,
+		Number(process.env.HASH_COST_FACTOR)
+	);
 
 	//2.save user in database
 	const userToSave = new UserModel({
@@ -295,14 +306,13 @@ const generateAccessTokenViaRefreshToken = async (refreshToken) => {
 
 		//check if user exist and active
 		const userDataFromDatabase = await checkUseExistAndActiveById(decoded._id);
-		
+
 		//create object of user class
 		const user = new UserClass(userDataFromDatabase);
 
-
 		//create payload
 		const payload = await user.getUserInfo();
-	
+
 		//generate new access token
 		const newAccessToken = generateAccessToken(payload);
 
@@ -384,7 +394,7 @@ const changeUserPassword = async (credential, newPassword) => {
 	}
 };
 
-const resetUserPassword = async (user, oldPassword, newPassword) => {
+const verifyOldPassAndSetNewPass = async (user, oldPassword, newPassword) => {
 	//check old password match
 	const isMatched = await user.verifyPassword(oldPassword);
 
@@ -415,5 +425,5 @@ module.exports = {
 	changeUserPassword,
 	findUserById,
 	checkUseExistAndActiveById,
-	resetUserPassword,
+	verifyOldPassAndSetNewPass,
 };
