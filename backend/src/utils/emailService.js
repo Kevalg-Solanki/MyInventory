@@ -15,7 +15,7 @@ const {
 } = require("./prepareEmailFromTemplate.js");
 
 //utils
-const AppError = require("./appErrorHandler.js");
+const throwAppError = require("./throwAppError.js");
 
 
 //sender mail
@@ -63,8 +63,8 @@ sendMail = async (type, destination, metadata = {}) => {
 
 		//if there is not template for type of email
 		if (!preparedEmailTemplate) {
-			let error = ERROR.TEMPLATE_NOT_FOUND;
-			throw new AppError(error?.message, error?.code, error?.httpStatus);
+			throwAppError(ERROR.TEMPLATE_NOT_FOUND);
+	
 		}
 
 		//now send prepared email data to the sendEmailService

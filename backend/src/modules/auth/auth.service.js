@@ -18,7 +18,7 @@ const {
 } = require("../../utils/jwtTokenService.js");
 const { sendOtp } = require("../otp/otp.service.js");
 const validateOtp = require("../../utils/validateOtp.js");
-const AppError = require("../../utils/appErrorHandler.js");
+const throwAppError = require("../../utils/throwAppError.js");
 const sendResponse = require("../../utils/sendResponse.js");
 
 /**
@@ -54,16 +54,14 @@ const checkUserExistAndActive = async (credential) => {
 	const userInDatabase = await findUserWithCredential(credential);
 
 	if (!userInDatabase) {
-		let error = ERROR.USER_NOT_FOUND;
-		throw new AppError(error?.message, error?.code, error?.httpStatus);
+		throwAppError(ERROR.USER_NOT_FOUND);
 	}
 
 	const user = new UserClass(userInDatabase);
 
 	//check user active
 	if (!user.isUserAccountActive()) {
-		let error = ERROR.USER_DEACTIVATED;
-		throw new AppError(error?.message, error?.code, error?.httpStatus);
+		throwAppError(ERROR.USER_DEACTIVATED)
 	}
 
 	return userInDatabase;
@@ -78,16 +76,15 @@ const checkUserWithIdExistAndActive = async (userId) => {
 	const userInDatabase = await findUserWithId(userId);
 
 	if (!userInDatabase) {
-		let error = ERROR.USER_NOT_FOUND;
-		throw new AppError(error?.message, error?.code, error?.httpStatus);
+		throwAppError(ERROR.USER_NOT_FOUND)
+		
 	}
 
 	const user = new UserClass(userInDatabase);
 
 	//check user active
 	if (!user.isUserAccountActive()) {
-		let error = ERROR.USER_DEACTIVATED;
-		throw new AppError(error?.message, error?.code, error?.httpStatus);
+		throwAppError(ERROR.USER_DEACTIVATED)
 	}
 
 	return userInDatabase;
@@ -199,8 +196,8 @@ const checkUserExist = async (credential) => {
 
 	//if user exist in data base then throw error
 	if (existingUserInDatabase) {
-		let error = ERROR.USER_EXISTS;
-		throw new AppError(error?.message, error?.code, error?.httpStatus);
+		throwAppError(ERROR.USER_EXISTS)
+		
 	}
 
 	//if user does not exist return
@@ -225,8 +222,7 @@ const sendVericationOtp = async (credential, type) => {
 
 		//if failed to sent otp
 		if (!sendOtpResult) {
-			let error = ERROR.EMAIL_SEND_FAILED;
-			throw new AppError(error?.message, error?.code, error?.httpStatus);
+			throwAppError(ERROR.EMAIL_SEND_FAILED);
 		}
 
 		//if otp sent return
@@ -246,8 +242,7 @@ const loginUser = async (userData) => {
 
 	//if user does not exist
 	if (!userInDatabase) {
-		let error = ERROR.USER_NOT_FOUND;
-		throw new AppError(error?.message, error?.code, error?.httpStatus);
+		throwAppError(ERROR.USER_NOT_FOUND);
 	}
 
 	//2. Create object of user
@@ -258,8 +253,8 @@ const loginUser = async (userData) => {
 
 	//if password does not match
 	if (!isMatched) {
-		let error = ERROR.PASSWORD_INCORRECT;
-		throw new AppError(error?.message, error?.code, error?.httpStatus);
+		throwAppError(ERROR.PASSWORD_INCORRECT);
+		
 	}
 
 	//check user account is activate or not
@@ -267,8 +262,8 @@ const loginUser = async (userData) => {
 
 	//if diactived user account
 	if (!isActive) {
-		let error = ERROR.USER_DEACTIVATED;
-		throw new AppError(error?.message, error?.code, error?.httpStatus);
+		throwAppError(ERROR.USER_DEACTIVATED);
+		
 	}
 
 	//if active
@@ -296,7 +291,7 @@ const generateAccessTokenViaRefreshToken = async (refreshToken) => {
 		//check refreshToken exist
 		if (!refreshToken) {
 			let error = ERROR.TOKEN_NOT_FOUND;
-			throw new AppError(error?.message, error?.code, error?.httpStatus);
+			
 		}
 
 		//verify and decod token
@@ -307,14 +302,14 @@ const generateAccessTokenViaRefreshToken = async (refreshToken) => {
 
 		//if user not found
 		if (!userDataFromDatabase || userDataFromDatabase.isDeleted) {
-			let error = ERROR.USER_NOT_FOUND;
-			throw new AppError(error?.message, error?.code, error?.httpStatus);
+			throwAppError(ERROR.USER_NOT_FOUND);
+		
 		}
 
 		//check if user active
 		if (!userDataFromDatabase.isActive) {
-			let error = ERROR.USER_DEACTIVATED;
-			throw new AppError(error?.message, error?.code, error?.httpStatus);
+			throwAppError(ERROR.USER_DEACTIVATED);
+			
 		}
 
 		//create object of user class
@@ -329,13 +324,13 @@ const generateAccessTokenViaRefreshToken = async (refreshToken) => {
 		return newAccessToken;
 	} catch (error) {
 		if (error.name === "TokenExpiredError") {
-			let err = ERROR.TOKEN_EXPIRED;
-			throw new AppError(err?.message, err?.code, err?.httpStatus);
+			throwAppError(ERROR.TOKEN_EXPIRED)
+		
 		}
 		else if(error.name ==="JsonWebTokenError")
 		{
-			let err = ERROR.TOKEN_INVALID;
-			throw new AppError(err?.message, err?.code, err?.httpStatus);
+			throwAppError(ERROR.TOKEN_INVALID)
+		
 		}
 		throw error;
 	}
@@ -399,8 +394,8 @@ const changeUserPassword = async (credential, newPassword) => {
 		);
 
 		if (!setNewPasswordResponse) {
-			let error = ERROR.PASSWORD_RESET_FAILED;
-			throw new AppError(error?.message, error?.code, error?.httpStatus);
+			throwAppError(ERROR.PASSWORD_RESET_FAILED)
+			
 		}
 
 		return;
@@ -417,8 +412,8 @@ const resetUserPassword = async (user, oldPassword, newPassword) => {
 	console.log("is match",isMatched)
 	//if password does not match
 	if (!isMatched) {
-		let error = ERROR.PASSWORD_INCORRECT;
-		throw new AppError(error?.message, error?.code, error?.httpStatus);
+		throwAppError(ERROR.PASSWORD_INCORRECT)
+		
 	}
 
 	const userData = await user.getUserInfo();

@@ -13,4 +13,10 @@ class AppError extends Error
     }
 }
 
-module.exports = AppError;
+
+function throwAppError(error)
+{
+    throw new AppError(error?.message, error?.code, error?.httpStatus);
+}
+
+module.exports = throwAppError;

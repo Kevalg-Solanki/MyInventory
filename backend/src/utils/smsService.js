@@ -8,7 +8,7 @@ const { OTP_TYPE,MESSAGE_TYPE } = require("../constants/emailAndSms.js");
 
 
 //service
-const AppError = require("./appErrorHandler");
+const throwAppError = require("./throwAppError.js");
 
 
 const sendSms = async (type, destination,metadata) => {
@@ -32,8 +32,8 @@ const sendSms = async (type, destination,metadata) => {
 		}
 
 		//
-		let error = ERROR.OTP_INVALID;
-		if(!message) throw new AppError(error?.message,error?.code,error?.httpStatus);
+		
+		if(!message) throwAppError(ERROR.OTP_INVALID)
 
 		return await sendSmsService(destination, message);
 	} catch (error) {
@@ -63,8 +63,8 @@ const sendSmsService = async (destination, message) => {
     }
     catch(error)
     {
-		let err = ERROR.SMS_SEND_FAILED;
-		throw new AppError(err?.message,err?.code,err?.httpStatus);
+		throwAppError(ERROR.SMS_SEND_FAILED);
+
     }
 };
 

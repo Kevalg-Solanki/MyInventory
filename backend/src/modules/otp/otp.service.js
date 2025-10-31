@@ -5,7 +5,7 @@ const otpModel = require("./otp.model.js");
 const { generateOtp } = require("../../utils/otpGenerator.js");
 const { sendMail } = require("../../utils/emailService.js");
 const { sendSms } = require("../../utils/smsService.js");
-const AppError = require("../../utils/appErrorHandler.js");
+const throwAppError = require("../../utils/throwAppError.js");
 
 /**
  * -Function used to generate otp and send to destination email or mobile

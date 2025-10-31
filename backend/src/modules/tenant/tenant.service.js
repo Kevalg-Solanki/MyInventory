@@ -16,9 +16,9 @@ const GLOBAL_ERROR = require("../../constants/errors.js");
 const ROLE_PRESETS = require("../../constants/rolesPresets.js");
 
 //utiles
-const AppError = require("../../utils/appErrorHandler");
 const { sendMail } = require("../../utils/emailService.js");
 const { sendSms } = require("../../utils/smsService.js");
+const throwAppError = require("../../utils/throwAppError.js");
 
 //global variable
 let error;
@@ -41,8 +41,8 @@ async function findTenantByName(tenantName) {
  */
 async function convertStrToObjectId(strId) {
 	if (!ObjectId.isValid(strId)) {
-		error = GLOBAL_ERROR.OBJECTID_INVALID;
-		throw new AppError(error?.message, error?.code, error?.httpStatus);
+		throwAppError(GLOBAL_ERROR.OBJECTID_INVALID);
+		
 	}
 	return new ObjectId(strId);
 }
@@ -53,8 +53,8 @@ async function convertStrToObjectId(strId) {
  */
 async function getTenantDataById(tenantId) {
 	if (!tenantId.match(/^[0-9a-fA-F]{24}$/)) {
-		error = ERROR.TENANT_INVALID_ID;
-		throw new AppError(error?.message, error?.code, error?.httpStatus);
+		throwAppError(ERROR.TENANT_INVALID_ID);
+		
 	}
 	return await TenantModel.findById(tenantId);
 }
@@ -82,8 +82,8 @@ async function checkTenantNameTaken(tenantName) {
 
 	//if tenant found in databaes
 	if (tenantInDatabase) {
-		error = ERROR.TENANT_NAME_TAKEN;
-		throw new AppError(error?.message, error?.code, error?.httpStatus);
+		throwAppError(ERROR.TENANT_NAME_TAKEN)
+	
 	}
 
 	//if does not exist then return
@@ -135,8 +135,8 @@ async function saveNewTenantInDatabaseByUserId(userId, tenantData, session) {
 async function addTenantIdInUser(userData, tenantId, session) {
 	//return error if have
 	if (userData.tenants?.includes(tenantId)) {
-		error = ERROR.TENANT_ALREADY_CONNECTED_USER;
-		throw new AppError(error?.message, error?.code, error?.httpStatus);
+		throwAppError(ERROR.TENANT_ALREADY_CONNECTED_USER)
+		
 	}
 
 	//if not tenant id not exist than add to user
@@ -463,8 +463,8 @@ async function loginUserIntoTenant(userId, tenantId) {
 	console.log(tenantAndRoleData);
 	//if no tenant found by id
 	if (tenantAndRoleData.length < 1) {
-		error = ERROR.TENANT_NOT_FOUND;
-		throw new AppError(error?.message, error?.code, error?.httpStatus);
+		throwAppError(ERROR.TENANT_NOT_FOUND);
+
 	}
 
 	return tenantAndRoleData;
@@ -490,8 +490,8 @@ async function updateTenantData(tenantId, tenantData) {
 	console.log(newTenantData);
 
 	if (Object.keys(newTenantData).length === 0) {
-		error = GLOBAL_ERROR.UPDATABLE_FIELDS_MISSING;
-		throw new AppError(error?.message, error?.code, error?.httpStatus);
+		throwAppError(GLOBAL_ERROR.UPDATABLE_FIELDS_MISSING);
+		
 	}
 
 	//update
@@ -502,8 +502,8 @@ async function updateTenantData(tenantId, tenantData) {
 	);
 	console.log(updatedTenant);
 	if (Object.keys(updatedTenant).length === 0) {
-		error = ERROR.TENANT_NOT_FOUND;
-		throw new AppError(error?.message, error?.code, error?.httpStatus);
+		throwAppError(ERROR.TENANT_NOT_FOUND)
+		
 	}
 
 	console.log(updatedTenant);
@@ -517,15 +517,14 @@ async function deactivateTenantAndNotifyOwner(tenanId, userData) {
 		const tenantData = await getTenantDataById(tenanId);
 
 		if (!tenantData?.isActive) {
-			error = ERROR.TENANT_DEACTIVATED;
-			throw new AppError(error?.message, error?.code, error?.httpStatus);
+			throwAppError(ERROR.TENANT_DEACTIVATED);
 		}
 
 		//check requested by owner
 		console.log(tenantData.ownerId, userData._id);
 		if (tenantData.ownerId.toString() != userData._id.toString()) {
-			error = GLOBAL_ERROR.UNAUTHORIZED_ACCESS;
-			throw new AppError(error?.message, error?.code, error?.httpStatus);
+			throwAppError(GLOBAL_ERROR.UNAUTHORIZED_ACCESS);
+			
 		}
 
 		//deactivate tenant
@@ -570,14 +569,14 @@ async function deleteTenantAndNotifyOwner(tenanId, userData) {
 		const tenantData = await getTenantDataById(tenanId);
 
 		if (tenantData?.isDeleted) {
-			error = ERROR.TENANT_DELETED;
-			throw new AppError(error?.message, error?.code, error?.httpStatus);
+			throwAppError(ERROR.TENANT_DELETED);
+			
 		}
 
 		//check requested by owner
 		if (tenantData.ownerId.toString() != userData._id.toString()) {
-			error = GLOBAL_ERROR.UNAUTHORIZED_ACCESS;
-			throw new AppError(error?.message, error?.code, error?.httpStatus);
+			throwAppError(GLOBAL_ERROR.UNAUTHORIZED_ACCESS);
+			
 		}
 
 		//delete tenant
