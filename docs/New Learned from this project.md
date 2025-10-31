@@ -45,4 +45,6 @@ type: Joi.string().valid("email","mobile").required(),
 
 19.start session with mongoose for multiple write to ensure proper work of api by all write completions and avoding
 one write fails and other all completed which created issues
+20.make files for helper function which used across the app in folder 'utils' and make index.js file which export this all
+helper function so all helper function can exported simply from one path and avoid single big file of helper function 
 
