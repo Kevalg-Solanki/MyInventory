@@ -14,6 +14,7 @@ app.use(bodyParser.json());
 //routes
 const authRouter = require("./modules/auth/auth.routes.js");
 const tenantRouter = require("./modules/tenant/tenant.routes.js");
+const userRouter = require("./modules/user/user.routes.js");
 
 //logging middleware
 app.use(
@@ -24,6 +25,10 @@ app.use(
 app.use("/api/v1/auth", authRouter);
 
 app.use("/api/v1/tenants", tenantRouter);
+
+app.use("/api/v1/users", userRouter);
+
+
 
 //Error handler
 app.use((error, req, res, next) => {
@@ -38,5 +43,6 @@ app.use((error, req, res, next) => {
 		code: error.code || "SERVER_ERROR",
 	});
 });
+
 
 module.exports = app;

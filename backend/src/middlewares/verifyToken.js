@@ -5,10 +5,11 @@ const jwt = require("jsonwebtoken");
 const { UserModel } = require("../modules/user/user.model");
 
 //constants
-const { TOKEN_ERROR, USER_ERROR } = require("../constants");
+const { TOKEN_ERROR, USER_ERROR, ID_ERROR } = require("../constants");
 
 //utils
 const throwAppError = require("../utils/throwAppError");
+const { isValidObjectId } = require("mongoose");
 
 async function verifyToken(req, res, next){
 	const throwError = (error) => next(throwAppError(error));
@@ -24,6 +25,9 @@ async function verifyToken(req, res, next){
 		const token = authToken.split(" ")[1];
 		//verify token
 		const decoded = jwt.verify(token, process.env.JWT_SECRETE);
+
+		//check id
+		if(!isValidObjectId(decoded._id)) return throwError(ID_ERROR.OBJECTID_INVALID);
 
 		//check if user exist
 		req.user = await UserModel.findById(decoded._id).select("-password -__v"); //exclude password field to fetch
@@ -41,7 +45,7 @@ async function verifyToken(req, res, next){
 		if (error?.name === "TokenExpiredError")
 			return throwError(TOKEN_ERROR.TOKEN_EXPIRED);
 
-		if (error?.name === "JsonWebTokenError") return TOKEN_ERROR.TOKEN_INVALID;
+		if (error?.name === "JsonWebTokenError") return throwError(TOKEN_ERROR.TOKEN_INVALID);
 
 		return next(error);
 	}
