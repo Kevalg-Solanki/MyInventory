@@ -10,9 +10,9 @@ const { TenantRoleModel } = require("../tenantRole/tenantRole.model.js");
 const { TenantMemberModel } = require("../tenantMember/tenantMember.model.js");
 
 //constants
-const ERROR = require("../../constants/tenant.js");
-const { MESSAGE_TYPE } = require("../../constants/emailAndSms.js");
-const GLOBAL_ERROR = require("../../constants/errors.js");
+const { TENANT_ERROR, CRUD_ERROR, AUTH_ERROR } = require("../../constants");
+const { MESSAGE_TYPE } = require("../../constants/type.js");
+
 const ROLE_PRESETS = require("../../constants/rolesPresets.js");
 
 //utiles
@@ -41,7 +41,7 @@ async function findTenantByName(tenantName) {
  */
 async function getTenantDataById(tenantId) {
 	if (!tenantId.match(/^[0-9a-fA-F]{24}$/)) {
-		throwAppError(ERROR.TENANT_INVALID_ID);
+		throwAppError(TENANT_ERROR.TENANT_INVALID_ID);
 	}
 	return await TenantModel.findById(tenantId);
 }
@@ -69,7 +69,7 @@ async function checkTenantNameTaken(tenantName) {
 
 	//if tenant found in databaes
 	if (tenantInDatabase) {
-		throwAppError(ERROR.TENANT_NAME_TAKEN);
+		throwAppError(TENANT_ERROR.TENANT_NAME_TAKEN);
 	}
 
 	//if does not exist then return
@@ -121,7 +121,7 @@ async function saveNewTenantInDatabaseByUserId(userId, tenantData, session) {
 async function addTenantIdInUser(userData, tenantId, session) {
 	//return error if have
 	if (userData.tenants?.includes(tenantId)) {
-		throwAppError(ERROR.TENANT_ALREADY_CONNECTED_USER);
+		throwAppError(TENANT_ERROR.TENANT_ALREADY_CONNECTED_USER);
 	}
 
 	//if not tenant id not exist than add to user
@@ -445,7 +445,7 @@ async function loginUserIntoTenant(userId, tenantId) {
 
 	//if no tenant found by id
 	if (tenantAndRoleData.length < 1) {
-		throwAppError(ERROR.TENANT_NOT_FOUND);
+		throwAppError(TENANT_ERROR.TENANT_NOT_FOUND);
 	}
 
 	return tenantAndRoleData;
@@ -469,7 +469,7 @@ async function updateTenantData(tenantId, tenantData) {
 	);
 
 	if (Object.keys(newTenantData).length === 0) {
-		throwAppError(GLOBAL_ERROR.UPDATABLE_FIELDS_MISSING);
+		throwAppError(CRUD_ERROR.UPDATABLE_FIELDS_MISSING);
 	}
 
 	//update
@@ -480,7 +480,7 @@ async function updateTenantData(tenantId, tenantData) {
 	);
 
 	if (Object.keys(updatedTenant).length === 0) {
-		throwAppError(ERROR.TENANT_NOT_FOUND);
+		throwAppError(TENANT_ERROR.TENANT_NOT_FOUND);
 	}
 
 	return updatedTenant;
@@ -493,12 +493,12 @@ async function deactivateTenantAndNotifyOwner(tenanId, userData) {
 		const tenantData = await getTenantDataById(tenanId);
 
 		if (!tenantData?.isActive) {
-			throwAppError(ERROR.TENANT_DEACTIVATED);
+			throwAppError(TENANT_ERROR.TENANT_DEACTIVATED);
 		}
 
 		//check requested by owner
 		if (tenantData.ownerId.toString() != userData._id.toString()) {
-			throwAppError(GLOBAL_ERROR.UNAUTHORIZED_ACCESS);
+			throwAppError(AUTH_ERROR.UNAUTHORIZED_ACCESS);
 		}
 
 		//deactivate tenant
@@ -543,12 +543,12 @@ async function deleteTenantAndNotifyOwner(tenanId, userData) {
 		const tenantData = await getTenantDataById(tenanId);
 
 		if (tenantData?.isDeleted) {
-			throwAppError(ERROR.TENANT_DELETED);
+			throwAppError(TENANT_ERROR.TENANT_DELETED);
 		}
 
 		//check requested by owner
 		if (tenantData.ownerId.toString() != userData._id.toString()) {
-			throwAppError(GLOBAL_ERROR.UNAUTHORIZED_ACCESS);
+			throwAppError(AUTH_ERROR.UNAUTHORIZED_ACCESS);
 		}
 
 		//delete tenant

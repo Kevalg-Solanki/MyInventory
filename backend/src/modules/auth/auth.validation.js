@@ -258,12 +258,10 @@ const forgotPassSchema = Joi.object({
 //reset-password
 const resetPassSchema = Joi.object({
 	userId: Joi.string().hex().length(24).required(),
-	oldPassword: Joi.string()
-		.required()
-		.messages({
-			"string.empty": "Old password cannot be empty.",
-			"any.required": "Old password is required.",
-		}),
+	oldPassword: Joi.string().required().messages({
+		"string.empty": "Old password cannot be empty.",
+		"any.required": "Old password is required.",
+	}),
 	newPassword: Joi.string()
 		.pattern(
 			new RegExp(
@@ -287,5 +285,5 @@ module.exports = {
 	forgotPassRequestSchema,
 	verifyForgotPassOtpSchema,
 	forgotPassSchema,
-	resetPassSchema
+	resetPassSchema,
 };

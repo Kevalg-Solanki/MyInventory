@@ -5,11 +5,11 @@ const {
 const {
 	getCombinedPermsOfRolesByRoleIds,
 } = require("../modules/tenantRole/tenantRole.service.js");
-const { isValidObjectId, convertStrToObjectId } = require("../utils");
+const { isValidObjectId} = require("../utils");
 
 //constants
-const ERROR = require("../constants/errors.js");
-const TENANT_ERROR = require("../constants/tenant.js");
+
+const {TENANT_ERROR, AUTH_ERROR} = require("../constants");
 const PERMS = require("../constants/permission.js");
 const { RESTRICTED_PERMS } = require("../constants/permSets.js");
 
@@ -46,12 +46,12 @@ const verifyRolePermission = (requiredPerms = []) => {
 			if (!tenantId) return throwError(TENANT_ERROR.TENANT_NOT_FOUND);
 
 			//Tenant id validation
-			if (!isValidObjectId(tenantId)) return throwError(ERROR.REQUEST_INVALID);
+			if (!isValidObjectId(tenantId)) return throwError(AUTH_ERROR.REQUEST_INVALID);
 
 			//Verify user is member of tenant or not
 			const tenantMember = await findTenantMemberByIds(req.user._id, tenantId);
 
-			if (!tenantMember) return throwError(ERROR.UNAUTHORIZED_ACCESS);
+			if (!tenantMember) return throwError(AUTH_ERROR.UNAUTHORIZED_ACCESS);
 
 			//Get combined role permissions
 			const memberPerms = await getCombinedPermsOfRolesByRoleIds(
@@ -60,7 +60,7 @@ const verifyRolePermission = (requiredPerms = []) => {
 
 			//Validate member have perms or not
 			if (!Array.isArray(memberPerms) || memberPerms.length == 0)
-				throwError(ERROR.ACCESS_DENIED);
+				throwError(AUTH_ERROR.ACCESS_DENIED);
 
 			//Using Sets for faster interation checks
 			const memberPermsSet = new Set(memberPerms);
@@ -71,7 +71,7 @@ const verifyRolePermission = (requiredPerms = []) => {
 			//--Check for 'restricted perms' for Other roles
 			for (const perm of RESTRICTED_PERMS) {
 				if (requiredPerms.includes(perm))
-					return throwError(ERROR.ACCESS_DENIED);
+					return throwError(AUTH_ERROR.ACCESS_DENIED);
 			}
 
 			//--Skip unrestricted perms if 'TENANT_CO_OWNER_PERMS' found
@@ -79,7 +79,7 @@ const verifyRolePermission = (requiredPerms = []) => {
 
 			//Verify member have required perms
 			for (const perm of requiredPerms) {
-				if (!memberPermsSet.has(perm)) return throwError(ERROR.ACCESS_DENIED);
+				if (!memberPermsSet.has(perm)) return throwError(AUTH_ERROR.ACCESS_DENIED);
 			}
 
 			//Let member pass if all required perms foundb

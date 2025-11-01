@@ -3,11 +3,8 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 
 //constants
-const ERROR = require("../../constants/errors.js");
-const {
-	OTP_TYPE,
-	SESSION_OTP_TYPE,
-} = require("../../constants/emailAndSms.js");
+const { PASS_ERROR, TOKEN_ERROR, USER_ERROR } = require("../../constants");
+const { OTP_TYPE, SESSION_OTP_TYPE } = require("../../constants/type.js");
 
 //models
 const otpModel = require("../otp/otp.model");
@@ -29,13 +26,13 @@ const throwAppError = require("../../utils/throwAppError.js");
  * @return {Object} - if user exist returns user info or if not then returns null
  */
 
-const findUserByCredential = async (credential) => {
+async function findUserByCredential(credential) {
 	//find and return user
 	return await UserModel.findOne({
 		$or: [{ email: credential }, { mobile: credential }],
 		isDeleted: false,
 	});
-};
+}
 
 /**
  * -find user with id in database
@@ -43,55 +40,53 @@ const findUserByCredential = async (credential) => {
  * @return {Object} - if user exist returns user info or if not then returns null
  */
 
-const findUserById = async (userId) => {
+async function findUserById(userId) {
 	return await UserModel.findOne({ _id: userId, isDeleted: false });
-};
+}
 
 /**
  *
  * @param {string} credential - email/mobile
  * @returns {Object}
  */
-const assertUserDoesNotExistByCredentialAndActiveByCredential = async (
-	credential
-) => {
+async function assertUserExistAndActiveByCredential(credential) {
 	const userInDatabase = await findUserByCredential(credential);
 
 	if (!userInDatabase) {
-		throwAppError(ERROR.USER_NOT_FOUND);
+		throwAppError(USER_ERROR.USER_NOT_FOUND);
 	}
 
 	const user = new UserClass(userInDatabase);
 
 	//check user active
 	if (!user.isUserAccountActive()) {
-		throwAppError(ERROR.USER_DEACTIVATED);
+		throwAppError(USER_ERROR.USER_DEACTIVATED);
 	}
 
 	return userInDatabase;
-};
+}
 
 /**
  *
  * @param {string} userId - userId
  * @returns {Object}
  */
-const checkUseExistAndActiveById = async (userId) => {
+async function assertUseExistAndActiveById(userId) {
 	const userInDatabase = await findUserById(userId);
 
 	if (!userInDatabase) {
-		throwAppError(ERROR.USER_NOT_FOUND);
+		throwAppError(USER_ERROR.USER_NOT_FOUND);
 	}
 
 	const user = new UserClass(userInDatabase);
 
 	//check user active
 	if (!user.isUserAccountActive()) {
-		throwAppError(ERROR.USER_DEACTIVATED);
+		throwAppError(USER_ERROR.USER_DEACTIVATED);
 	}
 
 	return userInDatabase;
-};
+}
 
 /**
  * -find user with credential in database
@@ -99,7 +94,7 @@ const checkUseExistAndActiveById = async (userId) => {
  * @param {string} type - type of otp
  * @return {Object} - returns newOtp
  */
-const getNewOtp = async (destination, type) => {
+async function getNewOtp(destination, type) {
 	//generate new otp for registration
 	//clear all existing otp for user first
 	await otpModel.deleteMany({
@@ -124,7 +119,7 @@ const getNewOtp = async (destination, type) => {
 	await otpToSaveInDatabase.save();
 
 	return newOtp;
-};
+}
 
 /**
  *
@@ -132,7 +127,7 @@ const getNewOtp = async (destination, type) => {
  * @param {string} newPassword - new hashed password
  * @returns {Object} - response
  */
-const setNewPassword = async (credential, newPassword) => {
+async function setNewPassword(credential, newPassword) {
 	//hash password
 	const hashedPassword = await bcrypt.hash(
 		newPassword,
@@ -146,14 +141,14 @@ const setNewPassword = async (credential, newPassword) => {
 	);
 
 	return updatedUser;
-};
+}
 
 /**
  * @param {ObjectId} userId - userId for finding user
  * @param {string} newPassword - new password to set
  * @return {Object} - updated user
  */
-const setNewPasswordById = async (userId, newPassword) => {
+async function setNewPasswordById(userId, newPassword) {
 	//hash password
 	const hashedPassword = await bcrypt.hash(
 		newPassword,
@@ -167,14 +162,14 @@ const setNewPasswordById = async (userId, newPassword) => {
 	);
 
 	return updatedUser;
-};
+}
 
 /**
  *
  * @param {Object} userData - user data to save
  * @return {Object}- saved user data
  */
-const saveUserInDatabase = async (userData) => {
+async function saveUserInDatabase(userData) {
 	//1.hash password
 	const hashedPassword = await bcrypt.hash(
 		userData?.password,
@@ -195,23 +190,23 @@ const saveUserInDatabase = async (userData) => {
 	const savedUser = await userToSave.save();
 
 	return savedUser;
-};
+}
 
 /**
  * @param {string} credential - actual email/mobile
  * @param {string} type - "email" or "mobile"
  */
-const assertUserDoesNotExistByCredential = async (credential) => {
+async function assertUserDoesNotExistByCredential(credential) {
 	//check if user exist
 	const existingUserInDatabase = await findUserByCredential(credential);
 
 	//if user exist in data base then throw error
 	if (existingUserInDatabase) {
-		throwAppError(ERROR.USER_EXISTS);
+		throwAppError(USER_ERROR.USER_EXISTS);
 	}
 
 	//if user does not exist return
-};
+}
 
 /**
  *
@@ -220,7 +215,7 @@ const assertUserDoesNotExistByCredential = async (credential) => {
  * @returns
  */
 
-const sendVericationOtp = async (credential, type) => {
+async function sendVericationOtp(credential, type) {
 	try {
 		//send otp on the email/mobile.
 		const sendOtpResult = await sendOtp(
@@ -232,27 +227,38 @@ const sendVericationOtp = async (credential, type) => {
 
 		//if failed to sent otp
 		if (!sendOtpResult) {
-			throwAppError(ERROR.EMAIL_SEND_FAILED);
+			throwAppError(COMM_ERROR.EMAIL_SEND_FAILED);
 		}
 
 		//if otp sent return
 	} catch (error) {
 		throw error;
 	}
-};
+}
+
+async function getUserRegistrationRequiredData(savedUser) {
+	const user = new UserClass(savedUser);
+
+	const payload = await user.getUserInfo();
+
+	const accessToken = generateAccessToken(payload);
+	const refreshToken = generateRefreshToken(payload);
+
+	return { accessToken, refreshToken, userData: payload };
+}
 
 /**
  *
  * @param {Object} userData - user data recieved in request
  * @returns - userDetails from database and tokens
  */
-const loginUser = async (userData) => {
+async function loginUser(userData) {
 	//1. find user in database
 	const userInDatabase = await findUserByCredential(userData.credential);
 
 	//if user does not exist
 	if (!userInDatabase) {
-		throwAppError(ERROR.USER_NOT_FOUND);
+		throwAppError(USER_ERROR.USER_NOT_FOUND);
 	}
 
 	//2. Create object of user
@@ -263,7 +269,7 @@ const loginUser = async (userData) => {
 
 	//if password does not match
 	if (!isMatched) {
-		throwAppError(ERROR.PASSWORD_INCORRECT);
+		throwAppError(PASS_ERROR.PASSWORD_INCORRECT);
 	}
 
 	//check user account is activate or not
@@ -271,7 +277,7 @@ const loginUser = async (userData) => {
 
 	//if diactived user account
 	if (!isActive) {
-		throwAppError(ERROR.USER_DEACTIVATED);
+		throwAppError(USER_ERROR.USER_DEACTIVATED);
 	}
 
 	//if active
@@ -288,24 +294,24 @@ const loginUser = async (userData) => {
 		accessToken,
 		refreshToken,
 	};
-};
+}
 
 /**
  * @param {string} refreshToken - refresh token came in request with which new access token will generated
  * @return {Object} - new access token
  */
-const generateAccessTokenViaRefreshToken = async (refreshToken) => {
+async function generateAccessTokenViaRefreshToken(refreshToken) {
 	try {
 		//check refreshToken exist
 		if (!refreshToken) {
-			throwAppError(ERROR.TOKEN_NOT_FOUND);
+			throwAppError(TOKEN_ERROR.TOKEN_NOT_FOUND);
 		}
 
 		//verify and decod token
 		const decoded = jwt.verify(refreshToken, process.env.JWT_SECRETE);
 
 		//check if user exist and active
-		const userDataFromDatabase = await checkUseExistAndActiveById(decoded._id);
+		const userDataFromDatabase = await assertUseExistAndActiveById(decoded._id);
 
 		//create object of user class
 		const user = new UserClass(userDataFromDatabase);
@@ -319,13 +325,13 @@ const generateAccessTokenViaRefreshToken = async (refreshToken) => {
 		return newAccessToken;
 	} catch (error) {
 		if (error.name === "TokenExpiredError") {
-			throwAppError(ERROR.TOKEN_EXPIRED);
+			throwAppError(TOKEN_ERROR.TOKEN_EXPIRED);
 		} else if (error.name === "JsonWebTokenError") {
-			throwAppError(ERROR.TOKEN_INVALID);
+			throwAppError(TOKEN_ERROR.TOKEN_INVALID);
 		}
 		throw error;
 	}
-};
+}
 
 /**
  * @param {string} credential - example@gmail.com/999989898
@@ -333,10 +339,10 @@ const generateAccessTokenViaRefreshToken = async (refreshToken) => {
  * @return {Object} - response success/fail
  */
 
-const findUserAndSentOtp = async (credential, type) => {
+async function findUserAndSentOtp(credential, type) {
 	try {
 		//first check user
-		await assertUserDoesNotExistByCredentialAndActiveByCredential(credential);
+		await assertUserExistAndActiveByCredential(credential);
 
 		//if user active then sent otp on credential
 		await sendOtp(OTP_TYPE.FORGOT_PASSWORD, type, credential);
@@ -345,7 +351,7 @@ const findUserAndSentOtp = async (credential, type) => {
 	} catch (error) {
 		throw error;
 	}
-};
+}
 
 /**
  * @param {string} credential - "credential to verify"
@@ -354,9 +360,9 @@ const findUserAndSentOtp = async (credential, type) => {
  * @return {Object} - response
  */
 
-const verifyForgotPassOtp = async (credential, otp) => {
+async function verifyForgotPassOtp(credential, otp) {
 	//first check user
-	await assertUserDoesNotExistByCredentialAndActiveByCredential(credential);
+	await assertUserExistAndActiveByCredential(credential);
 
 	//validate forgot passoword otp
 	await validateOtp(OTP_TYPE.FORGOT_PASSWORD, credential, otp);
@@ -365,7 +371,7 @@ const verifyForgotPassOtp = async (credential, otp) => {
 	const newOtp = await getNewOtp(credential, SESSION_OTP_TYPE.FORGOT_PASSWORD);
 
 	return newOtp;
-};
+}
 
 /**
  *
@@ -373,10 +379,10 @@ const verifyForgotPassOtp = async (credential, otp) => {
  * @param {string} newPassword - new password to set
  * @returns
  */
-const changeUserPassword = async (credential, newPassword) => {
+async function changeUserPassword(credential, newPassword) {
 	try {
 		//first check user
-		await assertUserDoesNotExistByCredentialAndActiveByCredential(credential);
+		await assertUserExistAndActiveByCredential(credential);
 
 		//set new password of user
 		const setNewPasswordResponse = await setNewPassword(
@@ -385,22 +391,22 @@ const changeUserPassword = async (credential, newPassword) => {
 		);
 
 		if (!setNewPasswordResponse) {
-			throwAppError(ERROR.PASSWORD_RESET_FAILED);
+			throwAppError(PASS_ERROR.PASSWORD_RESET_FAILED);
 		}
 
 		return;
 	} catch (error) {
 		throw error;
 	}
-};
+}
 
-const verifyOldPassAndSetNewPass = async (user, oldPassword, newPassword) => {
+async function verifyOldPassAndSetNewPass(user, oldPassword, newPassword) {
 	//check old password match
 	const isMatched = await user.verifyPassword(oldPassword);
 
 	//if password does not match
 	if (!isMatched) {
-		throwAppError(ERROR.PASSWORD_INCORRECT);
+		throwAppError(PASS_ERROR.PASSWORD_INCORRECT);
 	}
 
 	const userData = await user.getUserInfo();
@@ -410,7 +416,7 @@ const verifyOldPassAndSetNewPass = async (user, oldPassword, newPassword) => {
 
 	//if password changed return
 	return;
-};
+}
 
 module.exports = {
 	findUserByCredential,
@@ -418,12 +424,13 @@ module.exports = {
 	sendVericationOtp,
 	getNewOtp,
 	saveUserInDatabase,
+	getUserRegistrationRequiredData,
 	loginUser,
 	generateAccessTokenViaRefreshToken,
 	findUserAndSentOtp,
 	verifyForgotPassOtp,
 	changeUserPassword,
 	findUserById,
-	checkUseExistAndActiveById,
+	assertUseExistAndActiveById,
 	verifyOldPassAndSetNewPass,
 };

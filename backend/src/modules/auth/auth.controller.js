@@ -1,9 +1,8 @@
-//external module
-const jwt = require("jsonwebtoken");
+//models
+const { UserClass } = require("../user/user.model.js");
 
 //services
 const {
-	findUserByCredential,
 	getNewOtp,
 	saveUserInDatabase,
 	loginUser,
@@ -14,27 +13,20 @@ const {
 	assertUserDoesNotExistByCredential,
 	sendVericationOtp,
 	findUserById,
-	checkUseExistAndActiveById,
+	assertUseExistAndActiveById,
 	verifyOldPassAndSetNewPass,
+	getUserRegistrationRequiredData,
 } = require("./auth.service.js");
 
 //utils
 const validateOtp = require("../../utils/validateOtp.js");
-const {
-	generateAccessToken,
-	generateRefreshToken,
-} = require("../../utils/jwtTokenService.js");
 const sendResponse = require("../../utils/sendResponse.js");
 
 //constants
-const {
-	OTP_TYPE,
-	SESSION_OTP_TYPE,
-} = require("../../constants/emailAndSms.js");
-const { UserClass } = require("../user/user.model.js");
+const { OTP_TYPE, SESSION_OTP_TYPE } = require("../../constants/type.js");
 
 //verify-credentials controller
-const verifyCredentialAndSendOtp = async (req, res, next) => {
+async function verifyCredentialAndSendOtp(req, res, next) {
 	try {
 		const { credential, type } = req.body;
 
@@ -46,10 +38,10 @@ const verifyCredentialAndSendOtp = async (req, res, next) => {
 	} catch (error) {
 		next(error);
 	}
-};
+}
 
 //verify-otp-register controller
-const verifyOtpForRegistration = async (req, res, next) => {
+async function verifyOtpForRegistration(req, res, next) {
 	try {
 		const { credential, otp } = req.body;
 
@@ -61,10 +53,10 @@ const verifyOtpForRegistration = async (req, res, next) => {
 	} catch (error) {
 		next(error);
 	}
-};
+}
 
 //register controller
-const register = async (req, res, next) => {
+async function register(req, res, next) {
 	try {
 		const credential =
 			req.body?.type == "email" ? req.body?.email : req.body?.mobile;
@@ -75,42 +67,21 @@ const register = async (req, res, next) => {
 
 		const savedUser = await saveUserInDatabase(req.body);
 
-		const { _id, firstName, lastName, email, mobile, isSuperAdmin } = savedUser;
-
-		const payload = {
-			_id,
-			firstName,
-			lastName,
-			email,
-			mobile,
-			isSuperAdmin,
-		};
-
-		const accessToken = generateAccessToken(payload);
-
-		const refreshToken = generateRefreshToken(payload);
-
-		const userDataToSend = {
-			_id: _id,
-			firstName: firstName,
-			lastName: lastName,
-			email: email,
-			mobile: mobile,
-			isSuperAdmin: isSuperAdmin,
-		};
+		const { accessToken, refreshToken, userData } =
+			await getUserRegistrationRequiredData(savedUser);
 
 		return sendResponse(res, 201, "Registration successful", {
-			userDataToSend,
+			userData,
 			refreshToken,
 			accessToken,
 		});
 	} catch (error) {
 		next(error);
 	}
-};
+}
 
 //login
-const login = async (req, res, next) => {
+async function login(req, res, next) {
 	try {
 		const { userData, refreshToken, accessToken } = await loginUser(req.body);
 
@@ -122,10 +93,10 @@ const login = async (req, res, next) => {
 	} catch (error) {
 		next(error);
 	}
-};
+}
 
 //refresh token
-const refreshToken = async (req, res, next) => {
+async function refreshToken(req, res, next) {
 	try {
 		const { refreshToken } = req.body;
 
@@ -140,10 +111,10 @@ const refreshToken = async (req, res, next) => {
 	} catch (error) {
 		next(error);
 	}
-};
+}
 
 //forgot password request
-const forgotPassReq = async (req, res, next) => {
+async function forgotPassReq(req, res, next) {
 	try {
 		const { credential, type } = req.body;
 
@@ -153,10 +124,10 @@ const forgotPassReq = async (req, res, next) => {
 	} catch (error) {
 		next(error);
 	}
-};
+}
 
 //verify forgot password
-const verifyOtpForForgotPass = async (req, res, next) => {
+async function verifyOtpForForgotPass(req, res, next) {
 	try {
 		const { credential, otp } = req.body;
 
@@ -167,10 +138,10 @@ const verifyOtpForForgotPass = async (req, res, next) => {
 	} catch (error) {
 		next(error);
 	}
-};
+}
 
 //forgot password
-const forgotPassword = async (req, res, next) => {
+async function forgotPassword(req, res, next) {
 	try {
 		const { credential, otp, newPassword } = req.body;
 
@@ -182,15 +153,15 @@ const forgotPassword = async (req, res, next) => {
 	} catch (error) {
 		next(error);
 	}
-};
+}
 
 //reset password
-const resetPassword = async (req, res, next) => {
+async function resetPassword(req, res, next) {
 	try {
 		const { userId, oldPassword, newPassword } = req.body;
 
 		//check user exist and active
-		const userInDatabase = await checkUseExistAndActiveById(userId);
+		const userInDatabase = await assertUseExistAndActiveById(userId);
 
 		const user = new UserClass(userInDatabase);
 
@@ -200,10 +171,10 @@ const resetPassword = async (req, res, next) => {
 	} catch (error) {
 		next(error);
 	}
-};
+}
 
 //get user
-const getUserDataById = async (req, res, next) => {
+async function getUserDataById(req, res, next) {
 	try {
 		const userData = req.user;
 
@@ -211,7 +182,7 @@ const getUserDataById = async (req, res, next) => {
 	} catch (error) {
 		next(error);
 	}
-};
+}
 
 module.exports = {
 	verifyCredentialAndSendOtp,

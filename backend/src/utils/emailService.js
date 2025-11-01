@@ -2,21 +2,20 @@
 const nodemailer = require("nodemailer");
 
 //constants
-const ERROR = require("../constants/errors.js");
+const { COMM_ERROR } = require("../constants/index.js");
 const SENDER_EMAIL = process.env.EMAIL_USER;
-const { OTP_TYPE,MESSAGE_TYPE } = require("../constants/emailAndSms.js");
+const { OTP_TYPE, MESSAGE_TYPE } = require("../constants/type.js");
 
 //template prepare services
 const {
 	prepareVerifyCredentialEmailTemplate,
 	prepareForgotPassEmailTemplate,
 	prepareTenantDeactivationEmailTemplate,
-	prepareTenantDeleteEmailTemplate
+	prepareTenantDeleteEmailTemplate,
 } = require("./prepareEmailFromTemplate.js");
 
 //utils
 const throwAppError = require("./throwAppError.js");
-
 
 //sender mail
 
@@ -29,8 +28,7 @@ const throwAppError = require("./throwAppError.js");
  * @return {Object} - otp sent success or fail and error
  */
 
-const 
-sendMail = async (type, destination, metadata = {}) => {
+async function sendMail(type, destination, metadata = {}) {
 	try {
 		let preparedEmailTemplate;
 
@@ -55,7 +53,7 @@ sendMail = async (type, destination, metadata = {}) => {
 				);
 
 			case MESSAGE_TYPE.TENANT_DELETED_MSG:
-					preparedEmailTemplate = await prepareTenantDeleteEmailTemplate(
+				preparedEmailTemplate = await prepareTenantDeleteEmailTemplate(
 					destination,
 					metadata
 				);
@@ -63,17 +61,15 @@ sendMail = async (type, destination, metadata = {}) => {
 
 		//if there is not template for type of email
 		if (!preparedEmailTemplate) {
-			throwAppError(ERROR.TEMPLATE_NOT_FOUND);
-	
+			throwAppError(COMM_ERROR.TEMPLATE_NOT_FOUND);
 		}
 
 		//now send prepared email data to the sendEmailService
 		return await sendMailService(preparedEmailTemplate);
-
 	} catch (error) {
 		throw error;
 	}
-};
+}
 
 //Create transporter object
 const tranposter = nodemailer.createTransport({
@@ -96,7 +92,7 @@ const tranposter = nodemailer.createTransport({
  * @returns {Object} - response
  */
 
-const sendMailService = async ({ email, subject, text, htmlTemplate }) => {
+async function sendMailService({ email, subject, text, htmlTemplate }) {
 	try {
 		//prepare object of email to send
 		const emailToSent = {
@@ -115,7 +111,7 @@ const sendMailService = async ({ email, subject, text, htmlTemplate }) => {
 	} catch (error) {
 		throw error;
 	}
-};
+}
 
 module.exports = {
 	sendMailService,

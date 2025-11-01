@@ -2,16 +2,16 @@
 const twilio = require("twilio");
 
 //constants
-const ERROR = require("../constants/errors.js");
-const { OTP_TYPE,MESSAGE_TYPE } = require("../constants/emailAndSms.js");
+const { OTP_TYPE,MESSAGE_TYPE } = require("../constants/type.js");
 
 
 
 //service
 const throwAppError = require("./throwAppError.js");
+const { COMM_ERROR, OTP_ERROR } = require("../constants/index.js");
 
 
-const sendSms = async (type, destination,metadata) => {
+async function sendSms(type, destination,metadata){
 	try {
 		//set proper message
 		let message;
@@ -39,7 +39,7 @@ const sendSms = async (type, destination,metadata) => {
 
 		//
 		
-		if(!message) throwAppError(ERROR.OTP_INVALID)
+		if(!message) throwAppError(OTP_ERROR.OTP_INVALID)
 
 		return await sendSmsService(destination, message);
 	} catch (error) {
@@ -55,7 +55,7 @@ const client = twilio(
 	process.env.TWILIO_AUTH_TOKEN
 );
 
-const sendSmsService = async (destination, message) => {
+async function sendSmsService(destination, message){
     try
     {
         //send message
@@ -69,7 +69,7 @@ const sendSmsService = async (destination, message) => {
     }
     catch(error)
     {
-		throwAppError(ERROR.SMS_SEND_FAILED);
+		throwAppError(COMM_ERROR.SMS_SEND_FAILED);
 
     }
 };

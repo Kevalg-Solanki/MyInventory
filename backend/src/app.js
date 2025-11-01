@@ -25,15 +25,16 @@ app.use("/api/v1/auth", authRouter);
 
 app.use("/api/v1/tenants", tenantRouter);
 
-
-
 //Error handler
 app.use((error, req, res, next) => {
 	console.error("Error : ", error);
 	res.status(error.httpStatus || 500).json({
 		success: false,
 		statusCode: error.httpStatus || 500,
-		message: error.httpStatus >= 500 || !error.httpStatus?  "Internal Server Error" : error.message||"Internal Server Error",
+		message:
+			error.httpStatus >= 500 || !error.httpStatus
+				? "Internal Server Error"
+				: error.message || "Internal Server Error",
 		code: error.code || "SERVER_ERROR",
 	});
 });

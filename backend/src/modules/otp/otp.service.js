@@ -5,7 +5,7 @@ const otpModel = require("./otp.model.js");
 const { generateOtp } = require("../../utils/otpGenerator.js");
 const { sendMail } = require("../../utils/emailService.js");
 const { sendSms } = require("../../utils/smsService.js");
-const throwAppError = require("../../utils/throwAppError.js");
+
 
 /**
  * -Function used to generate otp and send to destination email or mobile
@@ -17,7 +17,7 @@ const throwAppError = require("../../utils/throwAppError.js");
  * @return {Object} - otp sent success or fail and error
  */
 
-const sendOtp = async (type, method, destination, expiryTime = 5) => {
+async function sendOtp(type, method, destination, expiryTime = 5){
 	try {
 		//clear all existing otp for user first
 		await otpModel.deleteMany({

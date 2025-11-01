@@ -2,8 +2,8 @@
 const otpModel = require("../modules/otp/otp.model");
 
 //constants
-const ERROR = require("../constants/errors");
 const throwAppError = require("./throwAppError.js");
+const { OTP_ERROR } = require("../constants/index.js");
 
 /**
  * @param {string} type - type of otp e.g. verify-credential,registration
@@ -12,7 +12,7 @@ const throwAppError = require("./throwAppError.js");
  * @return {Object} - return otp if found otherwise null
  */
 
-const validateOtp = async (type, credential, otp) => {
+async function validateOtp(type, credential, otp){
 	//1.first check otp exist or not
 	const existingOtpInDatabase = await otpModel.findOne({
 		destination: credential,
@@ -20,17 +20,17 @@ const validateOtp = async (type, credential, otp) => {
 	});
 
 	if (!existingOtpInDatabase) {
-		throwAppError(ERROR.OTP_NOT_AVAILABLE);
+		throwAppError(OTP_ERROR.OTP_NOT_AVAILABLE);
 	}
 
 	//2.check otp is expired or not
 	if (Date.now() > existingOtpInDatabase.expireIn) {
-		throwAppError(ERROR.OTP_EXPIRED);
+		throwAppError(OTP_ERROR.OTP_EXPIRED);
 	}
 
 	//3.check otp is correct or not
 	if (existingOtpInDatabase.otp != otp) {
-		throwAppError(ERROR.OTP_INVALID);
+		throwAppError(OTP_ERROR.OTP_INVALID);
 	}
 
 	//first clear otp for user

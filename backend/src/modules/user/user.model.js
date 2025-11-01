@@ -77,7 +77,6 @@ userSchema.index({
 	},
 });
 
-
 //Indexing
 userSchema.index({ tenants: 1 });
 

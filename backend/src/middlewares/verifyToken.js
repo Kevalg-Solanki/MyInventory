@@ -1,30 +1,27 @@
 //External modules
 const jwt = require("jsonwebtoken");
 
-//constants
-const ERROR = require("../constants/errors.js");
+//models
 const { UserModel } = require("../modules/user/user.model");
 
-const verifyToken = async (req, res, next) => {
+//constants
+const { TOKEN_ERROR, USER_ERROR } = require("../constants");
+
+//utils
+const throwAppError = require("../utils/throwAppError");
+
+async function verifyToken(req, res, next){
+	const throwError = (error) => next(throwAppError(error));
 	try {
 		//get token
 		const authToken = req.header("Authorization");
 
 		//check token exist
-		if (!authToken || !authToken.startsWith("Bearer ")) {
-			let err = ERROR.TOKEN_NOT_FOUND;
-			//if token not exist or wrong keyword
-			return res.status(err?.httpStatus).json({
-				success: false,
-				statusCode: err.httpStatus,
-				message: err.message,
-				code: err?.code,
-			});
-		}
+		if (!authToken || !authToken.startsWith("Bearer "))
+			return throwError(TOKEN_ERROR.TOKEN_NOT_FOUND);
 
 		//get token part only
 		const token = authToken.split(" ")[1];
-
 		//verify token
 		const decoded = jwt.verify(token, process.env.JWT_SECRETE);
 
@@ -32,55 +29,21 @@ const verifyToken = async (req, res, next) => {
 		req.user = await UserModel.findById(decoded._id).select("-password -__v"); //exclude password field to fetch
 
 		//if user not exist
-		if (!req.user || req.user?.isDeleted) {
-			let err = ERROR.USER_NOT_FOUND;
-			return res.status(err?.httpStatus).json({
-				success: false,
-				statusCode: err.httpStatus,
-				message: err.message,
-				code: err?.code,
-			});
-		}
+		if (!req.user || req.user?.isDeleted)
+			return throwError(USER_ERROR.USER_NOT_FOUND);
 
 		//check user is active or not
-		if (!req.user?.isActive) {
-			let err = ERROR.USER_DEACTIVATED;
-			return res.status(err?.httpStatus).json({
-				success: false,
-				statusCode: err.httpStatus,
-				message: err.message,
-				code: err?.code,
-			});
-		}
+		if (!req.user?.isActive) return throwError(USER_ERROR.USER_DEACTIVATED);
 
 		//if token valid
-		next();
+		return next();
 	} catch (error) {
-		console.error(error);
-		if (error?.name === "JsonWebTokenError") {
-			let err = ERROR.TOKEN_INVALID;
-			return res.status(err?.httpStatus).json({
-				success: false,
-				statusCode: err.httpStatus,
-				message: err.message,
-				code: err?.code,
-			});
-		} else if (error?.name === "TokenExpiredError") {
-			let err = ERROR.TOKEN_EXPIRED;
-			return res.status(err?.httpStatus).json({
-				success: false,
-				statusCode: err.httpStatus,
-				message: err.message,
-				code: err?.code,
-			});
-		}
+		if (error?.name === "TokenExpiredError")
+			return throwError(TOKEN_ERROR.TOKEN_EXPIRED);
 
-		return res.status(500).json({
-			success: false,
-			statusCode: 500,
-			message: "Internal Server Error",
-			code:"SERVER_ERROR"
-		});
+		if (error?.name === "JsonWebTokenError") return TOKEN_ERROR.TOKEN_INVALID;
+
+		return next(error);
 	}
 };
 

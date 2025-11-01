@@ -1,4 +1,5 @@
 const { ObjectId } = require("mongodb");
+const { ID_ERROR } = require("../constants");
 
 /**
  *
@@ -7,7 +8,7 @@ const { ObjectId } = require("mongodb");
  */
 module.exports = async function convertStrToObjectId(strId) {
 	if (!ObjectId.isValid(strId)) {
-		throwAppError(GLOBAL_ERROR.OBJECTID_INVALID);
+		throwAppError(ID_ERROR.OBJECTID_INVALID);
 	}
 	return new ObjectId(strId);
 };
