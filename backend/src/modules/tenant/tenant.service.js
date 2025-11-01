@@ -19,6 +19,7 @@ const ROLE_PRESETS = require("../../constants/rolesPresets.js");
 const { sendMail } = require("../../utils/emailService.js");
 const { sendSms } = require("../../utils/smsService.js");
 const throwAppError = require("../../utils/throwAppError.js");
+const { convertStrToObjectId } = require("../../utils");
 
 //global variable
 let error;
@@ -32,18 +33,6 @@ async function findTenantByName(tenantName) {
 		tenantName,
 		isDeleted: false,
 	});
-}
-
-/**
- *
- * @param {string} strId - id as string to convert
- * @returns {ObjectId} - converted ObjectId
- */
-async function convertStrToObjectId(strId) {
-	if (!ObjectId.isValid(strId)) {
-		throwAppError(GLOBAL_ERROR.OBJECTID_INVALID);
-	}
-	return new ObjectId(strId);
 }
 
 /**
@@ -346,7 +335,6 @@ async function getUserConnectedTenantsAndRoleData(userId, tenantIds) {
 
 async function getUserTenantAndRoleDataById(userId, tenantId) {
 	try {
-
 		const pipeline = [
 			//first get tenants using tenant ids
 			{ $match: { _id: tenantId, isDeleted: false, isActive: true } },
@@ -455,7 +443,6 @@ async function loginUserIntoTenant(userId, tenantId) {
 		convertedId
 	);
 
-
 	//if no tenant found by id
 	if (tenantAndRoleData.length < 1) {
 		throwAppError(ERROR.TENANT_NOT_FOUND);
@@ -481,7 +468,6 @@ async function updateTenantData(tenantId, tenantData) {
 		tenantData
 	);
 
-
 	if (Object.keys(newTenantData).length === 0) {
 		throwAppError(GLOBAL_ERROR.UPDATABLE_FIELDS_MISSING);
 	}
@@ -496,7 +482,6 @@ async function updateTenantData(tenantId, tenantData) {
 	if (Object.keys(updatedTenant).length === 0) {
 		throwAppError(ERROR.TENANT_NOT_FOUND);
 	}
-
 
 	return updatedTenant;
 }
