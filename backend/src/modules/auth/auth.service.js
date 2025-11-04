@@ -10,6 +10,10 @@ const { OTP_TYPE, SESSION_OTP_TYPE } = require("../../constants/type.js");
 const otpModel = require("../otp/otp.model");
 const { UserModel, UserClass } = require("../user/user.model");
 
+//repositories
+const {findUserById,findUserByCredential} = require("../../repositories/user.repository.js");
+
+
 //utils
 const { generateOtp } = require("../../utils/otpGenerator.js");
 const {
@@ -20,29 +24,6 @@ const { sendOtp } = require("../otp/otp.service.js");
 const validateOtp = require("../../utils/validateOtp.js");
 const throwAppError = require("../../utils/throwAppError.js");
 
-/**
- * -find user with credential in database
- * @param {string} credential - credential with find user
- * @return {Object} - if user exist returns user info or if not then returns null
- */
-
-async function findUserByCredential(credential) {
-	//find and return user
-	return await UserModel.findOne({
-		$or: [{ email: credential }, { mobile: credential }],
-		isDeleted: false,
-	});
-}
-
-/**
- * -find user with id in database
- * @param {string} credential - id with find user
- * @return {Object} - if user exist returns user info or if not then returns null
- */
-
-async function findUserById(userId) {
-	return await UserModel.findOne({ _id: userId, isDeleted: false });
-}
 
 /**
  *

@@ -33,13 +33,15 @@ async function sendSms(type, destination,metadata){
 				message = `Your ${metadata?.tenantName} tenant is deleted from MyInventory. Please contact us on support phone number or email if this action was not intended.`
 				break;
 
+			case MESSAGE_TYPE.USER_DEACTIVATED_MSG:
+				message=`Your ${metadata?.userName} account is deleted from MyInventory. Please contact us on support phone number or email if this action was not intended.`
 			default:
 				message= null;
 		}
 
 		//
 		
-		if(!message) throwAppError(OTP_ERROR.OTP_INVALID)
+		if(!message) throwAppError(COMM_ERROR.SMS_SEND_FAILED);
 
 		return await sendSmsService(destination, message);
 	} catch (error) {

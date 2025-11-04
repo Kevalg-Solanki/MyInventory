@@ -1,11 +1,10 @@
 //middlewares
 const validateRequest = require("../../middlewares/validateRequest");
 const verifyToken = require("../../middlewares/verifyToken");
-
+const {verifyIsSelf} = require("../../middlewares/verifyRequester");
 
 //controllers
-const { updateUser } = require("./user.controller");
-
+const { updateUser,deactivateUser } = require("./user.controller");
 
 
 //validator
@@ -17,7 +16,15 @@ const userRouter = require("express").Router();
 
 
 //APIs
-userRouter.patch("/:userId",verifyToken,validateRequest(updateUserSchema),updateUser);
+
+//**Update user 
+userRouter.patch("/:userId",verifyToken,validateRequest(updateUserSchema),verifyIsSelf,updateUser);
+
+//**Deactivate user
+userRouter.patch("/deactivate/:userId",verifyToken,verifyIsSelf,deactivateUser);
+
+
+userRouter.patch("/:userId/settings",verifyToken,verifyIsSelf,deactivateUser);
 
 
 module.exports = userRouter;

@@ -8,7 +8,7 @@ module.exports = {
 		code: "SMS_SEND_FAILED",
 		httpStatus: 502,
 		message: "Failed to send OTP. Please try again later.",
-	},
+	}, 
 	TEMPLATE_NOT_FOUND: {
 		code: "TEMPLATE_NOT_FOUND",
 		httpStatus: 500,

@@ -3,7 +3,7 @@ const verifyCredentialEmailTemplate = require("./templates/verifyCredentialOtpEm
 const forgotPassOtpEmailTemplate = require("./templates/forgotPassOtpEmailTemplate.js");
 const tenantDeactivationEmailTemplate = require("./templates/tenantDeactivationEmailTemplate.js");
 const tenantDeletedEmailTemplate = require("./templates/tenantDeletedEmailTemplate.js");
-
+const userDeactivationEmailTemplate = require("./templates/userDeactivationEmailTemplate.js")
 //utils
 const fillUpHtmlTemplate = require("./fillUpHtmlTemplateService.js");
 
@@ -121,9 +121,52 @@ async function prepareTenantDeleteEmailTemplate(email,metadata) {
 	};
 }
 
+
+async function prepareUserDeactivationEmailTemplate(email, metadata) {
+	// replasables
+	// [[tenantName]],[[reason]], [[actedByName]], [[actedByEmail]], [[deactivatedAt]], [[reactivationWindowHours]]
+	// [[manageTenantUrl]], [[requestReactivationUrl]], [[helpCenterUrl]], [[contactSupportUrl]], [[privacyPolicyUrl]]
+	const {
+		userName,
+		userId,
+		userEmail,
+		userMobile,
+		actedByName,
+		actedByEmail,
+		actedByMobile,
+		deactivatedAt,
+		reactivationWindowHours,
+	} = metadata;
+
+	let htmlTemplate = fillUpHtmlTemplate(userDeactivationEmailTemplate, {
+		"[[userFullName]]": userName,
+		"[[userId]]":userId,
+		"[[userEmail]]":userEmail,
+		"[[userMobile]]":userMobile,
+		"[[reason]]": "Not provided",
+		"[[actedByName]]": actedByName,
+		"[[actedByEmail]]": actedByEmail,
+		"[[actedByMobile]]": actedByMobile,
+		"[[deactivatedAt]]": deactivatedAt,
+		"[[reactivationWindowHours]]": reactivationWindowHours,
+	});
+
+	return {
+		success: true,
+		email,
+		subject: "Account deactivation",
+		text: "About deactivation of your Account",
+		htmlTemplate,
+	};
+}
+
+
+
+
 module.exports = {
 	prepareVerifyCredentialEmailTemplate,
 	prepareForgotPassEmailTemplate,
 	prepareTenantDeactivationEmailTemplate,
-	prepareTenantDeleteEmailTemplate
+	prepareTenantDeleteEmailTemplate,
+	prepareUserDeactivationEmailTemplate
 };

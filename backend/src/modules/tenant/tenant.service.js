@@ -12,17 +12,18 @@ const { TenantMemberModel } = require("../tenantMember/tenantMember.model.js");
 //constants
 const { TENANT_ERROR, CRUD_ERROR, AUTH_ERROR } = require("../../constants");
 const { MESSAGE_TYPE } = require("../../constants/type.js");
-
 const ROLE_PRESETS = require("../../constants/rolesPresets.js");
+
+//repositories
+const {
+	getTenantDataById,
+} = require("../../repositories/tenant.repository.js");
 
 //utiles
 const { sendMail } = require("../../utils/emailService.js");
 const { sendSms } = require("../../utils/smsService.js");
 const throwAppError = require("../../utils/throwAppError.js");
 const { convertStrToObjectId } = require("../../utils");
-
-//global variable
-let error;
 
 /**
  * @param {string} tenantName - Name of tenant to find
@@ -33,17 +34,6 @@ async function findTenantByName(tenantName) {
 		tenantName,
 		isDeleted: false,
 	});
-}
-
-/**
- * @param {string} tenantId - id of tenant to get data
- * @returns
- */
-async function getTenantDataById(tenantId) {
-	if (!tenantId.match(/^[0-9a-fA-F]{24}$/)) {
-		throwAppError(TENANT_ERROR.TENANT_INVALID_ID);
-	}
-	return await TenantModel.findById(tenantId);
 }
 
 function removeRestrictedFields(restrictedFields, data) {
@@ -146,7 +136,7 @@ async function setupDefaultTenantRoleAndAssignToUser(
 	tenantId,
 	session
 ) {
-	//create role for tenan
+	//create role for tenant
 	const roleToSave = new TenantRoleModel({
 		tenantId,
 		roleName: "Owner",
@@ -180,23 +170,30 @@ async function setupDefaultTanantRoles(tenantId, session) {
 		//create role for tenan
 		const defaultRoleToSave1 = new TenantRoleModel({
 			tenantId,
+			roleName: "Co-Owner",
+			permissions: [...ROLE_PRESETS.CO_OWNER],
+		});
+
+		const defaultRoleToSave2 = new TenantRoleModel({
+			tenantId,
 			roleName: "Admin",
 			permissions: [...ROLE_PRESETS.ADMIN],
 		});
 
-		const defaultRoleToSave2 = new TenantRoleModel({
+		const defaultRoleToSave3 = new TenantRoleModel({
 			tenantId,
 			roleName: "Member",
 			permissions: [...ROLE_PRESETS.MEMBER],
 		});
 
 		//save to database
-		const [savedRole1, savedRole2] = await Promise.all([
+		const [savedRole1, savedRole2, savedRole3] = await Promise.all([
 			defaultRoleToSave1.save({ session }),
 			defaultRoleToSave2.save({ session }),
+			defaultRoleToSave3.save({ session }),
 		]);
 
-		return { savedRole1, savedRole2 };
+		return { savedRole1, savedRole2, savedRole3 };
 	} catch (error) {
 		throw error;
 	}
@@ -473,13 +470,13 @@ async function updateTenantData(tenantId, tenantData) {
 	}
 
 	//update
-	const updatedTenant = await TenantModel.findByIdAndUpdate(
+	const updatedTenant = await TenantModel.findOneAndUpdate(
 		{ _id: tenantId, isDeleted: false, isActive: true },
 		{ $set: newTenantData },
 		{ new: true }
 	);
 
-	if (Object.keys(updatedTenant).length === 0) {
+	if (!updatedTenant) {
 		throwAppError(TENANT_ERROR.TENANT_NOT_FOUND);
 	}
 

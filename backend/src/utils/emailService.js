@@ -12,6 +12,7 @@ const {
 	prepareForgotPassEmailTemplate,
 	prepareTenantDeactivationEmailTemplate,
 	prepareTenantDeleteEmailTemplate,
+	prepareUserDeactivationEmailTemplate,
 } = require("./prepareEmailFromTemplate.js");
 
 //utils
@@ -39,24 +40,35 @@ async function sendMail(type, destination, metadata = {}) {
 					destination,
 					metadata
 				);
+				break;
 
 			case OTP_TYPE.FORGOT_PASSWORD:
 				preparedEmailTemplate = await prepareForgotPassEmailTemplate(
 					destination,
 					metadata
 				);
+				break;
 
 			case MESSAGE_TYPE.TENANT_DEACTIVATED_MSG:
 				preparedEmailTemplate = await prepareTenantDeactivationEmailTemplate(
 					destination,
 					metadata
 				);
+				break;
 
 			case MESSAGE_TYPE.TENANT_DELETED_MSG:
 				preparedEmailTemplate = await prepareTenantDeleteEmailTemplate(
 					destination,
 					metadata
 				);
+				break;
+			
+			case MESSAGE_TYPE.USER_DEACTIVATED_MSG:
+				preparedEmailTemplate = await prepareUserDeactivationEmailTemplate(
+					destination,
+					metadata
+				);
+				break;
 		}
 
 		//if there is not template for type of email

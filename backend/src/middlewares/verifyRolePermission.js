@@ -1,7 +1,4 @@
-//Module services
-const {
-	findTenantMemberByIds,
-} = require("../modules/tenantMember/tenantMember.service.js");
+//module services
 const {
 	getCombinedPermsOfRolesByRoleIds,
 } = require("../modules/tenantRole/tenantRole.service.js");
@@ -12,6 +9,12 @@ const { isValidObjectId} = require("../utils");
 const {TENANT_ERROR, AUTH_ERROR} = require("../constants");
 const PERMS = require("../constants/permission.js");
 const { RESTRICTED_PERMS } = require("../constants/permSets.js");
+
+//repositories
+const {
+	findTenantMemberByIds,
+} = require("../repositories/tenantMember.repository.js");
+
 
 //utils
 const throwAppError = require("../utils/throwAppError.js");
