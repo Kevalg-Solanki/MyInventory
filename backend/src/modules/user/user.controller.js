@@ -1,5 +1,5 @@
 //services
-const { updateUserProfile,deactivateUserAndNotifyUser } = require("./user.service");
+const { updateUserProfile,deactivateUserAndNotifyUser,  updateSettings } = require("./user.service");
 
 //utils
 const sendResponse = require("../../utils/sendResponse");
@@ -20,7 +20,6 @@ async function updateUser(req, res, next) {
 }
 
 //users/deactivate/:userId PATCH
-
 async function deactivateUser(req, res, next) {
 	try {
 		const {userId} = req.params;
@@ -34,7 +33,25 @@ async function deactivateUser(req, res, next) {
 	}
 }
 
+//users/:userId/settings
+async function updateUserSettings(req,res,next){
+	try
+	{
+		const {userId} = req.params;
+		const updatedSettings = req.body;
+
+		const savedSettings = await updateSettings(userId,updatedSettings);
+
+		return sendResponse(res,200,"Settings saved!",{savedSettings})
+	}
+	catch(error)
+	{
+		next(error);
+	}
+}
+
 module.exports = {
 	updateUser,
-	deactivateUser
+	deactivateUser,
+	updateUserSettings
 };

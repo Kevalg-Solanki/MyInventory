@@ -4,11 +4,11 @@ const verifyToken = require("../../middlewares/verifyToken");
 const {verifyIsSelf} = require("../../middlewares/verifyRequester");
 
 //controllers
-const { updateUser,deactivateUser } = require("./user.controller");
+const { updateUser,deactivateUser, updateUserSettings } = require("./user.controller");
 
 
 //validator
-const { updateUserSchema } = require("./user.validation");
+const { updateUserSchema, updateUserSettingSchema } = require("./user.validation");
 
 
 //create router
@@ -23,8 +23,8 @@ userRouter.patch("/:userId",verifyToken,validateRequest(updateUserSchema),verify
 //**Deactivate user
 userRouter.patch("/deactivate/:userId",verifyToken,verifyIsSelf,deactivateUser);
 
-
-userRouter.patch("/:userId/settings",verifyToken,verifyIsSelf,deactivateUser);
+//**Update user settings
+userRouter.patch("/:userId/settings",verifyToken,validateRequest(updateUserSettingSchema),verifyIsSelf,updateUserSettings);
 
 
 module.exports = userRouter;

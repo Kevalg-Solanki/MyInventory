@@ -11,8 +11,10 @@ const otpModel = require("../otp/otp.model");
 const { UserModel, UserClass } = require("../user/user.model");
 
 //repositories
-const {findUserById,findUserByCredential} = require("../../repositories/user.repository.js");
-
+const {
+	findUserById,
+	findUserByCredential,
+} = require("../../repositories/user.repository.js");
 
 //utils
 const { generateOtp } = require("../../utils/otpGenerator.js");
@@ -23,7 +25,7 @@ const {
 const { sendOtp } = require("../otp/otp.service.js");
 const validateOtp = require("../../utils/validateOtp.js");
 const throwAppError = require("../../utils/throwAppError.js");
-
+const UserSettingModel = require("../settings/userSettings.model.js");
 
 /**
  *
@@ -169,6 +171,13 @@ async function saveUserInDatabase(userData) {
 
 	//save and get saved user informations
 	const savedUser = await userToSave.save();
+
+	//3.create user settings object
+	const userSettingToSave = new UserSettingModel({
+		userId: savedUser._id
+	});
+
+	await userSettingToSave.save();
 
 	return savedUser;
 }

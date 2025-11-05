@@ -15,7 +15,7 @@ async function sendSms(type, destination,metadata){
 	try {
 		//set proper message
 		let message;
-		console.log(type,OTP_TYPE.VERIFY_CREDENTIAL)
+		console.log(type)
 		switch (type) {
 			case OTP_TYPE.VERIFY_CREDENTIAL:
 				message = `Your verification OTP for MyInventory is ${metadata?.otp}. It will expire in ${metadata?.expiryTime} minutes. If you did not request this, please ignore.`;
@@ -35,13 +35,14 @@ async function sendSms(type, destination,metadata){
 
 			case MESSAGE_TYPE.USER_DEACTIVATED_MSG:
 				message=`Your ${metadata?.userName} account is deleted from MyInventory. Please contact us on support phone number or email if this action was not intended.`
+				break;
 			default:
 				message= null;
 		}
 
 		//
 		
-		if(!message) throwAppError(COMM_ERROR.SMS_SEND_FAILED);
+		if(!message) throwAppError(COMM_ERROR.MESSAGE_INVALID);
 
 		return await sendSmsService(destination, message);
 	} catch (error) {

@@ -5,7 +5,7 @@ const {DateTime} = require("luxon")
 const { UserModel } = require("./user.model");
 
 //constants
-const { USER_ERROR } = require("../../constants");
+const { USER_ERROR, CRUD_ERROR } = require("../../constants");
 const { MESSAGE_TYPE } = require("../../constants/type");
 
 //repositories
@@ -17,7 +17,16 @@ const {
 //utils
 const throwAppError = require("../../utils/throwAppError");
 const { sendMail } = require("../../utils/emailService");
+const {sendSms} = require("../../utils/smsService")
+const { updateUserSettings } = require("../../repositories/userSettings.repository");
 
+
+/**
+ * 
+ * @param {ObjectId} userId 
+ * @param {Object} updatedUserData - updated user data
+ * @return 
+ */
 //users/:userId PATCH
 async function updateUserProfile(userId, updatedUserData) {
 	const allowedFields = new Set(["firstName", "lastName"]);
@@ -31,12 +40,19 @@ async function updateUserProfile(userId, updatedUserData) {
 
 	const savedUserData = await updateUserById(userId, filteredData);
 
+	
+
 	//if failed to update user
 	if (!savedUserData) {
 		throwAppError(USER_ERROR.USER_NOT_FOUND);
 	}
 }
 
+
+/**
+ * 
+ * @param {ObjectId} userId 
+ */
 //users/deactivate/:userId PATCH
 async function deactivateUserAndNotifyUser(userId) {
     let userID = userId;
@@ -80,7 +96,7 @@ async function deactivateUserAndNotifyUser(userId) {
 				deactivatedAt,
 				reactivationWindowHours,
 			});
-		} else if (req?.user?.mobile) {
+		} else if (userData?.mobile) {
 			await sendSms(MESSAGE_TYPE.USER_DEACTIVATED_MSG, userData?.mobile, {
 			    userName,
 			});
@@ -90,9 +106,26 @@ async function deactivateUserAndNotifyUser(userId) {
 	} catch (error) {
 		throw error;
 	}
-}
+} 
+
+/**
+ * 
+ * @param {String} userId 
+ * @param {Object} updatedSettings 
+ */
+//users/:userId/settings
+async function updateSettings(userId,updatedSettings){
+
+	const savedUserSettings = await updateUserSettings(userId,updatedSettings);
+
+	console.log(savedUserSettings);
+	if(!savedUserSettings) throwAppError(CRUD_ERROR.UNABLE_TO_UPDATE);
+}	
+
+
 
 module.exports = {
 	updateUserProfile,
-    deactivateUserAndNotifyUser
+    deactivateUserAndNotifyUser,
+	updateSettings
 };

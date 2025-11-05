@@ -13,6 +13,31 @@ const updateUserSchema = Joi.object({
 	}),
 });
 
+const updateUserSettingSchema = Joi.object({
+	displayPreferences: Joi.object({
+		theme: Joi.string().valid("dark", "light").required(),
+		saleSummary: Joi.string().valid("none", "week", "month", "year").required(),
+	}).required(),
+	systemPreferences: Joi.object({
+		defaultCurrency: Joi.string().valid("INR").required(),
+        locale:Joi.string().valid("en-IN").required(),
+		dateTimeFormat: Joi.string()
+			.valid("DD/MM/YYYY", "MM/DD/YYYY", "YYYY/MM/DD")
+			.required(),
+		language: Joi.string().required(),
+		numberFormat: Joi.string()
+			.valid("none", "indian", "international")
+			.required(),
+	}).required(),
+	businessInfos: Joi.object({
+		timezone: Joi.string().required(),
+	}),
+	notifications: Joi.object({
+		lowStockNotification: Joi.boolean().required(),
+	}),
+});
+
 module.exports = {
 	updateUserSchema,
+	updateUserSettingSchema,
 };

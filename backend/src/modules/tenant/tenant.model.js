@@ -12,7 +12,7 @@ const tenantSchema = new mongoose.Schema(
 			type: String,
 			trim: true,
 		},
-		tenantName: {
+		tenantName: {	
 			type: String,
 			unique: true,
 			required: true,
