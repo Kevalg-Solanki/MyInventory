@@ -15,6 +15,7 @@ app.use(bodyParser.json());
 const authRouter = require("./modules/auth/auth.routes.js");
 const tenantRouter = require("./modules/tenant/tenant.routes.js");
 const userRouter = require("./modules/user/user.routes.js");
+const tenantRoleRouter = require("./modules/tenantRole/tenantRole.routes.js");
 
 //logging middleware
 app.use(
@@ -28,7 +29,7 @@ app.use("/api/v1/tenants", tenantRouter);
 
 app.use("/api/v1/users", userRouter);
 
-
+app.use("/api/v1/tenant-roles", tenantRoleRouter)
 
 //Error handler
 app.use((error, req, res, next) => {

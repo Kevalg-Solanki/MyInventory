@@ -141,6 +141,7 @@ async function setupDefaultTenantRoleAndAssignToUser(
 		tenantId,
 		roleName: "Owner",
 		permissions: [...ROLE_PRESETS.OWNER],
+		numberOfUserAssigned:1
 	});
 
 	//save to database
