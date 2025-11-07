@@ -13,7 +13,7 @@ const { TenantMemberModel } = require("../modules/tenantMember/tenantMember.mode
  * @returns {Object} - null if not found
  */
 async function findTenantMemberByIds(userId, tenantId) {
-	return await TenantMemberModel.findOne({ tenantId, userId });
+	return await TenantMemberModel.findOne({ tenantId, userId,isDeleted:false });
 }
 
 

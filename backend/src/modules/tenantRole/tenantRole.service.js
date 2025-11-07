@@ -1,7 +1,17 @@
+//constants
+const { ROLE_ERROR } = require("../../constants");
+
+//repositories
 const {
-	getAllRolesByTenantId,
+	findAllRolesWithoutPermsByTenantId,
+	findAllRolesWithPermsByTenantId,
+	findRoleDetailsWithoutPermsByIds,
+	findRoleDetailsWithPermsByIds,
+	findAndCombinePermsFromAllRolesByRoleIds,
+	findRolesWithoutPermsByRoleIds
 } = require("../../repositories/tenantRole.repository");
-const { TenantRoleModel } = require("./tenantRole.model");
+const throwAppError = require("../../utils/throwAppError");
+
 
 /**
  * - Used for Combining all permission from different roles by roles id
@@ -10,45 +20,100 @@ const { TenantRoleModel } = require("./tenantRole.model");
  */
 async function getCombinedPermsOfRolesByRoleIds(roleIds) {
 	try {
-		const pipeline = [
-			{ $match: { _id: { $in: roleIds }, isDeleted: false } },
-			{
-				$project: {
-					permissions: 1,
-					_id: 0, //exclude _id which by default included
-				},
-			},
-			//make different documents for each permission array with $unwind
-			{ $unwind: { path: "$permissions", preserveNullAndEmptyArrays: false } },
-			//group all array into one and $addToSet only preserv unquie so not duplicate permissions
-			{ $group: { _id: null, permissions: { $addToSet: "$permissions" } } },
-			//get flat array
-			{
-				$project: {
-					_id: 0,
-					permissions:1
-				},
-			},
-		];
+		return await findAndCombinePermsFromAllRolesByRoleIds(roleIds)
 
-		console.log(pipeline);
-		const permsDocs = await TenantRoleModel.aggregate(pipeline);
-		console.log(permsDocs[0].permissions);
-		return permsDocs[0].permissions;
 	} catch (error) {
 		throw error;
 	}
 }
 
-async function getAllRoleListWithoutPerms(tenantId) {
-	const allRoleLists = await getAllRolesByTenantId(tenantId);
+/**
+ *
+ * @param {string} tenantId
+ * @returns {Array} - null or array of object
+ */
+async function getRoleListWithoutPermsByTenantId(tenantId) {
+	const allRoleLists = await findAllRolesWithoutPermsByTenantId(tenantId);
+
+	if (!allRoleLists) {
+		throwAppError(ROLE_ERROR.ROLE_NOT_FOUND);
+	}
 
 	console.log(allRoleLists);
 
 	return allRoleLists;
 }
 
+/**
+ *
+ * @param {string} tenantId
+ * @returns {Array} - null or array of object
+ */
+async function getRoleListWithPermsByTenantId(tenantId) {
+	const allRoleLists = await findAllRolesWithPermsByTenantId(tenantId);
+
+	if (!allRoleLists) {
+		throwAppError(ROLE_ERROR.ROLE_NOT_FOUND);
+	}
+
+	console.log(allRoleLists);
+
+	return allRoleLists;
+}
+
+/**
+ * @param {string} tenantId
+ * @param {string} roleId
+ * @returns
+ */
+async function getRoleDetailsWithoutPermsByIds(tenantId,roleId) {
+	
+	const roleDetails = await findRoleDetailsWithoutPermsByIds(tenantId,roleId);
+
+	if (roleDetails.length==0) {
+		throwAppError(ROLE_ERROR.ROLE_NOT_FOUND);
+	}
+
+	return roleDetails;
+}
+
+/**
+ * @param {string} tenantId
+ * @param {string} roleId
+ * @returns
+ */
+async function getRoleDetailsWithPermsByIds(tenantId,roleId) {
+	const roleDetails = await findRoleDetailsWithPermsByIds(tenantId,roleId);
+
+	if (!roleDetails) {
+		throwAppError(ROLE_ERROR.ROLE_NOT_FOUND);
+	}
+
+	return roleDetails;
+}
+
+
+async function getMemberRolesWithoutPermsByRoleIds(roleIds){
+	try
+	{
+		const userRoles = await findRolesWithoutPermsByRoleIds(roleIds);
+		console.log(userRoles)
+		if(!userRoles) throwAppError(ROLE_ERROR.ROLE_NOT_FOUND);
+
+		return userRoles;
+	}
+	catch(error)
+	{
+		throw error;
+	}
+}
+
+
 module.exports = {
 	getCombinedPermsOfRolesByRoleIds,
-	getAllRoleListWithoutPerms,
+	getRoleListWithoutPermsByTenantId,
+	getRoleListWithPermsByTenantId,
+	getRoleDetailsWithoutPermsByIds,
+	getRoleDetailsWithPermsByIds,
+	getMemberRolesWithoutPermsByRoleIds
 };
