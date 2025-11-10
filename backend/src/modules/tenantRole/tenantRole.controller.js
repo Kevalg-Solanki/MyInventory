@@ -7,13 +7,14 @@ const throwAppError = require("../../utils/throwAppError");
 
 //services
 const {
-    getRoleListWithoutPermsByTenantId,
+	getRoleListWithoutPermsByTenantId,
 	getRoleListWithPermsByTenantId,
 	getRoleDetailsWithoutPermsByIds,
 	getRoleDetailsWithPermsByIds,
-    getMemberRolesWithoutPermsByRoleIds
+	getMemberRolesWithoutPermsByRoleIds,
+	getMemberRolesWithPermsByRoleIds,
+	getMemberCombinedPermsByRoleIds,
 } = require("./tenantRole.service");
-
 
 //tenantRole/:tenantId
 async function getTenantAllRoleListWithoutPerms(req, res, next) {
@@ -49,11 +50,10 @@ async function getTenantAllRoleListWithPerms(req, res, next) {
 //**tenantRole/roles/:roleId
 async function getTenantRoleDetailsWithoutPerms(req, res, next) {
 	try {
-		const { tenantId,roleId} = req.params;
+		const { tenantId, roleId } = req.params;
 
-		const roleDetails = await getRoleDetailsWithoutPermsByIds(tenantId,roleId);
+		const roleDetails = await getRoleDetailsWithoutPermsByIds(tenantId, roleId);
 
-        
 		return sendResponse(res, 200, "Role details fetched successfully.", {
 			roleDetails,
 		});
@@ -65,9 +65,12 @@ async function getTenantRoleDetailsWithoutPerms(req, res, next) {
 //**/roles/:roleId/with-permissions
 async function getTenantRoleDetailsWithPerms(req, res, next) {
 	try {
-		const { tenantId,roleId } = req.params;
+		const { tenantId, roleId } = req.params;
 
-		const roleDetailsWithPerms = await getRoleDetailsWithPermsByIds(tenantId,roleId);
+		const roleDetailsWithPerms = await getRoleDetailsWithPermsByIds(
+			tenantId,
+			roleId
+		);
 
 		return sendResponse(res, 200, "Role details fetched successfully.", {
 			roleDetailsWithPerms,
@@ -82,13 +85,55 @@ async function getTenantMemberRolesWithoutPerms(req, res, next) {
 	try {
 		const { userId } = req.params;
 
-        if(!userId) throwAppError(USER_ERROR.USER_NOT_FOUND)
-		const memberRolesWithoutPerms = await getMemberRolesWithoutPermsByRoleIds(req?.tenantMemberRoleIds);
+		if (!userId) throwAppError(USER_ERROR.USER_NOT_FOUND);
+		const memberRolesWithoutPerms = await getMemberRolesWithoutPermsByRoleIds(
+			req?.tenantMemberRoleIds
+		);
 
 		return sendResponse(res, 200, "Member Roles fetched successfully.", {
 			memberRolesWithoutPerms,
 		});
+	} catch (error) {
+		next(error);
+	}
+}
 
+//**/:tenantId/tenant-members/:userId/with-permission
+async function getTenantMemberRolesWithPerms(req, res, next) {
+	try {
+		const { userId } = req.params;
+
+		if (!userId) throwAppError(USER_ERROR.USER_NOT_FOUND);
+		const memberRolesWithPerms = await getMemberRolesWithPermsByRoleIds(
+			req?.tenantMemberRoleIds
+		);
+
+		return sendResponse(
+			res,
+			200,
+			"Member Roles with permissions fetched successfully.",
+			{
+				memberRolesWithPerms,
+			}
+		);
+	} catch (error) {
+		next(error);
+	}
+}
+
+//**/:tenantId/tenant-members/:userId/with-permission
+async function getTenantMemberCombinedPerms(req, res, next) {
+	try {
+		const { userId } = req.params;
+
+		if (!userId) throwAppError(USER_ERROR.USER_NOT_FOUND);
+		const memberCombinedPerms = await getMemberCombinedPermsByRoleIds(
+			req?.tenantMemberRoleIds
+		);
+
+		return sendResponse(res, 200, "Member permissions fetched successfully.", {
+			memberCombinedPerms,
+		});
 	} catch (error) {
 		next(error);
 	}
@@ -99,5 +144,7 @@ module.exports = {
 	getTenantAllRoleListWithPerms,
 	getTenantRoleDetailsWithoutPerms,
 	getTenantRoleDetailsWithPerms,
-    getTenantMemberRolesWithoutPerms
+	getTenantMemberRolesWithoutPerms,
+	getTenantMemberRolesWithPerms,
+	getTenantMemberCombinedPerms
 };

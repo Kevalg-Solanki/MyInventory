@@ -8,7 +8,7 @@ const {
 	findRoleDetailsWithoutPermsByIds,
 	findRoleDetailsWithPermsByIds,
 	findAndCombinePermsFromAllRolesByRoleIds,
-	findRolesWithoutPermsByRoleIds
+	findRolesPermsByRoleIds
 } = require("../../repositories/tenantRole.repository");
 const throwAppError = require("../../utils/throwAppError");
 
@@ -92,15 +92,60 @@ async function getRoleDetailsWithPermsByIds(tenantId,roleId) {
 	return roleDetails;
 }
 
-
+/**
+ * 
+ * @param {ArrayOfObjectId} roleIds 
+ * @returns {Array}
+ */
 async function getMemberRolesWithoutPermsByRoleIds(roleIds){
 	try
 	{
-		const userRoles = await findRolesWithoutPermsByRoleIds(roleIds);
+		const userRoles = await findRolesPermsByRoleIds(roleIds);
 		console.log(userRoles)
 		if(!userRoles) throwAppError(ROLE_ERROR.ROLE_NOT_FOUND);
 
 		return userRoles;
+	}
+	catch(error)
+	{
+		throw error;
+	}
+}
+
+/**
+ * 
+ * @param {ArrayOfObjectId} roleIds 
+ * @returns {Array}
+ */
+async function getMemberRolesWithPermsByRoleIds(roleIds){
+	try
+	{
+		const userRoles = await findRolesPermsByRoleIds(roleIds,true);
+		console.log(userRoles)
+		if(!userRoles) throwAppError(ROLE_ERROR.ROLE_NOT_FOUND);
+
+		return userRoles;
+	}
+	catch(error)
+	{
+		throw error;
+	}
+}
+
+
+/**
+ * 
+ * @param {ArrayOfObjectId} roleIds 
+ * @returns {Array}
+ */
+async function getMemberCombinedPermsByRoleIds(roleIds){
+	try
+	{
+		const userCombinedPerms = await findAndCombinePermsFromAllRolesByRoleIds(roleIds);
+		console.log(userCombinedPerms)
+		if(!userCombinedPerms) throwAppError(ROLE_ERROR.ROLE_NOT_FOUND);
+
+		return userCombinedPerms;
 	}
 	catch(error)
 	{
@@ -115,5 +160,7 @@ module.exports = {
 	getRoleListWithPermsByTenantId,
 	getRoleDetailsWithoutPermsByIds,
 	getRoleDetailsWithPermsByIds,
-	getMemberRolesWithoutPermsByRoleIds
+	getMemberRolesWithoutPermsByRoleIds,
+	getMemberRolesWithPermsByRoleIds,
+	getMemberCombinedPermsByRoleIds
 };

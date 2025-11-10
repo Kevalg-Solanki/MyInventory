@@ -5,6 +5,8 @@ const {
 	getTenantRoleDetailsWithoutPerms,
 	getTenantRoleDetailsWithPerms,
 	getTenantMemberRolesWithoutPerms,
+	getTenantMemberRolesWithPerms,
+	getTenantMemberCombinedPerms,
 } = require("./tenantRole.controller");
 
 //constants
@@ -55,6 +57,30 @@ tenantRoleRouter.get(
 	verifyToken,
 	verifyRolePermission(PERMS_SET.ROLE_GET_MEMBER_ROLES_PERMS),
 	getTenantMemberRolesWithoutPerms
+)
+
+//**Get tenant's member/user roles with permissions
+tenantRoleRouter.get(
+	"/:tenantId/tenant-members/:userId/with-permissions",
+	verifyToken,
+	verifyRolePermission(PERMS_SET.ROLE_GET_MEMBER_ROLES_WITH_PERM),
+	getTenantMemberRolesWithPerms
+)
+
+//**Get tenant's member/user combined permissions
+tenantRoleRouter.get(
+	"/:tenantId/tenant-members/:userId/permissions",
+	verifyToken,
+	verifyRolePermission(PERMS_SET.ROLE_GET_MEMBER_PERM_COMBINED_PERMS),
+	getTenantMemberCombinedPerms
+)
+
+//**Create custome role for tenant
+tenantRoleRouter.post(
+	"/:tenantId",
+	verifyToken,
+	verifyRolePermission(PERMS_SET.ROLE_CREATE_PERMS),
+	
 )
 
 

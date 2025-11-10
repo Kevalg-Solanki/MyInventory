@@ -67,12 +67,12 @@ async function findAllRolesWithPermsByTenantId(tenantId) {
  * @param {string} roleId
  * @returns {Object} - null or document
  */
-async function findRoleDetailsWithoutPermsByIds(tenantId,roleId) {
+async function findRoleDetailsWithoutPermsByIds(tenantId, roleId) {
 	const convertedRoleId = await convertStrToObjectId(roleId);
 	const convertedTenantId = await convertStrToObjectId(tenantId);
 
 	return await TenantRoleModel.find(
-		{ _id: convertedRoleId,tenantId:convertedTenantId, isDeleted: false },
+		{ _id: convertedRoleId, tenantId: convertedTenantId, isDeleted: false },
 		{ roleName: 1, roleColor: 1, numberOfUserAssigned: 1, _id: 1 }
 	).lean();
 }
@@ -82,13 +82,12 @@ async function findRoleDetailsWithoutPermsByIds(tenantId,roleId) {
  * @param {string} roleId
  * @returns {Object} - null or document
  */
-async function findRoleDetailsWithPermsByIds(tenantId,roleId) {
+async function findRoleDetailsWithPermsByIds(tenantId, roleId) {
 	const convertedRoleId = await convertStrToObjectId(roleId);
 	const convertedTenantId = await convertStrToObjectId(tenantId);
 
-
 	return await TenantRoleModel.find(
-		{ _id: convertedRoleId,tenantId:convertedTenantId, isDeleted: false },
+		{ _id: convertedRoleId, tenantId: convertedTenantId, isDeleted: false },
 		{
 			roleName: 1,
 			roleColor: 1,
@@ -104,20 +103,29 @@ async function findRoleDetailsWithPermsByIds(tenantId,roleId) {
  * @param {ArrayOfObjectIds} roleIds - array of roleIds
  * @param {Array} - null or array of object
  */
-async function findRolesWithoutPermsByRoleIds(roleIds) {
+async function findRolesPermsByRoleIds(roleIds, withPerms = false) {
+	
+	let projectObj = {
+		_id: 1,
+		roleName: 1,
+		roleColor: 1,
+	};
+
+	if (withPerms) {
+		projectObj.permissions =1;
+	}
+	console.log(projectObj);
+
 	const pipeline = [
 		{ $match: { _id: { $in: roleIds }, isDeleted: false, isActive: true } },
 		{
-            $project:{
-                _id:1,
-                roleName:1,
-                roleColor:1,
-            }
-        },
+			$project: projectObj
+		},
 	];
 
-    return await TenantRoleModel.aggregate(pipeline);
+	return await TenantRoleModel.aggregate(pipeline);
 }
+
 
 module.exports = {
 	findAndCombinePermsFromAllRolesByRoleIds,
@@ -125,5 +133,5 @@ module.exports = {
 	findAllRolesWithPermsByTenantId,
 	findRoleDetailsWithoutPermsByIds,
 	findRoleDetailsWithPermsByIds,
-	findRolesWithoutPermsByRoleIds,
+	findRolesPermsByRoleIds,
 };
