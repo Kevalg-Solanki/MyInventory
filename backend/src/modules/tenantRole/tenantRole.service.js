@@ -1,5 +1,10 @@
+//models
+const { TenantRoleModel } = require("./tenantRole.model");
+
 //constants
-const { ROLE_ERROR } = require("../../constants");
+const { ROLE_ERROR, CRUD_ERROR } = require("../../constants");
+const PERMS = require("../../constants/permission")
+const AUTO_ENABLE_PERMS_TRIGGER = require("../../constants/autoEnablePerms")
 
 //repositories
 const {
@@ -8,10 +13,50 @@ const {
 	findRoleDetailsWithoutPermsByIds,
 	findRoleDetailsWithPermsByIds,
 	findAndCombinePermsFromAllRolesByRoleIds,
-	findRolesPermsByRoleIds
+	findRolesPermsByRoleIds,
+	saveCustomTenantRole
 } = require("../../repositories/tenantRole.repository");
-const throwAppError = require("../../utils/throwAppError");
 
+//utiles
+const throwAppError = require("../../utils/throwAppError");
+const { convertStrToObjectId } = require("../../utils");
+
+
+
+
+//--helpers functions
+
+/**
+ * 
+ */
+function addDefaultRequiredPermissions(permissions){
+
+	if(!permissions||permissions.length === 0)
+	{
+		return [PERMS.TENANT_LOGIN];
+	}
+
+	//convert to enums array 
+	const triggerPermsArray = Object.values(AUTO_ENABLE_PERMS_TRIGGER);
+
+	//copy permissions
+	let newPermissions = [...permissions];
+
+	//
+	for(const perm of triggerPermsArray){
+		if(permissions.includes(perm))
+		{
+			triggerPermsArray.forEach((value)=>{
+				newPermissions.push(value);
+			})
+		}
+	}
+
+	return newPermissions;
+}
+
+
+//--Constoller services
 
 /**
  * - Used for Combining all permission from different roles by roles id
@@ -153,6 +198,42 @@ async function getMemberCombinedPermsByRoleIds(roleIds){
 	}
 }
 
+/**
+ * 
+ * @param {string} tenantId 
+ * @param {Object} roleData 
+ * @return {Object} - null or object
+ */
+async function createCustomRoleForTenant(tenantId,roleData){
+
+	const {roleName,roleColor,permissions} = roleData;
+
+	//auto add permission if trigger permission if found
+	const newPermissions = addDefaultRequiredPermissions(permissions);
+	
+	//convert to the objectId
+	const convertedTenantId = await convertStrToObjectId(tenantId);
+
+
+
+	const tenantRoleToSave = {
+		tenantId:convertedTenantId,
+		permissions:newPermissions
+	};
+
+	if(roleName) tenantRoleToSave.roleName = roleName;
+	if(roleColor) tenantRoleToSave.roleColor = roleColor;
+
+	const savedCustomRole = await saveCustomTenantRole(tenantRoleToSave);
+
+	if(!savedCustomRole)
+	{
+		throwAppError(CRUD_ERROR.UNABLE_TO_SAVE);
+	}
+
+	return savedCustomRole;
+}
+
 
 module.exports = {
 	getCombinedPermsOfRolesByRoleIds,
@@ -162,5 +243,6 @@ module.exports = {
 	getRoleDetailsWithPermsByIds,
 	getMemberRolesWithoutPermsByRoleIds,
 	getMemberRolesWithPermsByRoleIds,
-	getMemberCombinedPermsByRoleIds
+	getMemberCombinedPermsByRoleIds,
+	createCustomRoleForTenant
 };

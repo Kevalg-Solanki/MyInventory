@@ -1,6 +1,16 @@
 const { TenantRoleModel } = require("../modules/tenantRole/tenantRole.model");
 const { convertStrToObjectId } = require("../utils");
 
+
+async function saveCustomTenantRole(tenantRoledData){
+
+	const tenantRoleToSave = new TenantRoleModel(tenantRoledData);
+
+	return await tenantRoleToSave.save();
+}
+
+
+
 async function findAndCombinePermsFromAllRolesByRoleIds(roleIds) {
 	const pipeline = [
 		{ $match: { _id: { $in: roleIds }, isDeleted: false, isActive: true } },
@@ -134,4 +144,5 @@ module.exports = {
 	findRoleDetailsWithoutPermsByIds,
 	findRoleDetailsWithPermsByIds,
 	findRolesPermsByRoleIds,
+	saveCustomTenantRole
 };

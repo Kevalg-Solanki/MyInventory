@@ -51,7 +51,7 @@ const verifyRolePermission = (requiredPerms = []) => {
 			if (req.params.tenantId) {
 				if (!isValidObjectId(req.params.tenantId))
 					return throwError(AUTH_ERROR.REQUEST_INVALID);
-				if (req.params.tenantId != tenantId)
+				if (req.params.tenantId !== tenantId)
 					return throwError(TENANT_ERROR.TENANT_NOT_FOUND);
 			}
 

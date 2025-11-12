@@ -8,7 +8,11 @@ module.exports = {
 	UNABLE_TO_UPDATE:{
 		code:"UNABLE_TO_UPDATE",
 		httpStatus:400,
-		message:"Unable to update settings. Someting went wrong."
+		message:"Unable to update. Someting went wrong."
+	},
+	UNABLE_TO_SAVE:{
+		code:"UNABLE_TO_SAVE",
+		httpStatus:400,
+		message:"Unable to save. Someting went wrong."
 	}
-
 };

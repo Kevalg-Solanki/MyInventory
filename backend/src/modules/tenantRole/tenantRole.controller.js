@@ -14,6 +14,7 @@ const {
 	getMemberRolesWithoutPermsByRoleIds,
 	getMemberRolesWithPermsByRoleIds,
 	getMemberCombinedPermsByRoleIds,
+	createCustomRoleForTenant,
 } = require("./tenantRole.service");
 
 //tenantRole/:tenantId
@@ -139,6 +140,19 @@ async function getTenantMemberCombinedPerms(req, res, next) {
 	}
 }
 
+//**/:tenantId
+async function createCustomRole(req, res, next) {
+	try {
+		const { tenantId } = req.params;
+
+		const savedCustomRole = await createCustomRoleForTenant(tenantId, req.body);
+
+		return sendResponse(res, 201, "New role created.", { savedCustomRole });
+	} catch (error) {
+		next(error);
+	}
+}
+
 module.exports = {
 	getTenantAllRoleListWithoutPerms,
 	getTenantAllRoleListWithPerms,
@@ -146,5 +160,6 @@ module.exports = {
 	getTenantRoleDetailsWithPerms,
 	getTenantMemberRolesWithoutPerms,
 	getTenantMemberRolesWithPerms,
-	getTenantMemberCombinedPerms
+	getTenantMemberCombinedPerms,
+	createCustomRole
 };

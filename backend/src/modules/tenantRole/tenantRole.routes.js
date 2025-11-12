@@ -1,3 +1,14 @@
+//constants
+const PERMS_SET = require("../../constants/permSets");
+
+//middlewares
+const verifyRolePermission = require("../../middlewares/verifyRolePermission");
+const verifyToken = require("../../middlewares/verifyToken");
+const validateRequest = require("../../middlewares/validateRequest");
+
+//validators
+const { createTenantCustomRoleSchema } = require("./tenantRole.validation");
+
 //controllers
 const {
 	getTenantAllRoleListWithoutPerms,
@@ -7,14 +18,10 @@ const {
 	getTenantMemberRolesWithoutPerms,
 	getTenantMemberRolesWithPerms,
 	getTenantMemberCombinedPerms,
+	createCustomRole,
 } = require("./tenantRole.controller");
 
-//constants
-const PERMS_SET = require("../../constants/permSets");
 
-//middlewares
-const verifyRolePermission = require("../../middlewares/verifyRolePermission");
-const verifyToken = require("../../middlewares/verifyToken");
 
 //crete controller
 const 	tenantRoleRouter = require("express").Router();
@@ -80,7 +87,8 @@ tenantRoleRouter.post(
 	"/:tenantId",
 	verifyToken,
 	verifyRolePermission(PERMS_SET.ROLE_CREATE_PERMS),
-	
+	validateRequest(createTenantCustomRoleSchema),
+	createCustomRole
 )
 
 
