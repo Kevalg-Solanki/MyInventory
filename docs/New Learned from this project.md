@@ -47,5 +47,11 @@ type: Joi.string().valid("email","mobile").required(),
 one write fails and other all completed which created issues
 20.make files for helper function which used across the app in folder 'utils' and make index.js file which export this all
 helper function so all helper function can exported simply from one path and avoid single big file of helper function 
+<<<<<<< Updated upstream
 21.aggregate pipline how to group and convert object into flat array with query
 
+=======
+21.validate permission array coming from request in joi which allow only value stored in pre defined Object
+22.restrict duplicate value in array in joi
+23.Joi let pass validation for text type data from request have to enforce json format for request body
+>>>>>>> Stashed changes
