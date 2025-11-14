@@ -10,8 +10,10 @@ const app = express();
 //routes
 const authRouter = require("./modules/auth/auth.routes.js");
 const tenantRouter = require("./modules/tenant/tenant.routes.js");
+const userRouter = require("./modules/user/user.routes.js")
 
-//middlewares
+//--middlewares
+//CORS
 app.use(cors());
 
 //Content-type gate to allow only JSON format
@@ -36,7 +38,7 @@ app.use((req, res, next) => {
 
 app.use(bodyParser.json());
 
-//logging middleware
+//LOGGER
 app.use(
 	morgan(":method :url :status :res[content-length] - :response-time ms")
 );
@@ -44,20 +46,12 @@ app.use(
 //--ROUTES
 app.use("/api/v1/auth", authRouter);
 
-<<<<<<< Updated upstream
-app.use("/api/v1/tenants", tenantRouter);
-
-=======
-<<<<<<< Updated upstream
-=======
 app.use("/api/v1/tenants", tenantRouter);
 
 app.use("/api/v1/users", userRouter);
 
-app.use("/api/v1/tenant-roles", tenantRoleRouter);
 
->>>>>>> Stashed changes
->>>>>>> Stashed changes
+
 //Error handler
 app.use((error, req, res, next) => {
 	console.error("Error : ", error);
