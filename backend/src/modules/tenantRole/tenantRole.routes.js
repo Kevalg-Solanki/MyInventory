@@ -7,7 +7,7 @@ const verifyToken = require("../../middlewares/verifyToken");
 const validateRequest = require("../../middlewares/validateRequest");
 
 //validators
-const { createTenantCustomRoleSchema } = require("./tenantRole.validation");
+const { createTenantCustomRoleSchema, updateTenantCustomRoleDetailsSchema } = require("./tenantRole.validation");
 
 //controllers
 const {
@@ -19,6 +19,7 @@ const {
 	getTenantMemberRolesWithPerms,
 	getTenantMemberCombinedPerms,
 	createCustomRole,
+	updateCustomRole,
 } = require("./tenantRole.controller");
 
 
@@ -89,6 +90,15 @@ tenantRoleRouter.post(
 	verifyRolePermission(PERMS_SET.ROLE_CREATE_PERMS),
 	validateRequest(createTenantCustomRoleSchema),
 	createCustomRole
+)
+
+//**Update custome role for tenant
+tenantRoleRouter.patch(
+	"/:tenantId/:roleId",
+	verifyToken,
+	verifyRolePermission(PERMS_SET.ROLE_UPDATE_PERMS),
+	validateRequest(updateTenantCustomRoleDetailsSchema),
+	updateCustomRole
 )
 
 

@@ -15,6 +15,7 @@ const {
 	getMemberRolesWithPermsByRoleIds,
 	getMemberCombinedPermsByRoleIds,
 	createCustomRoleForTenant,
+	updateTenantCustomRole,
 } = require("./tenantRole.service");
 
 //tenantRole/:tenantId
@@ -140,7 +141,7 @@ async function getTenantMemberCombinedPerms(req, res, next) {
 	}
 }
 
-//**/:tenantId
+//**POST /:tenantId
 async function createCustomRole(req, res, next) {
 	try {
 		const { tenantId } = req.params;
@@ -153,6 +154,23 @@ async function createCustomRole(req, res, next) {
 	}
 }
 
+
+//**PATCH /:tenantId/:roleId
+async function updateCustomRole(req, res, next) {
+	try {
+		const { tenantId,roleId } = req.params;
+		const {include} = req.query;
+
+		const updatePerms = include==="permissions";
+		const updatedCustomRole = await updateTenantCustomRole(tenantId,roleId,req.body,updatePerms);
+
+		return sendResponse(res, 200, "Role details updated.", { updatedCustomRole });
+	} catch (error) {
+		next(error);
+	}
+}
+
+
 module.exports = {
 	getTenantAllRoleListWithoutPerms,
 	getTenantAllRoleListWithPerms,
@@ -161,5 +179,6 @@ module.exports = {
 	getTenantMemberRolesWithoutPerms,
 	getTenantMemberRolesWithPerms,
 	getTenantMemberCombinedPerms,
-	createCustomRole
+	createCustomRole,
+	updateCustomRole  
 };

@@ -136,6 +136,16 @@ async function findRolesPermsByRoleIds(roleIds, withPerms = false) {
 	return await TenantRoleModel.aggregate(pipeline);
 }
 
+async function updateRoleByIds(tenantId,roleId,updatedRoleData) {
+	const convertedTenantId = await convertStrToObjectId(tenantId);
+	const convertedRoleId = await convertStrToObjectId(roleId);
+
+	return await TenantRoleModel.findOneAndUpdate(
+		{_id:convertedRoleId,tenantId:convertedTenantId,isDeleted:false},
+		{$set: updatedRoleData},
+		{new:true}
+	)
+}
 
 module.exports = {
 	findAndCombinePermsFromAllRolesByRoleIds,
@@ -144,5 +154,6 @@ module.exports = {
 	findRoleDetailsWithoutPermsByIds,
 	findRoleDetailsWithPermsByIds,
 	findRolesPermsByRoleIds,
-	saveCustomTenantRole
+	saveCustomTenantRole,
+	updateRoleByIds
 };

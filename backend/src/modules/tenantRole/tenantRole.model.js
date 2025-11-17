@@ -49,7 +49,12 @@ tenantRoleSchema.index(
 
 tenantRoleSchema.index({tenantId:1,isDeleted:1});
 
-
+tenantRoleSchema.set("toJSON", {
+	transform(doc, ret) {
+		delete ret.__v;
+		return ret;
+	},
+});
 const TenantRoleModel = mongoose.model("Tenant-Role", tenantRoleSchema);
 
 module.exports = {

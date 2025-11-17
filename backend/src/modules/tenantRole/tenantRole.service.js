@@ -3,8 +3,9 @@ const { TenantRoleModel } = require("./tenantRole.model");
 
 //constants
 const { ROLE_ERROR, CRUD_ERROR } = require("../../constants");
-const PERMS = require("../../constants/permission")
-const AUTO_ENABLE_PERMS_TRIGGER = require("../../constants/autoEnablePerms")
+const PERMS = require("../../constants/permission");
+const PERMS_SET = require("../../constants/permSets");
+const AUTO_ENABLE_PERMS_TRIGGER = require("../../constants/autoEnablePermsSet");
 
 //repositories
 const {
@@ -14,47 +15,50 @@ const {
 	findRoleDetailsWithPermsByIds,
 	findAndCombinePermsFromAllRolesByRoleIds,
 	findRolesPermsByRoleIds,
-	saveCustomTenantRole
+	saveCustomTenantRole,
+	updateRoleByIds,
 } = require("../../repositories/tenantRole.repository");
 
 //utiles
 const throwAppError = require("../../utils/throwAppError");
 const { convertStrToObjectId } = require("../../utils");
 
-
-
-
 //--helpers functions
 
 /**
- * 
+ *
  */
-function addDefaultRequiredPermissions(permissions){
+function addDefaultRequiredPermissions(permissions) {
+	if (!permissions || permissions.length === 0) return [PERMS.TENANT_LOGIN];
 
-	if(!permissions||permissions.length === 0)
-	{
-		return [PERMS.TENANT_LOGIN];
-	}
+	//convert to enums array
+	const triggerPermsArray = Object.keys(AUTO_ENABLE_PERMS_TRIGGER);
+	const RESTRICTED_PERMS = [
+		PERMS.TENANT_CO_OWNER_PERMS,
+		PERMS.TENANT_OWNER_PERMS,
+		...PERMS_SET.RESTRICTED_PERMS,
+	];
 
-	//convert to enums array 
-	const triggerPermsArray = Object.values(AUTO_ENABLE_PERMS_TRIGGER);
+	console.log(triggerPermsArray);
 
-	//copy permissions
-	let newPermissions = [...permissions];
+	//Remove restricted perms
+	const newPermissions = permissions.filter(
+		(perm) => !RESTRICTED_PERMS.includes(perm)
+	);
 
 	//
-	for(const perm of triggerPermsArray){
-		if(permissions.includes(perm))
-		{
-			triggerPermsArray.forEach((value)=>{
-				newPermissions.push(value);
-			})
+	for (const triggerPerm of triggerPermsArray) {
+		console.log("trigger perm", triggerPerm);
+		if (newPermissions.includes(triggerPerm)) {
+			for (const perm of AUTO_ENABLE_PERMS_TRIGGER[triggerPerm]) {
+				console.log("perm", perm);
+				if (!newPermissions.includes(perm)) newPermissions.push(perm);
+			}
 		}
 	}
 
 	return newPermissions;
 }
-
 
 //--Constoller services
 
@@ -65,8 +69,7 @@ function addDefaultRequiredPermissions(permissions){
  */
 async function getCombinedPermsOfRolesByRoleIds(roleIds) {
 	try {
-		return await findAndCombinePermsFromAllRolesByRoleIds(roleIds)
-
+		return await findAndCombinePermsFromAllRolesByRoleIds(roleIds);
 	} catch (error) {
 		throw error;
 	}
@@ -111,11 +114,10 @@ async function getRoleListWithPermsByTenantId(tenantId) {
  * @param {string} roleId
  * @returns
  */
-async function getRoleDetailsWithoutPermsByIds(tenantId,roleId) {
-	
-	const roleDetails = await findRoleDetailsWithoutPermsByIds(tenantId,roleId);
+async function getRoleDetailsWithoutPermsByIds(tenantId, roleId) {
+	const roleDetails = await findRoleDetailsWithoutPermsByIds(tenantId, roleId);
 
-	if (roleDetails.length==0) {
+	if (roleDetails.length == 0) {
 		throwAppError(ROLE_ERROR.ROLE_NOT_FOUND);
 	}
 
@@ -127,8 +129,8 @@ async function getRoleDetailsWithoutPermsByIds(tenantId,roleId) {
  * @param {string} roleId
  * @returns
  */
-async function getRoleDetailsWithPermsByIds(tenantId,roleId) {
-	const roleDetails = await findRoleDetailsWithPermsByIds(tenantId,roleId);
+async function getRoleDetailsWithPermsByIds(tenantId, roleId) {
+	const roleDetails = await findRoleDetailsWithPermsByIds(tenantId, roleId);
 
 	if (!roleDetails) {
 		throwAppError(ROLE_ERROR.ROLE_NOT_FOUND);
@@ -138,103 +140,121 @@ async function getRoleDetailsWithPermsByIds(tenantId,roleId) {
 }
 
 /**
- * 
- * @param {ArrayOfObjectId} roleIds 
+ *
+ * @param {ArrayOfObjectId} roleIds
  * @returns {Array}
  */
-async function getMemberRolesWithoutPermsByRoleIds(roleIds){
-	try
-	{
+async function getMemberRolesWithoutPermsByRoleIds(roleIds) {
+	try {
 		const userRoles = await findRolesPermsByRoleIds(roleIds);
-		console.log(userRoles)
-		if(!userRoles) throwAppError(ROLE_ERROR.ROLE_NOT_FOUND);
+		console.log(userRoles);
+		if (!userRoles) throwAppError(ROLE_ERROR.ROLE_NOT_FOUND);
 
 		return userRoles;
-	}
-	catch(error)
-	{
+	} catch (error) {
 		throw error;
 	}
 }
 
 /**
- * 
- * @param {ArrayOfObjectId} roleIds 
+ *
+ * @param {ArrayOfObjectId} roleIds
  * @returns {Array}
  */
-async function getMemberRolesWithPermsByRoleIds(roleIds){
-	try
-	{
-		const userRoles = await findRolesPermsByRoleIds(roleIds,true);
-		console.log(userRoles)
-		if(!userRoles) throwAppError(ROLE_ERROR.ROLE_NOT_FOUND);
+async function getMemberRolesWithPermsByRoleIds(roleIds) {
+	try {
+		const userRoles = await findRolesPermsByRoleIds(roleIds, true);
+		console.log(userRoles);
+		if (!userRoles) throwAppError(ROLE_ERROR.ROLE_NOT_FOUND);
 
 		return userRoles;
-	}
-	catch(error)
-	{
+	} catch (error) {
 		throw error;
 	}
 }
 
-
 /**
- * 
- * @param {ArrayOfObjectId} roleIds 
+ *
+ * @param {ArrayOfObjectId} roleIds
  * @returns {Array}
  */
-async function getMemberCombinedPermsByRoleIds(roleIds){
-	try
-	{
-		const userCombinedPerms = await findAndCombinePermsFromAllRolesByRoleIds(roleIds);
-		console.log(userCombinedPerms)
-		if(!userCombinedPerms) throwAppError(ROLE_ERROR.ROLE_NOT_FOUND);
+async function getMemberCombinedPermsByRoleIds(roleIds) {
+	try {
+		const userCombinedPerms = await findAndCombinePermsFromAllRolesByRoleIds(
+			roleIds
+		);
+		console.log(userCombinedPerms);
+		if (!userCombinedPerms) throwAppError(ROLE_ERROR.ROLE_NOT_FOUND);
 
 		return userCombinedPerms;
-	}
-	catch(error)
-	{
+	} catch (error) {
 		throw error;
 	}
 }
 
 /**
- * 
- * @param {string} tenantId 
- * @param {Object} roleData 
+ *
+ * @param {string} tenantId
+ * @param {Object} roleData
  * @return {Object} - null or object
  */
-async function createCustomRoleForTenant(tenantId,roleData){
-
-	const {roleName,roleColor,permissions} = roleData;
+async function createCustomRoleForTenant(tenantId, roleData) {
+	const { roleName, roleColor, isActive, permissions } = roleData;
 
 	//auto add permission if trigger permission if found
 	const newPermissions = addDefaultRequiredPermissions(permissions);
-	
+
 	//convert to the objectId
 	const convertedTenantId = await convertStrToObjectId(tenantId);
 
-
-
 	const tenantRoleToSave = {
-		tenantId:convertedTenantId,
-		permissions:newPermissions
+		tenantId: convertedTenantId,
+		permissions: newPermissions,
+		isActive: isActive,
 	};
 
-	if(roleName) tenantRoleToSave.roleName = roleName;
-	if(roleColor) tenantRoleToSave.roleColor = roleColor;
+	if (roleName) tenantRoleToSave.roleName = roleName;
+	if (roleColor) tenantRoleToSave.roleColor = roleColor;
 
 	const savedCustomRole = await saveCustomTenantRole(tenantRoleToSave);
 
-	if(!savedCustomRole)
-	{
+	if (!savedCustomRole) {
 		throwAppError(CRUD_ERROR.UNABLE_TO_SAVE);
 	}
 
 	return savedCustomRole;
 }
 
+/**
+ * 
+ * @param {string} tenantId - tenantId for finding role
+ * @param {string} roleId - roleId used for finding role
+ * @param {object} roleData - data to update
+ * @param {boolean} updatePerms - true if want to update permissions of role
+ * @returns 
+ */
+async function updateTenantCustomRole(tenantId, roleId, roleData, updatePerms = false) {
+	
+	let newRoleData = {
+		roleName: roleData?.roleName,
+		roleColor: roleData?.roleColor,
+		isActive: roleData?.isActive,
+	};
 
+	if (updatePerms) {
+		//auto include required perms
+		const newPermissions = await addDefaultRequiredPermissions(roleData?.permissions);
+		//add to role data to update
+		newRoleData.permissions = newPermissions;
+	}
+
+	console.log(newRoleData);
+	const updatedRoleData = await updateRoleByIds(tenantId, roleId, newRoleData,updatePerms);
+
+	if (!updatedRoleData) throwAppError(CRUD_ERROR.UNABLE_TO_UPDATE);
+
+	return updatedRoleData;
+}
 module.exports = {
 	getCombinedPermsOfRolesByRoleIds,
 	getRoleListWithoutPermsByTenantId,
@@ -244,5 +264,6 @@ module.exports = {
 	getMemberRolesWithoutPermsByRoleIds,
 	getMemberRolesWithPermsByRoleIds,
 	getMemberCombinedPermsByRoleIds,
-	createCustomRoleForTenant
+	createCustomRoleForTenant,
+	updateTenantCustomRole,
 };

@@ -12,4 +12,8 @@ module.exports = {
         PERMS.ROLE_GET_ALL,
         PERMS.ROLE_GET_ALL_WITH_PERM
     ],
+	ROLE_UPDATE:[
+		PERMS.ROLE_GET_ALL,
+		PERMS.ROLE_GET_ALL_WITH_PERM,
+	]
 };
