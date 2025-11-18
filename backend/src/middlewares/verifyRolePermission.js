@@ -56,7 +56,7 @@ const verifyRolePermission = (requiredPerms = []) => {
 			}
 
 			//Verify user is member of tenant or not
-			const tenantMember = await findTenantMemberByIds(req.user._id, tenantId);
+			const tenantMember = await findTenantMemberByIds(tenantId,req.user._id);
 
 			if (!tenantMember) return throwError(AUTH_ERROR.UNAUTHORIZED_ACCESS);
 

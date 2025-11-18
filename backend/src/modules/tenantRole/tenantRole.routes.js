@@ -20,6 +20,7 @@ const {
 	getTenantMemberCombinedPerms,
 	createCustomRole,
 	updateCustomRole,
+	assignRoleToTenantMember,
 } = require("./tenantRole.controller");
 
 
@@ -61,7 +62,7 @@ tenantRoleRouter.get(
 
 //**Get tenant's member/user roles without permissions
 tenantRoleRouter.get(
-	"/:tenantId/tenant-members/:userId",
+	"/:tenantId/tenant-members/:memberId",
 	verifyToken,
 	verifyRolePermission(PERMS_SET.ROLE_GET_MEMBER_ROLES_PERMS),
 	getTenantMemberRolesWithoutPerms
@@ -69,7 +70,7 @@ tenantRoleRouter.get(
 
 //**Get tenant's member/user roles with permissions
 tenantRoleRouter.get(
-	"/:tenantId/tenant-members/:userId/with-permissions",
+	"/:tenantId/tenant-members/:memberId/with-permissions",
 	verifyToken,
 	verifyRolePermission(PERMS_SET.ROLE_GET_MEMBER_ROLES_WITH_PERM),
 	getTenantMemberRolesWithPerms
@@ -77,7 +78,7 @@ tenantRoleRouter.get(
 
 //**Get tenant's member/user combined permissions
 tenantRoleRouter.get(
-	"/:tenantId/tenant-members/:userId/permissions",
+	"/:tenantId/tenant-members/:memberId/permissions",
 	verifyToken,
 	verifyRolePermission(PERMS_SET.ROLE_GET_MEMBER_PERM_COMBINED_PERMS),
 	getTenantMemberCombinedPerms
@@ -101,5 +102,14 @@ tenantRoleRouter.patch(
 	updateCustomRole
 )
 
+//**Assign role to user in tenant
+tenantRoleRouter.patch(
+	"/:tenantId/:roleId/assign/:memberId",
+	verifyToken,
+	verifyRolePermission(PERMS_SET.ROLE_ASSIGN_PERMS),
+	assignRoleToTenantMember
+)
+
 
 module.exports = tenantRoleRouter;
+	

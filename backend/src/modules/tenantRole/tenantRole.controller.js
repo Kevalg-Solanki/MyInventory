@@ -1,5 +1,5 @@
 //constants
-const { USER_ERROR } = require("../../constants");
+const { USER_ERROR, MEMBER_ERROR } = require("../../constants");
 
 //utils
 const sendResponse = require("../../utils/sendResponse");
@@ -11,11 +11,13 @@ const {
 	getRoleListWithPermsByTenantId,
 	getRoleDetailsWithoutPermsByIds,
 	getRoleDetailsWithPermsByIds,
-	getMemberRolesWithoutPermsByRoleIds,
-	getMemberRolesWithPermsByRoleIds,
+	getMemberRolesWithoutPermsByIds,
+	getMemberCombinedPermsByIds,
 	getMemberCombinedPermsByRoleIds,
 	createCustomRoleForTenant,
 	updateTenantCustomRole,
+	getMemberRolesWithPermsByIds,
+	assignRoleToMemberByIds,
 } = require("./tenantRole.service");
 
 //tenantRole/:tenantId
@@ -82,14 +84,16 @@ async function getTenantRoleDetailsWithPerms(req, res, next) {
 	}
 }
 
-//**/:tenantId/users/:userId
+//**/:tenantId/tenant-members/:memberId
 async function getTenantMemberRolesWithoutPerms(req, res, next) {
 	try {
-		const { userId } = req.params;
+		const { tenantId, memberId } = req.params;
 
-		if (!userId) throwAppError(USER_ERROR.USER_NOT_FOUND);
-		const memberRolesWithoutPerms = await getMemberRolesWithoutPermsByRoleIds(
-			req?.tenantMemberRoleIds
+		if (!memberId) throwAppError(MEMBER_ERROR.MEMBER_NOT_FOUND);
+
+		const memberRolesWithoutPerms = await getMemberRolesWithoutPermsByIds(
+			tenantId,
+			memberId
 		);
 
 		return sendResponse(res, 200, "Member Roles fetched successfully.", {
@@ -100,14 +104,16 @@ async function getTenantMemberRolesWithoutPerms(req, res, next) {
 	}
 }
 
-//**/:tenantId/tenant-members/:userId/with-permission
+//**/:tenantId/tenant-members/:memberId/with-permission
 async function getTenantMemberRolesWithPerms(req, res, next) {
 	try {
-		const { userId } = req.params;
+		const { tenantId, memberId } = req.params;
 
-		if (!userId) throwAppError(USER_ERROR.USER_NOT_FOUND);
-		const memberRolesWithPerms = await getMemberRolesWithPermsByRoleIds(
-			req?.tenantMemberRoleIds
+		if (!memberId) throwAppError(MEMBER_ERROR.MEMBER_NOT_FOUND);
+
+		const memberRolesWithPerms = await getMemberRolesWithPermsByIds(
+			tenantId,
+			memberId
 		);
 
 		return sendResponse(
@@ -126,11 +132,13 @@ async function getTenantMemberRolesWithPerms(req, res, next) {
 //**/:tenantId/tenant-members/:userId/with-permission
 async function getTenantMemberCombinedPerms(req, res, next) {
 	try {
-		const { userId } = req.params;
+		const { tenantId,memberId } = req.params;
 
-		if (!userId) throwAppError(USER_ERROR.USER_NOT_FOUND);
-		const memberCombinedPerms = await getMemberCombinedPermsByRoleIds(
-			req?.tenantMemberRoleIds
+		if (!memberId) throwAppError(MEMBER_ERROR.MEMBER_NOT_FOUND);
+
+		const memberCombinedPerms = await getMemberCombinedPermsByIds(
+			tenantId,
+			memberId
 		);
 
 		return sendResponse(res, 200, "Member permissions fetched successfully.", {
@@ -154,22 +162,42 @@ async function createCustomRole(req, res, next) {
 	}
 }
 
-
 //**PATCH /:tenantId/:roleId
 async function updateCustomRole(req, res, next) {
 	try {
-		const { tenantId,roleId } = req.params;
-		const {include} = req.query;
+		const { tenantId, roleId } = req.params;
+		const { include } = req.query;
 
-		const updatePerms = include==="permissions";
-		const updatedCustomRole = await updateTenantCustomRole(tenantId,roleId,req.body,updatePerms);
+		const updatePerms = include === "permissions";
+		const updatedCustomRole = await updateTenantCustomRole(
+			tenantId,
+			roleId,
+			req.body,
+			updatePerms
+		);
 
-		return sendResponse(res, 200, "Role details updated.", { updatedCustomRole });
+		return sendResponse(res, 200, "Role details updated.", {
+			updatedCustomRole,
+		});
 	} catch (error) {
 		next(error);
 	}
 }
 
+//**PATCH /:tenantId/:roleId/assign/:userId
+async function assignRoleToTenantMember(req, res, next) {
+	try {
+		const { tenantId, roleId, memberId } = req.params;
+
+		const updatedMember = await assignRoleToMemberByIds(tenantId,roleId,memberId);
+
+		return sendResponse(res,200,"Role assigned.",{
+			updatedMember
+		});
+	} catch (error) {
+		next(error);
+	}
+}
 
 module.exports = {
 	getTenantAllRoleListWithoutPerms,
@@ -180,5 +208,6 @@ module.exports = {
 	getTenantMemberRolesWithPerms,
 	getTenantMemberCombinedPerms,
 	createCustomRole,
-	updateCustomRole  
+	updateCustomRole,
+	assignRoleToTenantMember,
 };

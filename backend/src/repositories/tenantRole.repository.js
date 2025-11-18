@@ -81,7 +81,7 @@ async function findRoleDetailsWithoutPermsByIds(tenantId, roleId) {
 	const convertedRoleId = await convertStrToObjectId(roleId);
 	const convertedTenantId = await convertStrToObjectId(tenantId);
 
-	return await TenantRoleModel.find(
+	return await TenantRoleModel.findOne(
 		{ _id: convertedRoleId, tenantId: convertedTenantId, isDeleted: false },
 		{ roleName: 1, roleColor: 1, numberOfUserAssigned: 1, _id: 1 }
 	).lean();
@@ -96,7 +96,7 @@ async function findRoleDetailsWithPermsByIds(tenantId, roleId) {
 	const convertedRoleId = await convertStrToObjectId(roleId);
 	const convertedTenantId = await convertStrToObjectId(tenantId);
 
-	return await TenantRoleModel.find(
+	return await TenantRoleModel.findOne(
 		{ _id: convertedRoleId, tenantId: convertedTenantId, isDeleted: false },
 		{
 			roleName: 1,
@@ -136,6 +136,13 @@ async function findRolesPermsByRoleIds(roleIds, withPerms = false) {
 	return await TenantRoleModel.aggregate(pipeline);
 }
 
+/**
+ * 
+ * @param {string} tenantId - tenantId
+ * @param {string} roleId - roleId to add
+ * @param {object} updatedRoleData - Update role data
+ * @returns 
+ */
 async function updateRoleByIds(tenantId,roleId,updatedRoleData) {
 	const convertedTenantId = await convertStrToObjectId(tenantId);
 	const convertedRoleId = await convertStrToObjectId(roleId);

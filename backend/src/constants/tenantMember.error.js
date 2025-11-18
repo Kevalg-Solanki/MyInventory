@@ -8,4 +8,11 @@ module.exports = {
 		message:
 			"Your member account is deactivated in this tenant. Please your tenant.",
 	},
+
+	//--404
+	MEMBER_NOT_FOUND: {
+		code: "MEMBER_NOT_FOUND",
+		httpStatus: 404,
+		message: "Member not found.",
+	},
 }
