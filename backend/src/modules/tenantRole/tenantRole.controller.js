@@ -13,7 +13,7 @@ const {
 	getRoleDetailsWithPermsByIds,
 	getMemberRolesWithoutPermsByIds,
 	getMemberCombinedPermsByIds,
-	getMemberCombinedPermsByRoleIds,
+	removeRoleFromMemberByIds,
 	createCustomRoleForTenant,
 	updateTenantCustomRole,
 	getMemberRolesWithPermsByIds,
@@ -129,7 +129,7 @@ async function getTenantMemberRolesWithPerms(req, res, next) {
 	}
 }
 
-//**/:tenantId/tenant-members/:userId/with-permission
+//**/:tenantId/tenant-members/:memberId/with-permission
 async function getTenantMemberCombinedPerms(req, res, next) {
 	try {
 		const { tenantId,memberId } = req.params;
@@ -184,7 +184,7 @@ async function updateCustomRole(req, res, next) {
 	}
 }
 
-//**PATCH /:tenantId/:roleId/assign/:userId
+//**PATCH /:tenantId/:roleId/assign/:memberId
 async function assignRoleToTenantMember(req, res, next) {
 	try {
 		const { tenantId, roleId, memberId } = req.params;
@@ -199,6 +199,22 @@ async function assignRoleToTenantMember(req, res, next) {
 	}
 }
 
+//**PATCH /:tenantId/:roleId/remove/:memberId
+async function removeRoleFromTenantMember(req, res, next) {
+	try {
+		const { tenantId, roleId, memberId } = req.params;
+		console.log(tenantId,roleId,memberId)
+		const updatedMember = await removeRoleFromMemberByIds(tenantId,roleId,memberId);
+
+		return sendResponse(res,200,"Role removed.",{
+			updatedMember
+		});
+	} catch (error) {
+		next(error);
+	}
+}
+
+
 module.exports = {
 	getTenantAllRoleListWithoutPerms,
 	getTenantAllRoleListWithPerms,
@@ -210,4 +226,5 @@ module.exports = {
 	createCustomRole,
 	updateCustomRole,
 	assignRoleToTenantMember,
+	removeRoleFromTenantMember
 };

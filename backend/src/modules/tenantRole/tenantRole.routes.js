@@ -21,6 +21,7 @@ const {
 	createCustomRole,
 	updateCustomRole,
 	assignRoleToTenantMember,
+	removeRoleFromTenantMember,
 } = require("./tenantRole.controller");
 
 
@@ -106,10 +107,17 @@ tenantRoleRouter.patch(
 tenantRoleRouter.patch(
 	"/:tenantId/:roleId/assign/:memberId",
 	verifyToken,
-	verifyRolePermission(PERMS_SET.ROLE_ASSIGN_PERMS),
+	verifyRolePermission(PERMS_SET.ROLE_ASSIGN_REMOVE_PERMS),
 	assignRoleToTenantMember
 )
 
+//**Remove role of user
+tenantRoleRouter.patch(
+	"/:tenantId/:roleId/remove/:memberId",
+	verifyToken,
+	verifyRolePermission(PERMS_SET.ROLE_ASSIGN_REMOVE_PERMS),
+	removeRoleFromTenantMember
+)
 
 module.exports = tenantRoleRouter;
 	

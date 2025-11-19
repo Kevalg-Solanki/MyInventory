@@ -12,9 +12,10 @@ const { convertStrToObjectId } = require("../utils");
  * @returns {object} - null if not found
  */
 async function findTenantMemberByTenantAndMemberId(tenantId, tenantMemberId) {
+	console.log(tenantMemberId,tenantId)
 	if (!tenantId || !tenantMemberId) return null;
     const convertedMemberId = await convertStrToObjectId(tenantMemberId);
-
+	console.log(convertedMemberId)
 	return await TenantMemberModel.findOne({
 		_id: convertedMemberId,
 		tenantId,
@@ -44,18 +45,40 @@ async function findTenantMemberByIds(tenantId, userId) {
  * @param {string} roleIdToAdd
  * @returns - null if not
  */
-async function addRoleIdToMemberById(tenantId, memberId, roleIdToAdd) {
+async function addRoleIdToMemberByIds(tenantId, memberId, roleIdToAdd) {
 
 	if (!tenantId || !memberId || !roleIdToAdd) return null;
     console.log(memberId,tenantId,roleIdToAdd)
 	return await TenantMemberModel.findOneAndUpdate(
 		{ _id: memberId, tenantId, isDeleted: false },
-		{ $addToSet: { roles: roleIdToAdd } }
+		{ $addToSet: { roles: roleIdToAdd } },
+		{new:true}
+	);
+}
+
+/**
+ *
+ * @param {string} tenantId
+ * @param {string} userId
+ * @param {string} roleIdToRemove
+ * @returns - null if not
+ */
+async function removeRoleIdFromMemberByIds(tenantId, memberId, roleIdToRemove) {
+
+	if (!tenantId || !memberId || !roleIdToRemove) return null;
+	
+    console.log(memberId,tenantId,roleIdToRemove)
+	return await TenantMemberModel.findOneAndUpdate(
+		{ _id: memberId, tenantId, isDeleted: false },
+		{ $pull: { roles: roleIdToRemove } },
+		{new:true}
 	);
 }
 
 module.exports = {
 	findTenantMemberByTenantAndMemberId,
 	findTenantMemberByIds,
-	addRoleIdToMemberById,
+	addRoleIdToMemberByIds,
+	removeRoleIdFromMemberByIds
+	
 };

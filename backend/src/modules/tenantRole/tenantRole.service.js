@@ -22,10 +22,12 @@ const {
 //utiles
 const throwAppError = require("../../utils/throwAppError");
 const { convertStrToObjectId } = require("../../utils");
+
+//repository
 const {
-	findTenantMemberByIds,
 	findTenantMemberByTenantAndMemberId,
-	addRoleIdToMemberById,
+	addRoleIdToMemberByIds,
+	removeRoleIdFromMemberByIds
 } = require("../../repositories/tenantMember.repository");
 
 //--helpers functions
@@ -300,6 +302,7 @@ async function updateTenantCustomRole(
 	return updatedRoleData;
 }
 
+
 async function assignRoleToMemberByIds(tenantId, roleId, memberId) {
 	//find tenant member
 	const tenantMember = await findTenantMemberByTenantAndMemberId(
@@ -319,7 +322,7 @@ async function assignRoleToMemberByIds(tenantId, roleId, memberId) {
 
 	console.log(roleToAssign._id)
 	//if both found then add role id to member roles
-	const updatedMember = await addRoleIdToMemberById(
+	const updatedMember = await addRoleIdToMemberByIds(
 		tenantId,
 		memberId,
 		roleToAssign?._id
@@ -329,6 +332,40 @@ async function assignRoleToMemberByIds(tenantId, roleId, memberId) {
 
 	return updatedMember;
 }
+
+
+async function removeRoleFromMemberByIds(tenantId, roleId, memberId) {
+	//find tenant member
+	const tenantMember = await findTenantMemberByTenantAndMemberId(
+		tenantId,
+		memberId
+	);
+
+	console.log(tenantMember)
+	if (!tenantMember) throwAppError(MEMBER_ERROR.MEMBER_NOT_FOUND);
+
+	//find role
+	const roleToRemove = await findRoleDetailsWithoutPermsByIds(tenantId, roleId);
+
+	if (!roleToRemove) throwAppError(ROLE_ERROR.ROLE_NOT_FOUND);
+
+	if (!tenantMember?.roles.includes(roleToRemove?._id)) throwAppError(ROLE_ERROR.ROLE_NOT_ASSIGNED);
+
+
+	console.log(roleToRemove._id)
+	//if both found then add role id to member roles
+	const updatedMember = await removeRoleIdFromMemberByIds(
+		tenantId,
+		memberId,
+		roleToRemove?._id
+	);
+
+
+	if (!updatedMember) throwAppError(CRUD_ERROR.UNABLE_TO_UPDATE);
+
+	return updatedMember;
+}
+
 
 module.exports = {
 	getCombinedPermsOfRolesByRoleIds,
@@ -342,4 +379,5 @@ module.exports = {
 	createCustomRoleForTenant,
 	updateTenantCustomRole,
 	assignRoleToMemberByIds,
+	removeRoleFromMemberByIds
 };

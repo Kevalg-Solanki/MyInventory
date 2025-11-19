@@ -1,4 +1,11 @@
 module.exports = {
+	//--400
+	ROLE_NOT_ASSIGNED: {
+		code: "ROLE_NOT_ASSIGNED",
+		httpStatus: 400,
+		message: "Member don't have this role.",
+	},
+
 	//--404
 	ROLE_NOT_FOUND: {
 		code: "ROLE_NOT_FOUND",
