@@ -27,7 +27,7 @@ const { convertStrToObjectId } = require("../../utils");
 const {
 	findTenantMemberByTenantAndMemberId,
 	addRoleIdToMemberByIds,
-	removeRoleIdFromMemberByIds
+	removeRoleIdFromMemberByIds,
 } = require("../../repositories/tenantMember.repository");
 
 //--helpers functions
@@ -49,17 +49,51 @@ function addDefaultRequiredPermissions(permissions) {
 	console.log(triggerPermsArray);
 
 	//Remove restricted perms
-	const newPermissions = permissions.filter(
+	let newPermissions = permissions.filter(
 		(perm) => !RESTRICTED_PERMS.includes(perm)
 	);
 
 	//
 	for (const triggerPerm of triggerPermsArray) {
-		console.log("trigger perm", triggerPerm);
 		if (newPermissions.includes(triggerPerm)) {
+			console.log("trigger perm found = ",triggerPerm)
 			for (const perm of AUTO_ENABLE_PERMS_TRIGGER[triggerPerm]) {
-				console.log("perm", perm);
-				if (!newPermissions.includes(perm)) newPermissions.push(perm);
+				console.log("perm of tirgger perm = ", perm);
+				
+				//recursive which runs until all auto enable perms for this perm included in array.
+				
+				//**IGNORE** THIS COMMENT - (personal note):spent 2 hour for this recurssion function.
+				const returnRequiredPermsArray = (permission) => {
+					console.log("function start ",permission)
+					//1. check is permission passed in function is trigger permission.
+					if (triggerPermsArray.includes(permission)) {
+						console.log("permission is trigger perm ")
+						let permsToReturn = [permission];//returned perm will added in this.
+
+						//2. if permission is found in triggerPermArray then: 
+						//   -->iterate through its each element of array stored in this trigger permission.
+						for(const currentPerm of AUTO_ENABLE_PERMS_TRIGGER[permission])
+						{
+							//3. call this again function for recursion until returns value
+							let returnedPermissions = returnRequiredPermsArray(currentPerm);
+							//push returned array
+
+							permsToReturn.push(...returnedPermissions);
+						}
+
+						//4. remove duplicate values and return array
+						console.log("returnig array ",permsToReturn)
+						return [...new Set(permsToReturn)];
+					}
+					console.log("permission is not trigger perm ",[permission])
+					//return permission passed is not trigger permission
+					return [permission];
+				};
+
+				const autoEnablePerms = returnRequiredPermsArray(perm);
+				console.log("auto enable perms ",autoEnablePerms)
+				newPermissions = [...new Set([...newPermissions,...autoEnablePerms])];
+				console.log("new permissions",newPermissions)
 			}
 		}
 	}
@@ -302,7 +336,6 @@ async function updateTenantCustomRole(
 	return updatedRoleData;
 }
 
-
 async function assignRoleToMemberByIds(tenantId, roleId, memberId) {
 	//find tenant member
 	const tenantMember = await findTenantMemberByTenantAndMemberId(
@@ -320,19 +353,18 @@ async function assignRoleToMemberByIds(tenantId, roleId, memberId) {
 	if (tenantMember?.roles.includes(roleToAssign?._id))
 		throwAppError(ROLE_ERROR.ROLE_ALREADY_ASSIGNED);
 
-	console.log(roleToAssign._id)
+	console.log(roleToAssign._id);
 	//if both found then add role id to member roles
 	const updatedMember = await addRoleIdToMemberByIds(
 		tenantId,
 		memberId,
 		roleToAssign?._id
 	);
-	console.log(updatedMember)
+	console.log(updatedMember);
 	if (!updatedMember) throwAppError(CRUD_ERROR.UNABLE_TO_UPDATE);
 
 	return updatedMember;
 }
-
 
 async function removeRoleFromMemberByIds(tenantId, roleId, memberId) {
 	//find tenant member
@@ -341,7 +373,7 @@ async function removeRoleFromMemberByIds(tenantId, roleId, memberId) {
 		memberId
 	);
 
-	console.log(tenantMember)
+	console.log(tenantMember);
 	if (!tenantMember) throwAppError(MEMBER_ERROR.MEMBER_NOT_FOUND);
 
 	//find role
@@ -349,10 +381,10 @@ async function removeRoleFromMemberByIds(tenantId, roleId, memberId) {
 
 	if (!roleToRemove) throwAppError(ROLE_ERROR.ROLE_NOT_FOUND);
 
-	if (!tenantMember?.roles.includes(roleToRemove?._id)) throwAppError(ROLE_ERROR.ROLE_NOT_ASSIGNED);
+	if (!tenantMember?.roles.includes(roleToRemove?._id))
+		throwAppError(ROLE_ERROR.ROLE_NOT_ASSIGNED);
 
-
-	console.log(roleToRemove._id)
+	console.log(roleToRemove._id);
 	//if both found then add role id to member roles
 	const updatedMember = await removeRoleIdFromMemberByIds(
 		tenantId,
@@ -360,12 +392,10 @@ async function removeRoleFromMemberByIds(tenantId, roleId, memberId) {
 		roleToRemove?._id
 	);
 
-
 	if (!updatedMember) throwAppError(CRUD_ERROR.UNABLE_TO_UPDATE);
 
 	return updatedMember;
 }
-
 
 module.exports = {
 	getCombinedPermsOfRolesByRoleIds,
@@ -379,5 +409,5 @@ module.exports = {
 	createCustomRoleForTenant,
 	updateTenantCustomRole,
 	assignRoleToMemberByIds,
-	removeRoleFromMemberByIds
+	removeRoleFromMemberByIds,
 };

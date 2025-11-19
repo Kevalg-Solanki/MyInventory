@@ -7,7 +7,10 @@ const verifyToken = require("../../middlewares/verifyToken");
 const validateRequest = require("../../middlewares/validateRequest");
 
 //validators
-const { createTenantCustomRoleSchema, updateTenantCustomRoleDetailsSchema } = require("./tenantRole.validation");
+const {
+	createTenantCustomRoleSchema,
+	updateTenantCustomRoleDetailsSchema,
+} = require("./tenantRole.validation");
 
 //controllers
 const {
@@ -24,10 +27,8 @@ const {
 	removeRoleFromTenantMember,
 } = require("./tenantRole.controller");
 
-
-
 //crete controller
-const 	tenantRoleRouter = require("express").Router();
+const tenantRoleRouter = require("express").Router();
 
 //**Get all roles without permissions
 tenantRoleRouter.get(
@@ -67,7 +68,7 @@ tenantRoleRouter.get(
 	verifyToken,
 	verifyRolePermission(PERMS_SET.ROLE_GET_MEMBER_ROLES_PERMS),
 	getTenantMemberRolesWithoutPerms
-)
+);
 
 //**Get tenant's member/user roles with permissions
 tenantRoleRouter.get(
@@ -75,7 +76,7 @@ tenantRoleRouter.get(
 	verifyToken,
 	verifyRolePermission(PERMS_SET.ROLE_GET_MEMBER_ROLES_WITH_PERM),
 	getTenantMemberRolesWithPerms
-)
+);
 
 //**Get tenant's member/user combined permissions
 tenantRoleRouter.get(
@@ -83,7 +84,7 @@ tenantRoleRouter.get(
 	verifyToken,
 	verifyRolePermission(PERMS_SET.ROLE_GET_MEMBER_PERM_COMBINED_PERMS),
 	getTenantMemberCombinedPerms
-)
+);
 
 //**Create custome role for tenant
 tenantRoleRouter.post(
@@ -92,7 +93,7 @@ tenantRoleRouter.post(
 	verifyRolePermission(PERMS_SET.ROLE_CREATE_PERMS),
 	validateRequest(createTenantCustomRoleSchema),
 	createCustomRole
-)
+);
 
 //**Update custome role for tenant
 tenantRoleRouter.patch(
@@ -101,7 +102,7 @@ tenantRoleRouter.patch(
 	verifyRolePermission(PERMS_SET.ROLE_UPDATE_PERMS),
 	validateRequest(updateTenantCustomRoleDetailsSchema),
 	updateCustomRole
-)
+);
 
 //**Assign role to user in tenant
 tenantRoleRouter.patch(
@@ -109,7 +110,7 @@ tenantRoleRouter.patch(
 	verifyToken,
 	verifyRolePermission(PERMS_SET.ROLE_ASSIGN_REMOVE_PERMS),
 	assignRoleToTenantMember
-)
+);
 
 //**Remove role of user
 tenantRoleRouter.patch(
@@ -117,7 +118,14 @@ tenantRoleRouter.patch(
 	verifyToken,
 	verifyRolePermission(PERMS_SET.ROLE_ASSIGN_REMOVE_PERMS),
 	removeRoleFromTenantMember
-)
+);
+
+//**Delete tenant custome role
+tenantRoleRouter.delete(
+	"/:tenantId/:roleId",
+	verifyToken,
+	verifyRolePermission(PERMS_SET.ROLE_ASSIGN_REMOVE_PERMS),
+	removeRoleFromTenantMember
+);
 
 module.exports = tenantRoleRouter;
-	

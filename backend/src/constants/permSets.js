@@ -65,5 +65,9 @@ module.exports = {
 		PERMS.ROLE_GET_ALL_WITH_PERM,
 		PERMS.ROLE_ASSIGN_REMOVE
 	],
+	ROLE_DELETE_PERMS:[
+		PERMS.TENANT_LOGIN,
+		
+	],
 	
 };
