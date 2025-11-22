@@ -18,6 +18,14 @@ module.exports = {
 	//tenant.error
 	TENANT_ERROR: require("./tenant.error"),
 
+	//tenantRole.error
+	ROLE_ERROR: require("./tenantRole.error"),
+
+	//tenantMember.error
+	MEMBER_ERROR:require("./tenantMember.error"),
+
 	//communication.error.js
 	COMM_ERROR: require("./comms.error"),
+
+
 };

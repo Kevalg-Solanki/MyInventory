@@ -1,5 +1,6 @@
 //models
 const { UserModel } = require("../modules/user/user.model");
+const { convertStrToObjectId } = require("../utils");
 
 
 
@@ -27,7 +28,12 @@ async function findUserByCredential(credential) {
 	});
 }
 
-
+/**
+ * 
+ * @param {string} userId 
+ * @param {object} updatedUserData 
+ * @returns {object} - null or object
+ */
 async function updateUserById(userId,updatedUserData){
 	return await UserModel.findOneAndUpdate(
 			{ _id: userId, isDeleted: false, isActive: true },
@@ -35,6 +41,7 @@ async function updateUserById(userId,updatedUserData){
 			{ new: true }
 		);
 }
+
 
 
 module.exports = {

@@ -31,7 +31,7 @@ async function getTenantData(req, res, next) {
 		const { tenantId } = req.params;
 
 		const tenantData = await getTenantDataById(tenantId);
-
+		
 		return sendResponse(res, 200, "Tenant fetched successfully", {
 			tenantData,
 		});

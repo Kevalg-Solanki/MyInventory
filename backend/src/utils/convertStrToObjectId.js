@@ -1,5 +1,11 @@
+//external modules
 const { ObjectId } = require("mongodb");
+
+//constants
 const { ID_ERROR } = require("../constants");
+
+//utils
+const throwAppError = require("./throwAppError");
 
 /**
  *
