@@ -139,7 +139,7 @@ async function findRolesPermsByRoleIds(roleIds, withPerms = false) {
 /**
  * 
  * @param {string} tenantId - tenantId
- * @param {string} roleId - roleId to add
+ * @param {string} roleId - roleId to update
  * @param {object} updatedRoleData - Update role data
  * @returns 
  */
@@ -154,6 +154,22 @@ async function updateRoleByIds(tenantId,roleId,updatedRoleData) {
 	)
 }
 
+/**
+ * 
+ * @param {string} tenantId - tenantId
+ * @param {string} roleId - roleId to delete
+ * @returns - void
+ */
+async function deleteRoleByIds(tenantId,roleId) {
+	const convertedTenantId = await convertStrToObjectId(tenantId);
+	const convertedRoleId = await convertStrToObjectId(roleId);
+
+	return await TenantRoleModel.updateOne(
+		{_id:convertedRoleId,tenantId:convertedTenantId,isDeleted:false},
+		{$set: {isDeleted:true}}
+	)
+}
+
 module.exports = {
 	findAndCombinePermsFromAllRolesByRoleIds,
 	findAllRolesWithoutPermsByTenantId,
@@ -162,5 +178,6 @@ module.exports = {
 	findRoleDetailsWithPermsByIds,
 	findRolesPermsByRoleIds,
 	saveCustomTenantRole,
-	updateRoleByIds
+	updateRoleByIds,
+	deleteRoleByIds
 };

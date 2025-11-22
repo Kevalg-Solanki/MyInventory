@@ -17,6 +17,7 @@ const {
 	findRolesPermsByRoleIds,
 	saveCustomTenantRole,
 	updateRoleByIds,
+	deleteRoleByIds,
 } = require("../../repositories/tenantRole.repository");
 
 //utiles
@@ -397,6 +398,21 @@ async function removeRoleFromMemberByIds(tenantId, roleId, memberId) {
 	return updatedMember;
 }
 
+
+async function deleteTenantCustomRole(tenantId,roleId){
+
+	//check if role exist and not deleted
+	const roleInDatabase = await findRoleDetailsWithoutPermsByIds(tenantId,roleId);
+
+	if(!roleInDatabase) throwAppError(ROLE_ERROR.ROLE_NOT_FOUND);
+
+	//soft delete role
+	await deleteRoleByIds(tenantId,roleId)
+	
+
+	return;
+}
+
 module.exports = {
 	getCombinedPermsOfRolesByRoleIds,
 	getRoleListWithoutPermsByTenantId,
@@ -410,4 +426,5 @@ module.exports = {
 	updateTenantCustomRole,
 	assignRoleToMemberByIds,
 	removeRoleFromMemberByIds,
+	deleteTenantCustomRole
 };

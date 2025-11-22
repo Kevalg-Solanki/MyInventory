@@ -25,6 +25,7 @@ const {
 	updateCustomRole,
 	assignRoleToTenantMember,
 	removeRoleFromTenantMember,
+	deleteCustomRole,
 } = require("./tenantRole.controller");
 
 //crete controller
@@ -124,8 +125,10 @@ tenantRoleRouter.patch(
 tenantRoleRouter.delete(
 	"/:tenantId/:roleId",
 	verifyToken,
-	verifyRolePermission(PERMS_SET.ROLE_ASSIGN_REMOVE_PERMS),
-	removeRoleFromTenantMember
+	verifyRolePermission(PERMS_SET.ROLE_DELETE_PERMS),
+	deleteCustomRole
 );
+
+
 
 module.exports = tenantRoleRouter;

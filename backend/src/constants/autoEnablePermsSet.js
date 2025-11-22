@@ -1,5 +1,11 @@
 const PERMS = require("./permission");
 
+/**
+ * Defines permissions which are trigger permissions, if trigger permission found permission defined will 
+ * auto added to that permission of role
+ */
+
+
 //tenant
 const TENANT_UPDATE = [PERMS.TENANT_GET_ALL_DATA];
 

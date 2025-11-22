@@ -18,6 +18,7 @@ const {
 	updateTenantCustomRole,
 	getMemberRolesWithPermsByIds,
 	assignRoleToMemberByIds,
+	deleteTenantCustomRole,
 } = require("./tenantRole.service");
 
 //tenantRole/:tenantId
@@ -214,6 +215,19 @@ async function removeRoleFromTenantMember(req, res, next) {
 	}
 }
 
+//**DELETE /:tenantId/:roleId
+async function deleteCustomRole(req, res, next) {
+	try {
+		const { tenantId, roleId } = req.params;
+	
+		await deleteTenantCustomRole(tenantId,roleId);
+
+		return sendResponse(res,200,"Role deleted.");
+	} catch (error) {
+		next(error);
+	}
+}
+
 
 module.exports = {
 	getTenantAllRoleListWithoutPerms,
@@ -226,5 +240,6 @@ module.exports = {
 	createCustomRole,
 	updateCustomRole,
 	assignRoleToTenantMember,
-	removeRoleFromTenantMember
+	removeRoleFromTenantMember,
+	deleteCustomRole
 };
