@@ -7,9 +7,9 @@ const userDeactivationEmailTemplate = require("./templates/userDeactivationEmail
 //utils
 const fillUpHtmlTemplate = require("./fillUpHtmlTemplateService.js");
 
+//** -function used for prepare email template for verify credential is just replace code in email template
 
 /**
- * -function used for prepare email template for verify credential is just replace code in email template
  * @param {string} email - receiver email
  * @param {Object} metadata - containains otp and expireIn time
  * @returns {Object} - response
@@ -34,6 +34,11 @@ async function prepareVerifyCredentialEmailTemplate(email, metadata) {
 	};
 }
 
+/**
+ * @param {string} email - receiver email
+ * @param {Object} metadata - verification code
+ * @returns {Object} - response
+ */
 async function prepareForgotPassEmailTemplate(email, metadata) {
 	const { otp, expireIn } = metadata;
 	//prepare html template for email to send
@@ -53,6 +58,11 @@ async function prepareForgotPassEmailTemplate(email, metadata) {
 	};
 }
 
+/**
+ * @param {string} email - receiver email
+ * @param {Object} metadata - data to send
+ * @returns {Object} - response
+ */
 async function prepareTenantDeactivationEmailTemplate(email, metadata) {
 	// replasables
 	// [[tenantName]],[[reason]], [[actedByName]], [[actedByEmail]], [[deactivatedAt]], [[reactivationWindowHours]]
@@ -87,10 +97,13 @@ async function prepareTenantDeactivationEmailTemplate(email, metadata) {
 	};
 }
 
+/**
+ * @param {string} email - receiver email
+ * @param {Object} metadata - data to send
+ * @returns {Object} - response
+ */
 async function prepareTenantDeleteEmailTemplate(email,metadata) {
 	// replasables
-	// [[tenantName]],[[reason]], [[actedByName]], [[actedByEmail]], [[deactivatedAt]], [[reactivationWindowHours]]
-	// [[manageTenantUrl]], [[requestReactivationUrl]], [[helpCenterUrl]], [[contactSupportUrl]], [[privacyPolicyUrl]]
 	const {
 		tenantName,
 		tenantId,
@@ -121,11 +134,13 @@ async function prepareTenantDeleteEmailTemplate(email,metadata) {
 	};
 }
 
-
+/**
+ * @param {string} email - receiver email
+ * @param {Object} metadata - data to send
+ * @returns {Object} - response
+ */
 async function prepareUserDeactivationEmailTemplate(email, metadata) {
 	// replasables
-	// [[tenantName]],[[reason]], [[actedByName]], [[actedByEmail]], [[deactivatedAt]], [[reactivationWindowHours]]
-	// [[manageTenantUrl]], [[requestReactivationUrl]], [[helpCenterUrl]], [[contactSupportUrl]], [[privacyPolicyUrl]]
 	const {
 		userName,
 		userId,
@@ -160,6 +175,44 @@ async function prepareUserDeactivationEmailTemplate(email, metadata) {
 	};
 }
 
+/**
+ * @param {string} email - receiver email
+ * @param {Object} metadata - data to send
+ * @returns {Object} - response
+ */
+async function prepareTenantInviteEmailTemplate(email, metadata) {
+	// replasables
+
+	// const {
+	// 	userName,
+	// 	userId,
+	// 	userEmail,
+	// 	userMobile,
+	// 	actedByName,
+	// 	actedByEmail,
+	// 	actedByMobile,
+	// 	deactivatedAt,
+	// 	reactivationWindowHours,
+	// } = metadata;
+
+	let htmlTemplate = fillUpHtmlTemplate(userDeactivationEmailTemplate, {
+		"[[invitorName]]": metadata?.invitorName,
+		"[[tenantName]]":metadata?.tenantName,
+		"[[tenantCategory]]":metadata?.tenantCategory,
+		"[[tenantOwnerName]]": metadata?.ownerName,
+		"[[tenantAddress]]": metadata?.tenantAddress,
+		"[[expirationDays]]":"30" 
+	});
+
+	return {
+		success: true,
+		email,
+		subject: "Account deactivation",
+		text: "About deactivation of your Account",
+		htmlTemplate,
+	};
+}
+
 
 
 
@@ -168,5 +221,6 @@ module.exports = {
 	prepareForgotPassEmailTemplate,
 	prepareTenantDeactivationEmailTemplate,
 	prepareTenantDeleteEmailTemplate,
-	prepareUserDeactivationEmailTemplate
+	prepareUserDeactivationEmailTemplate,
+	prepareTenantInviteEmailTemplate
 };

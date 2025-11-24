@@ -11,7 +11,7 @@ module.exports = {
 		code: "TENANT_DEACTIVATED",
 		httpStatus: 403,
 		message:
-			"Tenant you trying to access is deactivated. Please visit recovery page by clicking recover tenant/account in singUp page.",
+			"Tenant you trying to access is deactivated. If your owner then please visit recovery page by clicking recover tenant/account in singUp page.",
 	},
 
 	//--404

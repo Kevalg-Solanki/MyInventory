@@ -13,6 +13,7 @@ const {
 	prepareTenantDeactivationEmailTemplate,
 	prepareTenantDeleteEmailTemplate,
 	prepareUserDeactivationEmailTemplate,
+	prepareTenantInviteEmailTemplate,
 } = require("./prepareEmailFromTemplate.js");
 
 //utils
@@ -35,6 +36,7 @@ async function sendMail(type, destination, metadata = {}) {
 
 		//select which template to prepare
 		switch (type) {
+			//--AUTH
 			case OTP_TYPE.VERIFY_CREDENTIAL:
 				preparedEmailTemplate = await prepareVerifyCredentialEmailTemplate(
 					destination,
@@ -49,26 +51,38 @@ async function sendMail(type, destination, metadata = {}) {
 				);
 				break;
 
+		    //--TENANT: DEACTIVATE, DELETE, PLATFORM-AND-TENANT-INVITE
+				//DEACTIVATED
 			case MESSAGE_TYPE.TENANT_DEACTIVATED_MSG:
 				preparedEmailTemplate = await prepareTenantDeactivationEmailTemplate(
 					destination,
 					metadata
 				);
 				break;
-
+				//DELETED
 			case MESSAGE_TYPE.TENANT_DELETED_MSG:
 				preparedEmailTemplate = await prepareTenantDeleteEmailTemplate(
 					destination,
 					metadata
 				);
 				break;
-			
+				//PLATFORM-AND-TENANT-INVITE
+			case MESSAGE_TYPE.PLATFORM_AND_TENANT_INVITE:
+				preparedEmailTemplate = await prepareTenantInviteEmailTemplate(
+					destination,
+					metadata
+				)
+
+			//--USER: DEACTIVATE
 			case MESSAGE_TYPE.USER_DEACTIVATED_MSG:
 				preparedEmailTemplate = await prepareUserDeactivationEmailTemplate(
 					destination,
 					metadata
 				);
 				break;
+
+			default:
+				preparedEmailTemplate = null;
 		}
 
 		//if there is not template for type of email

@@ -48,6 +48,12 @@ tenantMemberSchema.index(
     {unique:true, partialFilterExpression:{isDeleted:{$ne:true}}}
 );
 
+tenantMemberSchema.set("toJSON", {
+	transform(doc, ret) {
+		delete ret.__v;
+		return ret;
+	},
+});
 
 const TenantMemberModel = mongoose.model("Tenant-Member", tenantMemberSchema);
 

@@ -16,7 +16,7 @@ const ROLE_PRESETS = require("../../constants/rolesPresets.js");
 
 //repositories
 const {
-	getTenantDataById,
+	fetchTenantDataById,
 } = require("../../repositories/tenant.repository.js");
 
 //utiles
@@ -488,7 +488,7 @@ async function updateTenantData(tenantId, tenantData) {
 async function deactivateTenantAndNotifyOwner(tenanId, userData) {
 	try {
 		//check tenant deactivated
-		const tenantData = await getTenantDataById(tenanId);
+		const tenantData = await fetchTenantDataById(tenanId);
 
 		if (!tenantData?.isActive) {
 			throwAppError(TENANT_ERROR.TENANT_DEACTIVATED);
@@ -538,7 +538,7 @@ async function deactivateTenantAndNotifyOwner(tenanId, userData) {
 async function deleteTenantAndNotifyOwner(tenanId, userData) {
 	try {
 		//check tenant deactivated
-		const tenantData = await getTenantDataById(tenanId);
+		const tenantData = await fetchTenantDataById(tenanId);
 
 		if (tenantData?.isDeleted) {
 			throwAppError(TENANT_ERROR.TENANT_DELETED);
@@ -592,7 +592,7 @@ module.exports = {
 	setupDefaultTenantRoleAndAssignToUser,
 	setupDefaultTanantRoles,
 	createAndSetupTenantForUser,
-	getTenantDataById,
+	fetchTenantDataById,
 	getTenantsConnectedToUserById,
 	loginUserIntoTenant,
 	updateTenantData,

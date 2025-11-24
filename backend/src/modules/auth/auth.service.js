@@ -9,6 +9,7 @@ const { OTP_TYPE, SESSION_OTP_TYPE } = require("../../constants/type.js");
 //models
 const otpModel = require("../otp/otp.model");
 const { UserModel, UserClass } = require("../user/user.model");
+const UserSettingModel = require("../settings/userSettings.model.js");
 
 //repositories
 const {
@@ -25,7 +26,6 @@ const {
 const { sendOtp } = require("../otp/otp.service.js");
 const validateOtp = require("../../utils/validateOtp.js");
 const throwAppError = require("../../utils/throwAppError.js");
-const UserSettingModel = require("../settings/userSettings.model.js");
 
 /**
  *

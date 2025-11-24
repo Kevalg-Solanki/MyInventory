@@ -8,10 +8,16 @@ const { OTP_TYPE,MESSAGE_TYPE } = require("../constants/type.js");
 
 //service
 const throwAppError = require("./throwAppError.js");
-const { COMM_ERROR, OTP_ERROR } = require("../constants/index.js");
+const { COMM_ERROR } = require("../constants/index.js");
 
-
-async function sendSms(type, destination,metadata){
+/**
+ * 
+ * @param {string} type - type of messsage eg.VERIFY-CREDENTIAL,TENANT-DELETE-MSG
+ * @param {string} destination - email or mobile 
+ * @param {object} metadata - data to required to send
+ * @returns {null} - throw error if failed
+ */
+async function sendSms(type, destination,metadata={}){
 	try {
 		//set proper message
 		let message;

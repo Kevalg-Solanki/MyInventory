@@ -4,7 +4,7 @@ const sendResponse = require("../../utils/sendResponse");
 //service
 const {
 	createAndSetupTenantForUser,
-	getTenantDataById,
+	fetchTenantDataById,
 	getTenantsConnectedToUserById,
 	loginUserIntoTenant,
 	updateTenantData,
@@ -30,7 +30,7 @@ async function getTenantData(req, res, next) {
 	try {
 		const { tenantId } = req.params;
 
-		const tenantData = await getTenantDataById(tenantId);
+		const tenantData = await fetchTenantDataById(tenantId);
 		
 		return sendResponse(res, 200, "Tenant fetched successfully", {
 			tenantData,

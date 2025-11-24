@@ -14,6 +14,7 @@ const {
 //utils
 const throwAppError = require("../utils/throwAppError.js");
 const { isValidObjectId } = require("../utils");
+const { fetchTenantDataById, findTenantStatusById } = require("../repositories/tenant.repository.js");
 
 /**
  * ----- ROLE PERMISSION VERIFICATION FLOW SUMMERY -----
@@ -55,6 +56,13 @@ const verifyRolePermission = (requiredPerms = []) => {
 					return throwError(TENANT_ERROR.TENANT_NOT_FOUND);
 			}
 
+			//find tenant 
+			const tenantData = await findTenantStatusById(tenantId);
+
+			if(tenantData?.isDeleted) throwError(TENANT_ERROR.TENANT_NOT_FOUND);
+
+			if(!tenantData?.isActive) throwError(TENANT_ERROR.TENANT_DEACTIVATED)
+			
 			//Verify user is member of tenant or not
 			const tenantMember = await findTenantMemberByIds(tenantId,req.user._id);
 
