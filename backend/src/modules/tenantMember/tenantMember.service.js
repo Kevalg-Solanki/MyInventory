@@ -1,5 +1,5 @@
 //constants
-const { USER_ERROR } = require("../../constants");
+const { USER_ERROR, COMM_ERROR, REQUEST_TYPE } = require("../../constants");
 const { MESSAGE_TYPE } = require("../../constants/type.js");
 
 //repository
@@ -39,16 +39,16 @@ async function inviteUserToPlatformAndSendTenantInviteRequest(
 	type,
 	credential
 ) {
-	//check user exist with credential
+	//Check user exist with credential
 	const userInDatabase = assertUserExistByCredential(credential);
 
 	if (userInDatabase) throwAppError(USER_ERROR.USER_EXISTS);
 
-	//send invitation on email/mobile
+	//Send invitation on email/mobile
+	const tenantData = await tenantRepo.fetchSelectedTenantFieldsById(tenantId,
+							"_id tenantName tenantCategory ownerId street landmark city state country zip");
 
-	const tenantData = await tenantRepo.fetchTenantDataById(tenantId);
-
-	//finder owner name
+	//Get owner name by owner id in tenantData
 	const ownerData = await userRepo.findUserById(tenantData?.ownerId);
 
 	const user = req.user;
@@ -58,8 +58,9 @@ async function inviteUserToPlatformAndSendTenantInviteRequest(
 		tenantName: tenantData?.tenantName,
 		tenantCategory: tenantData?.tenantCategory,
 		tenantAddress: `${tenantData?.street}, ${tenantData?.landmark}, ${tenantData?.city}, ${state}, ${country}, ${zip}`,
-        tenantOwnerName:`${tenantData?.firstName,tenantData?.lastName}`
+        tenantOwnerName:`${ownerData?.firstName,ownerData?.lastName}`
 	};
+
 	if (type == "mobile")
     {
 		await sendSms(MESSAGE_TYPE.PLATFORM_AND_TENANT_INVITE, credential, {payload});
@@ -68,6 +69,23 @@ async function inviteUserToPlatformAndSendTenantInviteRequest(
     {
         await sendMail(MESSAGE_TYPE.PLATFORM_AND_TENANT_INVITE, credential, {payload});
     }
+	else
+	{
+		throwAppError(COMM_ERROR.UNSUPPORTED_CREDENTIAL_TYPE);
+	}
+
+
+	//Open the invite request for ther user to tenant
+	const inviteRequestToSave = {
+		senderId:user._id,
+		receiverCredential:credential,
+		tenantId: tenantData?._id,
+		requestType: REQUEST_TYPE.INVITE_TO_TENANT_REQUEST
+		
+
+		
+	}
+
 }
 
 module.exports = {

@@ -39,6 +39,11 @@ async function sendSms(type, destination,metadata={}){
 				message = `Your ${metadata?.tenantName} tenant is deleted from MyInventory. Please contact us on support phone number or email if this action was not intended.`
 				break;
 
+			case MESSAGE_TYPE.PLATFORM_AND_TENANT_INVITE:
+				message = `Hey! your invited by ${metadata?.invitorName} in ${metadata?.tenantName} (${metadata?.tenantCategory}) at address ${metadata?.tenantAddress}.
+				Owned by ${metadata?.tenantOwnerName}. You can accept or reject this invitation by login in MyInventory or signUp if you don't have account in MyInventory`
+				break;
+
 			case MESSAGE_TYPE.USER_DEACTIVATED_MSG:
 				message=`Your ${metadata?.userName} account is deleted from MyInventory. Please contact us on support phone number or email if this action was not intended.`
 				break;

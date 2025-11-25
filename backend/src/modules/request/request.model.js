@@ -2,15 +2,14 @@ const mongoose = require("mongoose");
 
 const requestSchema = new mongoose.Schema(
 	{
-		sender: {
+		senderId: {
 			type: mongoose.Schema.Types.ObjectId,
 			ref: "User",
 			required: true,
 		},
-		receiver: {
+		receiverId: {
 			type: mongoose.Schema.Types.ObjectId,
 			ref: "User",
-			required: true,
 		},
 		receiverCredential: {
 			type: String,
@@ -24,22 +23,22 @@ const requestSchema = new mongoose.Schema(
 			ref: "Tenant",
 			required: true,
 		},
-		type: {
+		requestType: {
 			type: String,
 			required: true,
 		},
-		status: {
+		requestStatus: {
 			type: String,
 			enum: ["pending", "accepted", "rejected"],
 			default: "pending",
 			required: true,
 		},
-		title: {
+		requestTitle: {
 			type: String,
 			required: true,
 			maxlength: 20,
 		},
-		message: {
+		requestMessage: {
 			type: String,
 			required: true,
 			maxlength: 50,

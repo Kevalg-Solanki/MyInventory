@@ -2,6 +2,8 @@
 //only import and export
 
 module.exports = {
+	//--ERRORS
+
 	//auth.error.js
 	AUTH_ERROR: require("./auth.error").AUTH,
 	ID_ERROR: require("./auth.error").ID,
@@ -15,17 +17,20 @@ module.exports = {
 	//user.error.js
 	USER_ERROR: require("./user.error"),
 
-	//tenant.error
+	//tenant.error.js
 	TENANT_ERROR: require("./tenant.error"),
 
-	//tenantRole.error
+	//tenantRole.error.js
 	ROLE_ERROR: require("./tenantRole.error"),
 
-	//tenantMember.error
+	//tenantMember.error.js
 	MEMBER_ERROR:require("./tenantMember.error"),
 
 	//communication.error.js
 	COMM_ERROR: require("./comms.error"),
 
+	//--TYPES
 
+	//requestTypes.js
+	REQUEST_TYPE: require("./requestTypes");
 };

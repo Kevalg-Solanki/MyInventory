@@ -1,0 +1,3 @@
+module.exports = { 
+    INVITE_TO_TENANT_REQUEST:"INVITE-TO-TENANT-REQUEST"
+}
