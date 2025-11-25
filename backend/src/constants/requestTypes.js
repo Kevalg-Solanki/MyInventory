@@ -1,3 +1,8 @@
 module.exports = { 
-    INVITE_TO_TENANT_REQUEST:"INVITE-TO-TENANT-REQUEST"
+    TENANT_INVITE_REQ:{
+        type:"TENANT-INVITE-REQ",
+        title:"Join request",
+        message:"Your invited to join [[tenantName]]"
+    }
+
 }

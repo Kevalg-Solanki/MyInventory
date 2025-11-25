@@ -11,7 +11,7 @@ const { TenantMemberModel } = require("../tenantMember/tenantMember.model.js");
 
 //constants
 const { TENANT_ERROR, CRUD_ERROR, AUTH_ERROR } = require("../../constants");
-const { MESSAGE_TYPE } = require("../../constants/type.js");
+const { MESSAGE_TYPE } = require("../../constants/messageType.js");
 const ROLE_PRESETS = require("../../constants/rolesPresets.js");
 
 //repositories

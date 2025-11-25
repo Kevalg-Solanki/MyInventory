@@ -7,9 +7,10 @@ const verifyToken = require("../../middlewares/verifyToken");
 const validateRequest = require("../../middlewares/validateRequest");
 
 //validators
-const { inviteToPlatformSchema } = require("./tenantMember.validation");
+const memberValidators = require("./tenantMember.validation");
 
 //controllers
+const memberControllers = require("./tenantMember.controller");
 
 //create controller
 const tenantMemberRouter = require("express").Router();
@@ -19,7 +20,8 @@ tenantMemberRouter.post(
 	"/:tenantId/invite-platform",
 	verifyToken,
 	verifyRolePermission(PERMS_SET.REQUEST_SEND_PLATFORM_INVITE_PERMS),
-    validateRequest(inviteToPlatformSchema)
+    validateRequest(memberValidators.inviteToPlatformSchema),
+	memberControllers.inviteUserToPlatformAndTenant
 );
 
 //

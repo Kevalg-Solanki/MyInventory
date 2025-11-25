@@ -29,8 +29,10 @@ module.exports = {
 	//communication.error.js
 	COMM_ERROR: require("./comms.error"),
 
+	//request.error.js
+	REQ_ERROR: require("./request.errors"),
 	//--TYPES
 
 	//requestTypes.js
-	REQUEST_TYPE: require("./requestTypes");
+	REQUEST_TYPE: require("./requestTypes")
 };

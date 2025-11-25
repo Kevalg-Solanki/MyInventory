@@ -14,7 +14,7 @@ async function findUserById(userId) {
 	return await UserModel.findOne({ _id: userId, isDeleted: false });
 }
 
-/**
+/**	
  * -find user with credential in database
  * @param {string} credential - credential with find user
  * @return {Object} - if user exist returns user info or if not then returns null

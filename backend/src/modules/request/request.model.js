@@ -59,9 +59,10 @@ const requestSchema = new mongoose.Schema(
 
 
 //Create compound unique index on the tenantId,receiver,receiverCredential
-requestSchema.index({tenantId:1,receiver:1,receiverCredential:1},{unique:true});
+// requestSchema.index({tenantId:1,receiverCredential:1},{unique:true});
+requestSchema.index({tenantId:1,receiverCredential:1,isActive:1});
+requestSchema.index({receiverId:1,isActive:1});
 
-requestSchema.index({receiver:1,isDeleted:1});
 
 requestSchema.set("toJSON", {
 	transform(doc, ret) {

@@ -6,7 +6,7 @@ const { UserModel } = require("./user.model");
 
 //constants
 const { USER_ERROR, CRUD_ERROR } = require("../../constants");
-const { MESSAGE_TYPE } = require("../../constants/type");
+const { MESSAGE_TYPE } = require("../../constants/messageType");
 
 //repositories
 const {

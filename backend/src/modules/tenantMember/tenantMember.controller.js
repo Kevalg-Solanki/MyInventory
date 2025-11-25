@@ -3,9 +3,10 @@ const { TENANT_ERROR } = require("../../constants");
 
 //utils
 const throwAppError = require("../../utils/throwAppError");
+const sendResponse = require("../../utils/sendResponse.js");
 
 //services
-const SERVICE = require("./tenantMember.service");
+const services = require("./tenantMember.service");
 
 
 
@@ -18,6 +19,10 @@ async function inviteUserToPlatformAndTenant(req,res,next){
         const {tenantId} = req.params;
 
         if(!tenantId) throwAppError(TENANT_ERROR.TENANT_NOT_FOUND)
+        
+        await services.inviteUserToPlatformAndSendInviteRequest(tenantId,type,credential,req.user);
+
+        return sendResponse(res,200,"Invitation to platform and invite request send!.");
     }
     catch(error)
     {

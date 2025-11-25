@@ -23,7 +23,7 @@ const validateOtp = require("../../utils/validateOtp.js");
 const sendResponse = require("../../utils/sendResponse.js");
 
 //constants
-const { OTP_TYPE, SESSION_OTP_TYPE } = require("../../constants/type.js");
+const { OTP_TYPE, SESSION_OTP_TYPE } = require("../../constants/messageType.js");
 
 //verify-credentials controller
 async function verifyCredentialAndSendOtp(req, res, next) {

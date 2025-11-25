@@ -4,7 +4,7 @@ const bcrypt = require("bcrypt");
 
 //constants
 const { PASS_ERROR, TOKEN_ERROR, USER_ERROR } = require("../../constants");
-const { OTP_TYPE, SESSION_OTP_TYPE } = require("../../constants/type.js");
+const { OTP_TYPE, SESSION_OTP_TYPE } = require("../../constants/messageType.js");
 
 //models
 const otpModel = require("../otp/otp.model");
