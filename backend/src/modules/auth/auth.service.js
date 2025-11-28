@@ -12,10 +12,7 @@ const { UserModel, UserClass } = require("../user/user.model");
 const UserSettingModel = require("../settings/userSettings.model.js");
 
 //repositories
-const {
-	findUserById,
-	findUserByCredential,
-} = require("../../repositories/user.repository.js");
+const userRepo = require("../../repositories/user.repository.js");
 
 //utils
 const { generateOtp } = require("../../utils/otpGenerator.js");
@@ -33,7 +30,7 @@ const throwAppError = require("../../utils/throwAppError.js");
  * @returns {Object}
  */
 async function assertUserExistAndActiveByCredential(credential) {
-	const userInDatabase = await findUserByCredential(credential);
+	const userInDatabase = await userRepo.findUserByCredential(credential);
 
 	if (!userInDatabase) {
 		throwAppError(USER_ERROR.USER_NOT_FOUND);
@@ -55,7 +52,7 @@ async function assertUserExistAndActiveByCredential(credential) {
  * @returns {Object}
  */
 async function assertUseExistAndActiveById(userId) {
-	const userInDatabase = await findUserById(userId);
+	const userInDatabase = await userRepo.findUserById(userId);
 
 	if (!userInDatabase) {
 		throwAppError(USER_ERROR.USER_NOT_FOUND);
@@ -188,7 +185,7 @@ async function saveUserInDatabase(userData) {
  */
 async function assertUserDoesNotExistByCredential(credential) {
 	//check if user exist
-	const existingUserInDatabase = await findUserByCredential(credential);
+	const existingUserInDatabase = await userRepo.findUserByCredential(credential);
 
 	//if user exist in data base then throw error
 	if (existingUserInDatabase) {
@@ -244,7 +241,7 @@ async function getUserRegistrationRequiredData(savedUser) {
  */
 async function loginUser(userData) {
 	//1. find user in database
-	const userInDatabase = await findUserByCredential(userData.credential);
+	const userInDatabase = await userRepo.findUserByCredential(userData.credential);
 
 	//if user does not exist
 	if (!userInDatabase) {
@@ -409,7 +406,7 @@ async function verifyOldPassAndSetNewPass(user, oldPassword, newPassword) {
 }
 
 module.exports = {
-	findUserByCredential,
+
 	assertUserDoesNotExistByCredential,
 	sendVericationOtp,
 	getNewOtp,
@@ -420,7 +417,6 @@ module.exports = {
 	findUserAndSentOtp,
 	verifyForgotPassOtp,
 	changeUserPassword,
-	findUserById,
 	assertUseExistAndActiveById,
 	verifyOldPassAndSetNewPass,
 };

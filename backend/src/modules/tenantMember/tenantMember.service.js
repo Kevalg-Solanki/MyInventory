@@ -11,7 +11,7 @@ const requestRepo = require("../../repositories/request.repository.js");
 const throwAppError = require("../../utils/throwAppError");
 const {sendSms}  = require("../../utils/smsService.js");
 const { sendMail } = require("../../utils/emailService.js");
-const { createRequestByData } = require("../../repositories/request.repository.js");
+
 
 //-- helper functins
 
@@ -94,7 +94,7 @@ async function inviteUserToPlatformAndSendInviteRequest(
 		requestMessage:reqMessage
 	}
 
-	const savedRequestData = await createRequestByData(inviteRequestToSave);
+	const savedRequestData = await requestRepo.createRequestByData(inviteRequestToSave);
 
 	if(!savedRequestData) throwAppError(CRUD_ERROR.UNABLE_TO_SAVE);
 
