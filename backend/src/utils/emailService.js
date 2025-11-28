@@ -4,18 +4,9 @@ const nodemailer = require("nodemailer");
 //constants
 const { COMM_ERROR } = require("../constants/index.js");
 const SENDER_EMAIL = process.env.EMAIL_USER;
-const { OTP_TYPE, MESSAGE_TYPE } = require("../constants/messageType.js");
 
 //template prepare services
-const {
-	prepareVerifyCredentialEmailTemplate,
-	prepareForgotPassEmailTemplate,
-	prepareTenantDeactivationEmailTemplate,
-	prepareTenantDeleteEmailTemplate,
-	prepareUserDeactivationEmailTemplate,
-	prepareTenantInviteEmailTemplate,
-	preparePlatformInviteEmailTemplate
-} = require("./prepareEmailFromTemplate.js");
+const prepareEmailTemplate = require("./prepareEmailTemplate.js");
 
 //utils
 const throwAppError = require("./throwAppError.js");
@@ -31,75 +22,22 @@ const throwAppError = require("./throwAppError.js");
  * @return {Object} - otp sent success or fail and error
  */
 
-async function sendMail(type, destination, metadata = {}) {
+async function sendMail(emailType, destination, metadata = {}) {
 	try {
-		let preparedEmailTemplate;
 
-		//select which template to prepare
-		switch (type) {
-			//--AUTH
-			case OTP_TYPE.VERIFY_CREDENTIAL:
-				preparedEmailTemplate = await prepareVerifyCredentialEmailTemplate(
-					destination,
-					metadata
-				);
-				break;
-
-			case OTP_TYPE.FORGOT_PASSWORD:
-				preparedEmailTemplate = await prepareForgotPassEmailTemplate(
-					destination,
-					metadata
-				);
-				break;
-
-			//--TENANT: DEACTIVATE, DELETE, PLATFORM-AND-TENANT-INVITE
-			//DEACTIVATED
-			case MESSAGE_TYPE.TENANT_DEACTIVATED_MSG:
-				preparedEmailTemplate = await prepareTenantDeactivationEmailTemplate(
-					destination,
-					metadata
-				);
-				break;
-			//DELETED
-			case MESSAGE_TYPE.TENANT_DELETED_MSG:
-				preparedEmailTemplate = await prepareTenantDeleteEmailTemplate(
-					destination,
-					metadata
-				);
-				break;
-			//PLATFORM-INVITE
-			case MESSAGE_TYPE.PLATFORM_INVITE:
-				preparedEmailTemplate = await preparePlatformInviteEmailTemplate(
-					destination,
-					metadata
-				);
-				break;
-
-			case MESSAGE_TYPE.TENANT_INVITE:
-				preparedEmailTemplate = await prepareTenantInviteEmailTemplate(
-					destination,
-					metadata
-				);
-				break;
-			//--USER: DEACTIVATE
-			case MESSAGE_TYPE.USER_DEACTIVATED_MSG:
-				preparedEmailTemplate = await prepareUserDeactivationEmailTemplate(
-					destination,
-					metadata
-				);
-				break;
-
-			default:
-				preparedEmailTemplate = null;
-		}
+		let preparedEmailTemplate = await prepareEmailTemplate(
+			emailType,
+			destination,
+			metadata
+		);
 
 		//if there is not template for type of email
-		if (!preparedEmailTemplate) {
-			throwAppError(COMM_ERROR.TEMPLATE_NOT_FOUND);
-		}
+		if (!preparedEmailTemplate) throwAppError(COMM_ERROR.TEMPLATE_NOT_FOUND);
+		
 
 		//now send prepared email data to the sendEmailService
 		return await sendMailService(preparedEmailTemplate);
+		
 	} catch (error) {
 		throw error;
 	}

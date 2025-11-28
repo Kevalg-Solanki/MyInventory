@@ -9,7 +9,7 @@ const requestRepo = require("../../repositories/request.repository.js");
 
 //utils
 const throwAppError = require("../../utils/throwAppError");
-const { sendSms } = require("../../utils/smsService.js");
+const {sendSms}  = require("../../utils/smsService.js");
 const { sendMail } = require("../../utils/emailService.js");
 const { createRequestByData } = require("../../repositories/request.repository.js");
 
@@ -60,10 +60,7 @@ async function inviteUserToPlatformAndSendInviteRequest(
 	const tenantData = await tenantRepo.fetchSelectedTenantFieldsById(tenantId,
 							"_id tenantName tenantCategory ownerId street landmark city state country zip");
 
-	//Get owner name by owner id in tenantData
-	const ownerData = await userRepo.findUserById(tenantData?.ownerId);
-
-	
+	//Get owner name by owner id in tenantData	
 	console.log(invitorUserData);
 	const payload = {
 		invitorName: `${invitorUserData?.firstName} ${invitorUserData?.lastName}`,
@@ -85,13 +82,16 @@ async function inviteUserToPlatformAndSendInviteRequest(
 	}
 
 	//Open the invite request for ther user to tenant
+
+	//replace keyword
+	let reqMessage = REQUEST_TYPE.TENANT_INVITE_REQ.message.replaceAll("[[tenantName]]",tenantData?.tenantName)
 	const inviteRequestToSave = {
 		senderId:invitorUserData._id,
 		receiverCredential:credential,
 		tenantId: tenantData?._id,
 		requestType: REQUEST_TYPE.TENANT_INVITE_REQ.type,
 		requestTitle: REQUEST_TYPE.TENANT_INVITE_REQ.title,
-		requestMessage:REQUEST_TYPE.TENANT_INVITE_REQ.message
+		requestMessage:reqMessage
 	}
 
 	const savedRequestData = await createRequestByData(inviteRequestToSave);
