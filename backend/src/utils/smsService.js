@@ -20,6 +20,7 @@ async function sendSms(type, destination, metadata = {}) {
 		//set proper message
 		let message;
 		console.log(type);
+		console.log(metadata)
 		switch (type) {
 			case OTP_TYPE.VERIFY_CREDENTIAL:
 				message = `Your verification OTP for MyInventory is ${metadata?.otp}. It will expire in ${metadata?.expiryTime} minutes. If you did not request this, please ignore.`;

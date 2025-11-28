@@ -64,18 +64,20 @@ async function inviteUserToPlatformAndSendInviteRequest(
 	const ownerData = await userRepo.findUserById(tenantData?.ownerId);
 
 	
-
+	console.log(invitorUserData);
 	const payload = {
 		invitorName: `${invitorUserData?.firstName} ${invitorUserData?.lastName}`,
 	};
+	
+	console.log(payload)
 
 	if (type == "mobile")
     {
-		await sendSms(MESSAGE_TYPE.PLATFORM_INVITE, credential, {payload});
+		await sendSms(MESSAGE_TYPE.PLATFORM_INVITE, credential, payload);
     }
     else if(type=="email")
     {
-        await sendMail(MESSAGE_TYPE.PLATFORM_INVITE, credential, {payload});
+        await sendMail(MESSAGE_TYPE.PLATFORM_INVITE, credential, payload);
     }
 	else
 	{
