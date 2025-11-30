@@ -2,20 +2,15 @@
 const sendResponse = require("../../utils/sendResponse");
 
 //service
-const {
-	createAndSetupTenantForUser,
-	fetchTenantDataById,
-	getTenantsConnectedToUserById,
-	loginUserIntoTenant,
-	updateTenantData,
-	deactivateTenantAndNotifyOwner,
-	deleteTenantAndNotifyOwner,
-} = require("./tenant.service");
+const tenantServices = require("./tenant.service");
+
+//repositories
+const tenantRepo = require("../../repositories/tenant.repository");
 
 //tenants/ POST
 async function createTenant(req, res, next) {
 	try {
-		const tenantId = await createAndSetupTenantForUser(req.user, req.body);
+		const tenantId = await tenantServices.createAndSetupTenantForUser(req.user, req.body);
 
 		return sendResponse(res, 201, "New tenant opened successfully", {
 			tenantId: tenantId,
@@ -30,7 +25,7 @@ async function getTenantData(req, res, next) {
 	try {
 		const { tenantId } = req.params;
 
-		const tenantData = await fetchTenantDataById(tenantId);
+		const tenantData = await tenantRepo.fetchTenantDataById(tenantId);
 		
 		return sendResponse(res, 200, "Tenant fetched successfully", {
 			tenantData,
@@ -43,7 +38,7 @@ async function getTenantData(req, res, next) {
 //tenants/mine
 async function getTenantsConnectedToUser(req, res, next) {
 	try {
-		const allTenants = await getTenantsConnectedToUserById(req.user);
+		const allTenants = await tenantServices.getTenantsConnectedToUserById(req.user);
 
 		return sendResponse(res, 200, "All tenants fetched successfully", {
 			allTenants,
@@ -59,7 +54,7 @@ async function loginInTenant(req, res, next) {
 		const { tenantId } = req.body;
 		const userId = req.user._id;
 
-		const loginRequiredData = await loginUserIntoTenant(userId, tenantId);
+		const loginRequiredData = await tenantServices.loginUserIntoTenant(userId, tenantId);
 
 		return sendResponse(res, 200, "Welcome to tenant!", { loginRequiredData });
 	} catch (error) {
@@ -73,7 +68,7 @@ async function updateTenant(req, res, next) {
 		const newTenantData = req.body;
 		const { tenantId } = req.params;
 
-		const updatedTenantData = await updateTenantData(tenantId, newTenantData);
+		const updatedTenantData = await tenantServices.updateTenantData(tenantId, newTenantData);
 
 		return sendResponse(res, 200, "Updated successfully", {
 			updatedTenantData,
@@ -88,7 +83,7 @@ async function deactivateTenant(req, res, next) {
 	try {
 		const { tenantId } = req.params;
 
-		await deactivateTenantAndNotifyOwner(tenantId, req.user);
+		await tenantServices.deactivateTenantAndNotifyOwner(tenantId, req.user);
 
 		return sendResponse(res, 200, "Deactivated tenant successfully.");
 	} catch (error) {
@@ -101,7 +96,7 @@ async function deleteTenant(req, res, next) {
 	try {
 		const { tenantId } = req.params;
 
-		await deleteTenantAndNotifyOwner(tenantId, req.user);
+		await tenantServices.deleteTenantAndNotifyOwner(tenantId, req.user);
 
 		return sendResponse(res, 200, "Deleted tenant successfully.");
 	} catch (error) {

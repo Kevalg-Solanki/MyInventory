@@ -8,28 +8,14 @@ const PERMS_SET = require("../../constants/permSets");
 const AUTO_ENABLE_PERMS_TRIGGER = require("../../constants/autoEnablePermsSet");
 
 //repositories
-const {
-	findAllRolesWithoutPermsByTenantId,
-	findAllRolesWithPermsByTenantId,
-	findRoleDetailsWithoutPermsByIds,
-	findRoleDetailsWithPermsByIds,
-	findAndCombinePermsFromAllRolesByRoleIds,
-	findRolesPermsByRoleIds,
-	saveCustomTenantRole,
-	updateRoleByIds,
-	deleteRoleByIds,
-} = require("../../repositories/tenantRole.repository");
+const tenantRoleRepo = require("../../repositories/tenantRole.repository");
 
 //utiles
 const throwAppError = require("../../utils/throwAppError");
 const { convertStrToObjectId } = require("../../utils");
 
 //repository
-const {
-	findTenantMemberByTenantAndMemberId,
-	addRoleIdToMemberByIds,
-	removeRoleIdFromMemberByIds,
-} = require("../../repositories/tenantMember.repository");
+const tenantMemberRepo = require("../../repositories/tenantMember.repository");
 
 //--helpers functions
 
@@ -111,7 +97,7 @@ function addDefaultRequiredPermissions(permissions) {
  */
 async function getCombinedPermsOfRolesByRoleIds(roleIds) {
 	try {
-		return await findAndCombinePermsFromAllRolesByRoleIds(roleIds);
+		return await tenantRoleRepo.findAndCombinePermsFromAllRolesByRoleIds(roleIds);
 	} catch (error) {
 		throw error;
 	}
@@ -123,7 +109,7 @@ async function getCombinedPermsOfRolesByRoleIds(roleIds) {
  * @returns {Array} - null or array of object
  */
 async function getRoleListWithoutPermsByTenantId(tenantId) {
-	const allRoleLists = await findAllRolesWithoutPermsByTenantId(tenantId);
+	const allRoleLists = await tenantRoleRepo.findAllRolesWithoutPermsByTenantId(tenantId);
 
 	if (!allRoleLists) {
 		throwAppError(ROLE_ERROR.ROLE_NOT_FOUND);
@@ -140,7 +126,7 @@ async function getRoleListWithoutPermsByTenantId(tenantId) {
  * @returns {Array} - null or array of object
  */
 async function getRoleListWithPermsByTenantId(tenantId) {
-	const allRoleLists = await findAllRolesWithPermsByTenantId(tenantId);
+	const allRoleLists = await tenantRoleRepo.findAllRolesWithPermsByTenantId(tenantId);
 
 	if (!allRoleLists) {
 		throwAppError(ROLE_ERROR.ROLE_NOT_FOUND);
@@ -157,7 +143,7 @@ async function getRoleListWithPermsByTenantId(tenantId) {
  * @returns
  */
 async function getRoleDetailsWithoutPermsByIds(tenantId, roleId) {
-	const roleDetails = await findRoleDetailsWithoutPermsByIds(tenantId, roleId);
+	const roleDetails = await tenantRoleRepo.findRoleDetailsWithoutPermsByIds(tenantId, roleId);
 
 	if (roleDetails.length == 0) {
 		throwAppError(ROLE_ERROR.ROLE_NOT_FOUND);
@@ -172,7 +158,7 @@ async function getRoleDetailsWithoutPermsByIds(tenantId, roleId) {
  * @returns
  */
 async function getRoleDetailsWithPermsByIds(tenantId, roleId) {
-	const roleDetails = await findRoleDetailsWithPermsByIds(tenantId, roleId);
+	const roleDetails = await tenantRoleRepo.findRoleDetailsWithPermsByIds(tenantId, roleId);
 
 	if (!roleDetails) {
 		throwAppError(ROLE_ERROR.ROLE_NOT_FOUND);
@@ -189,7 +175,7 @@ async function getRoleDetailsWithPermsByIds(tenantId, roleId) {
 async function getMemberRolesWithoutPermsByIds(tenantId, memberId) {
 	try {
 		//find tenant member
-		const tenantMember = await findTenantMemberByTenantAndMemberId(
+		const tenantMember = await tenantRoleRepo.findTenantMemberByTenantAndMemberId(
 			tenantId,
 			memberId
 		);
@@ -199,7 +185,7 @@ async function getMemberRolesWithoutPermsByIds(tenantId, memberId) {
 		//find roles of member
 		const roleIds = tenantMember?.roles;
 
-		const memberRoles = await findRolesPermsByRoleIds(roleIds);
+		const memberRoles = await tenantRoleRepo.findRolesPermsByRoleIds(roleIds);
 
 		return memberRoles;
 	} catch (error) {
@@ -215,7 +201,7 @@ async function getMemberRolesWithoutPermsByIds(tenantId, memberId) {
 async function getMemberRolesWithPermsByIds(tenantId, memberId) {
 	try {
 		//find tenant member
-		const tenantMember = await findTenantMemberByTenantAndMemberId(
+		const tenantMember = await tenantMemberRepo.findTenantMemberByTenantAndMemberId(
 			tenantId,
 			memberId
 		);
@@ -225,7 +211,7 @@ async function getMemberRolesWithPermsByIds(tenantId, memberId) {
 		//find roles of member
 		const roleIds = tenantMember?.roles;
 
-		const memberRoles = await findRolesPermsByRoleIds(roleIds, true);
+		const memberRoles = await tenantRoleRepo.findRolesPermsByRoleIds(roleIds, true);
 
 		return memberRoles;
 	} catch (error) {
@@ -241,7 +227,7 @@ async function getMemberRolesWithPermsByIds(tenantId, memberId) {
 async function getMemberCombinedPermsByIds(tenantId, memberId) {
 	try {
 		//find tenant member
-		const tenantMember = await findTenantMemberByTenantAndMemberId(
+		const tenantMember = await tenantMemberRepo.findTenantMemberByTenantAndMemberId(
 			tenantId,
 			memberId
 		);
@@ -250,7 +236,7 @@ async function getMemberCombinedPermsByIds(tenantId, memberId) {
 
 		const roleIds = tenantMember?.roles;
 
-		const memberCombinedPerms = await findAndCombinePermsFromAllRolesByRoleIds(
+		const memberCombinedPerms = await tenantRoleRepo.findAndCombinePermsFromAllRolesByRoleIds(
 			roleIds
 		);
 		console.log(memberCombinedPerms);
@@ -286,7 +272,7 @@ async function createCustomRoleForTenant(tenantId, roleData) {
 	if (roleName) tenantRoleToSave.roleName = roleName;
 	if (roleColor) tenantRoleToSave.roleColor = roleColor;
 
-	const savedCustomRole = await saveCustomTenantRole(tenantRoleToSave);
+	const savedCustomRole = await tenantRoleRepo.saveCustomTenantRole(tenantRoleToSave);
 
 	if (!savedCustomRole) {
 		throwAppError(CRUD_ERROR.UNABLE_TO_SAVE);
@@ -325,7 +311,7 @@ async function updateTenantCustomRole(
 	}
 
 	console.log(newRoleData);
-	const updatedRoleData = await updateRoleByIds(
+	const updatedRoleData = await tenantRoleRepo.updateRoleByIds(
 		tenantId,
 		roleId,
 		newRoleData,
@@ -339,7 +325,7 @@ async function updateTenantCustomRole(
 
 async function assignRoleToMemberByIds(tenantId, roleId, memberId) {
 	//find tenant member
-	const tenantMember = await findTenantMemberByTenantAndMemberId(
+	const tenantMember = await tenantRoleRepo.findTenantMemberByTenantAndMemberId(
 		tenantId,
 		memberId
 	);
@@ -347,7 +333,7 @@ async function assignRoleToMemberByIds(tenantId, roleId, memberId) {
 	if (!tenantMember) throwAppError(MEMBER_ERROR.MEMBER_NOT_FOUND);
 
 	//find role
-	const roleToAssign = await findRoleDetailsWithoutPermsByIds(tenantId, roleId);
+	const roleToAssign = await tenantRoleRepo.findRoleDetailsWithoutPermsByIds(tenantId, roleId);
 
 	if (!roleToAssign) throwAppError(ROLE_ERROR.ROLE_NOT_FOUND);
 
@@ -356,7 +342,7 @@ async function assignRoleToMemberByIds(tenantId, roleId, memberId) {
 
 	console.log(roleToAssign._id);
 	//if both found then add role id to member roles
-	const updatedMember = await addRoleIdToMemberByIds(
+	const updatedMember = await tenantMemberRepo.addRoleIdToMemberByIds(
 		tenantId,
 		memberId,
 		roleToAssign?._id
@@ -369,7 +355,7 @@ async function assignRoleToMemberByIds(tenantId, roleId, memberId) {
 
 async function removeRoleFromMemberByIds(tenantId, roleId, memberId) {
 	//find tenant member
-	const tenantMember = await findTenantMemberByTenantAndMemberId(
+	const tenantMember = await tenantMemberRepo.findTenantMemberByTenantAndMemberId(
 		tenantId,
 		memberId
 	);
@@ -378,7 +364,7 @@ async function removeRoleFromMemberByIds(tenantId, roleId, memberId) {
 	if (!tenantMember) throwAppError(MEMBER_ERROR.MEMBER_NOT_FOUND);
 
 	//find role
-	const roleToRemove = await findRoleDetailsWithoutPermsByIds(tenantId, roleId);
+	const roleToRemove = await tenantRoleRepo.findRoleDetailsWithoutPermsByIds(tenantId, roleId);
 
 	if (!roleToRemove) throwAppError(ROLE_ERROR.ROLE_NOT_FOUND);
 
@@ -387,7 +373,7 @@ async function removeRoleFromMemberByIds(tenantId, roleId, memberId) {
 
 	console.log(roleToRemove._id);
 	//if both found then add role id to member roles
-	const updatedMember = await removeRoleIdFromMemberByIds(
+	const updatedMember = await tenantMemberRepo.removeRoleIdFromMemberByIds(
 		tenantId,
 		memberId,
 		roleToRemove?._id
@@ -402,12 +388,12 @@ async function removeRoleFromMemberByIds(tenantId, roleId, memberId) {
 async function deleteTenantCustomRole(tenantId,roleId){
 
 	//check if role exist and not deleted
-	const roleInDatabase = await findRoleDetailsWithoutPermsByIds(tenantId,roleId);
+	const roleInDatabase = await tenantRoleRepo.findRoleDetailsWithoutPermsByIds(tenantId,roleId);
 
 	if(!roleInDatabase) throwAppError(ROLE_ERROR.ROLE_NOT_FOUND);
 
 	//soft delete role
-	await deleteRoleByIds(tenantId,roleId)
+	await tenantRoleRepo.deleteRoleByIds(tenantId,roleId)
 	
 
 	return;

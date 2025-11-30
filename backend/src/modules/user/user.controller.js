@@ -1,5 +1,5 @@
 //services
-const { updateUserProfile,deactivateUserAndNotifyUser,  updateSettings } = require("./user.service");
+const userServices = require("./user.service");
 
 //utils
 const sendResponse = require("../../utils/sendResponse");
@@ -9,9 +9,8 @@ const sendResponse = require("../../utils/sendResponse");
 async function updateUser(req, res, next) {
 	try {
 		const { userId } = req.params;
-		const updatedUserData = req.body;
 
-		await updateUserProfile(userId, req.body);
+		await userServices.updateUserProfile(userId, req.body);
 
 		return sendResponse(res, 200, "User updated successfully.");
 	} catch (error) {
@@ -24,7 +23,7 @@ async function deactivateUser(req, res, next) {
 	try {
 		const {userId} = req.params;
 
-		await deactivateUserAndNotifyUser(userId);
+		await userServices.deactivateUserAndNotifyUser(userId);
 
 		return sendResponse(res,200,"Deactivation successfully.");
 
@@ -40,7 +39,7 @@ async function updateUserSettings(req,res,next){
 		const {userId} = req.params;
 		const updatedSettings = req.body;
 
-		const savedSettings = await updateSettings(userId,updatedSettings);
+		const savedSettings = await userServices.updateSettings(userId,updatedSettings);
 
 		return sendResponse(res,200,"Settings saved!",{savedSettings})
 	}

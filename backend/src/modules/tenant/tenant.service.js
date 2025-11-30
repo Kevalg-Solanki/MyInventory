@@ -15,9 +15,7 @@ const { MESSAGE_TYPE } = require("../../constants/messageType.js");
 const ROLE_PRESETS = require("../../constants/rolesPresets.js");
 
 //repositories
-const {
-	fetchTenantDataById,
-} = require("../../repositories/tenant.repository.js");
+const tenantRepo = require("../../repositories/tenant.repository.js");
 
 //utiles
 const { sendMail } = require("../../utils/emailService.js");
@@ -25,16 +23,7 @@ const { sendSms } = require("../../utils/smsService.js");
 const throwAppError = require("../../utils/throwAppError.js");
 const { convertStrToObjectId } = require("../../utils");
 
-/**
- * @param {string} tenantName - Name of tenant to find
- * @returns {Object} - object or null if not found
- */
-async function findTenantByName(tenantName) {
-	return await TenantModel.findOne({
-		tenantName,
-		isDeleted: false,
-	});
-}
+
 
 function removeRestrictedFields(restrictedFields, data) {
 	//check is it restricted field
@@ -55,7 +44,7 @@ function removeRestrictedFields(restrictedFields, data) {
 //create tenant service
 async function checkTenantNameTaken(tenantName) {
 	//find tenant
-	const tenantInDatabase = await findTenantByName(tenantName);
+	const tenantInDatabase = await tenantRepo.findTenantByName(tenantName);
 
 	//if tenant found in databaes
 	if (tenantInDatabase) {
@@ -76,6 +65,7 @@ async function checkTenantNameTaken(tenantName) {
  */
 
 async function saveNewTenantInDatabaseByUserId(userId, tenantData, session) {
+	//Database query here cause of session
 	//create tenant model object to save
 	const tenantModelToSave = new TenantModel({
 		ownerId: userId,
@@ -114,6 +104,7 @@ async function addTenantIdInUser(userData, tenantId, session) {
 		throwAppError(TENANT_ERROR.TENANT_ALREADY_CONNECTED_USER);
 	}
 
+	//Database query here cause of session
 	//if not tenant id not exist than add to user
 	const updatedUser = await UserModel.findByIdAndUpdate(
 		{ _id: userData._id },
@@ -488,7 +479,7 @@ async function updateTenantData(tenantId, tenantData) {
 async function deactivateTenantAndNotifyOwner(tenanId, userData) {
 	try {
 		//check tenant deactivated
-		const tenantData = await fetchTenantDataById(tenanId);
+		const tenantData = await tenantRepo.fetchTenantDataById(tenanId);
 
 		if (!tenantData?.isActive) {
 			throwAppError(TENANT_ERROR.TENANT_DEACTIVATED);
@@ -538,7 +529,7 @@ async function deactivateTenantAndNotifyOwner(tenanId, userData) {
 async function deleteTenantAndNotifyOwner(tenanId, userData) {
 	try {
 		//check tenant deactivated
-		const tenantData = await fetchTenantDataById(tenanId);
+		const tenantData = await tenantRepo.fetchTenantDataById(tenanId);
 
 		if (tenantData?.isDeleted) {
 			throwAppError(TENANT_ERROR.TENANT_DELETED);
@@ -584,6 +575,7 @@ async function deleteTenantAndNotifyOwner(tenanId, userData) {
 		throw error;
 	}
 }
+
 
 module.exports = {
 	checkTenantNameTaken,

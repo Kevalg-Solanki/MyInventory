@@ -2,6 +2,18 @@
 const { TenantModel } = require("../modules/tenant/tenant.model");
 const { convertStrToObjectId } = require("../utils");
 
+
+/**
+ * @param {string} tenantName - Name of tenant to find
+ * @returns {Object} - object or null if not found
+ */
+async function findTenantByName(tenantName) {
+	return await TenantModel.findOne({
+		tenantName,
+		isDeleted: false,
+	});
+}
+
 /**
  * @param {string} tenantId - id of tenant to get data
  * @returns {object | null}
@@ -40,7 +52,10 @@ async function fetchSelectedTenantFieldsById(tenantId, selectedDataQuery="") {
 	}).select(selectedDataQuery);
 }
 
+
+
 module.exports = {
+	findTenantByName,
 	fetchTenantDataById,
 	fetchTenantStatusById,
     fetchSelectedTenantFieldsById

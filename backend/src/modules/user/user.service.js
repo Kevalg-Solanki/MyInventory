@@ -9,10 +9,7 @@ const { USER_ERROR, CRUD_ERROR } = require("../../constants");
 const { MESSAGE_TYPE } = require("../../constants/messageType");
 
 //repositories
-const {
-	findUserById,
-	updateUserById,
-} = require("../../repositories/user.repository");
+const userRepo = require("../../repositories/user.repository");
 
 //utils
 const throwAppError = require("../../utils/throwAppError");
@@ -38,7 +35,7 @@ async function updateUserProfile(userId, updatedUserData) {
 		)
 	);
 
-	const savedUserData = await updateUserById(userId, filteredData);
+	const savedUserData = await userRepo.updateUserById(userId, filteredData);
 
 	
 
@@ -116,7 +113,7 @@ async function deactivateUserAndNotifyUser(userId) {
 //users/:userId/settings
 async function updateSettings(userId,updatedSettings){
 
-	const savedUserSettings = await updateUserSettings(userId,updatedSettings);
+	const savedUserSettings = await userRepo.updateUserSettings(userId,updatedSettings);
 
 	console.log(savedUserSettings);
 	if(!savedUserSettings) throwAppError(CRUD_ERROR.UNABLE_TO_UPDATE);
