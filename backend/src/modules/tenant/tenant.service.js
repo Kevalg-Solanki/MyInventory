@@ -584,7 +584,6 @@ module.exports = {
 	setupDefaultTenantRoleAndAssignToUser,
 	setupDefaultTanantRoles,
 	createAndSetupTenantForUser,
-	fetchTenantDataById,
 	getTenantsConnectedToUserById,
 	loginUserIntoTenant,
 	updateTenantData,

@@ -8,7 +8,7 @@ const { OTP_TYPE, MESSAGE_TYPE } = require("../constants/messageType.js");
 const templates = require("./templates/index.js");
 
 //utils
-const fillUpHtmlTemplate = require("./fillUpHtmlTemplateService.js");
+const replaceAllKeywordWithValue = require("./replaceAllKeywordWithValue.js");
 
 
 
@@ -143,7 +143,7 @@ async function prepareEmailTemplate(emailType, email, metadata) {
 		return null;
 	}
 
-	let htmlTemplate = fillUpHtmlTemplate(
+	let htmlTemplate = replaceAllKeywordWithValue(
 		replacerObj?.emailTemplate,
 		replacerObj?.getReplcerObj(metadata)
 	);

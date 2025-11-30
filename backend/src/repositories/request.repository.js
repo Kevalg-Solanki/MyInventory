@@ -19,7 +19,7 @@ async function createRequestByData(requestData){
 /**
  * 
  * @param {string} tenantId -id of tenant to find request
- * @param {*} credential - email/mobile of user to find with
+ * @param {string} credential - email/mobile of user to find with
  * @returns 
  */
 async function fetchRequestByCombination(tenantId,credential){

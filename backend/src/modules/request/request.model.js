@@ -41,7 +41,7 @@ const requestSchema = new mongoose.Schema(
 		requestMessage: {
 			type: String,
 			required: true,
-			maxlength: 50,
+			maxlength: 100,
 		},
 		isDeleted: {
 			type: Boolean,
