@@ -5,6 +5,7 @@ const {
 	REQUEST_TYPE,
 	CRUD_ERROR,
 	REQ_ERROR,
+	MEMBER_ERROR,
 } = require("../../constants");
 const { MESSAGE_TYPE } = require("../../constants/messageType.js");
 
@@ -12,6 +13,7 @@ const { MESSAGE_TYPE } = require("../../constants/messageType.js");
 const userRepo = require("../../repositories/user.repository.js");
 const tenantRepo = require("../../repositories/tenant.repository.js");
 const requestRepo = require("../../repositories/request.repository.js");
+const memberRepo = require("../../repositories/tenantMember.repository.js");
 
 //utils
 const throwAppError = require("../../utils/throwAppError");
@@ -130,6 +132,11 @@ async function sendUserJoinTenantRequest(
 	const userInDatabase = await assertUserExistByCredential(credential);
 	if (!userInDatabase) throwAppError(USER_ERROR.USER_NOT_FOUND);
 
+	//check user is not already member of the tenant
+	const isTenantMember = await memberRepo.findTenantMemberByIds(tenantId,userInDatabase?._id);
+	if(isTenantMember) throwAppError(MEMBER_ERROR.ALREADY_TENANT_MEMBER);
+
+	//check request is not sent alread.
 	const requestInDatabase = await requestRepo.fetchRequestByCombination(
 		tenantId,
 		credential
@@ -143,7 +150,7 @@ async function sendUserJoinTenantRequest(
 		"_id tenantName tenantCategory ownerId street landmark city state country zip"
 	);
 
-	//Get Category name
+	
 	//Get owner name by owner id in tenantData
 	const ownerData = await userRepo.findUserById(tenantData?.ownerId);
 

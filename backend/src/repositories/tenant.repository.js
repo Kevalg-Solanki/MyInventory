@@ -34,7 +34,7 @@ async function fetchTenantStatusById(tenantId) {
 	return await TenantModel.findOne({
 		_id: convertedId,
 		isDeleted: false,
-	}).select("isDelete isActive");
+	}).select("isDelete isActive").lean();
 }
 
 /**
@@ -49,7 +49,7 @@ async function fetchSelectedTenantFieldsById(tenantId, selectedDataQuery="") {
 	return await TenantModel.findOne({
 		_id: convertedId,
 		isDeleted: false,
-	}).select(selectedDataQuery);
+	}).select(selectedDataQuery).lean();
 }
 
 

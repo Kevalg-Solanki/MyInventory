@@ -27,7 +27,18 @@ async function fetchRequestByCombination(tenantId,credential){
     return await RequestModel.findOne({tenantId:convertedId, receiverCredential: credential,isActive:true})    
 }
 
+/**
+ * 
+ * @param {string} credential - email/mobile of user to find with
+ * @returns {object | null} 
+ */
+async function fetchAllActiveRequestByReceiverCredential(credential){
+    
+    return await RequestModel.find({receiverCredential:credential,isDeleted:false,isActive:true}).select("-isDeleted -senderId -isActive -receiverCredential").lean();
+}
+
 module.exports = {
     createRequestByData,
-    fetchRequestByCombination
+    fetchRequestByCombination,
+    fetchAllActiveRequestByReceiverCredential
 }

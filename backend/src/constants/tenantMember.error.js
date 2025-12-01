@@ -1,5 +1,6 @@
 
 module.exports = {
+	//
 
     //--403
 	MEMBER_DEACTIVATED: {
@@ -15,4 +16,11 @@ module.exports = {
 		httpStatus: 404,
 		message: "Member not found.",
 	},
+
+	//--409
+	ALREADY_TENANT_MEMBER:{
+		code:"ALREADY_TENANT_MEMBER",
+		httpStatus:409,
+		message:"User is already member of this tenant."
+	}
 }
