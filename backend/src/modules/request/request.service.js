@@ -12,11 +12,12 @@ const requestRepo = require("../../repositories/request.repository");
 /**
  * 
  * @param {string} userCredential - email/mobile of user to find request for
+ * @param {object} pagination - {page:number,limit:number,sort:object}
  * @return {object} - throw error if something is wrong
  */
-async function getAllRequestOfUser(userCredential){
+async function getActiveRequestsOfUser(userCredential,pagination){
 
-    const allRequestOfUser = await requestRepo.fetchAllActiveRequestByReceiverCredential(userCredential);
+    const allRequestOfUser = await requestRepo.fetchAllActiveRequestByReceiverCredential(userCredential,pagination);
 
     
 }

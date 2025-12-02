@@ -30,10 +30,12 @@ async function fetchRequestByCombination(tenantId,credential){
 /**
  * 
  * @param {string} credential - email/mobile of user to find with
+ * @param {object} pagination - email/mobile of user to find with
  * @returns {object | null} 
  */
-async function fetchAllActiveRequestByReceiverCredential(credential){
+async function fetchAllActiveRequestByReceiverCredential(credential,pagination){
     
+    const skip = 
     return await RequestModel.find({receiverCredential:credential,isDeleted:false,isActive:true}).select("-isDeleted -senderId -isActive -receiverCredential").lean();
 }
 
