@@ -13,6 +13,7 @@ const tenantRouter = require("./modules/tenant/tenant.routes.js");
 const userRouter = require("./modules/user/user.routes.js");
 const tenantRoleRouter = require("./modules/tenantRole/tenantRole.routes.js");
 const tenantMemberRouter = require("./modules/tenantMember/tenantMember.routes.js");
+const requestRouter = require("./modules/request/request.routes.js");
 
 //--middlewares
 //CORS
@@ -52,9 +53,11 @@ app.use("/api/v1/tenants", tenantRouter);
 
 app.use("/api/v1/users", userRouter);
 
-app.use("/api/v1/tenant-roles", tenantRoleRouter)
+app.use("/api/v1/tenant-roles", tenantRoleRouter);
 
-app.use("/api/v1/tenant-members", tenantMemberRouter)
+app.use("/api/v1/tenant-members", tenantMemberRouter);
+
+app.use("/api/v1/requests",requestRouter)
 
 //Error handler
 app.use((error, req, res, next) => {

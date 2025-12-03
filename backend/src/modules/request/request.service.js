@@ -1,10 +1,13 @@
 
+//constants
+const { REQ_ERROR } = require("../../constants");
+
 //repositories
 const tenantRepo = require("../../repositories/tenant.repository");
 const requestRepo = require("../../repositories/request.repository");
 
-
 //utils
+const prepareProperDataForPagination = require("../../utils/prepareProperDataForPagination");
 
 
 
@@ -17,12 +20,14 @@ const requestRepo = require("../../repositories/request.repository");
  */
 async function getActiveRequestsOfUser(userCredential,pagination){
 
-    const allRequestOfUser = await requestRepo.fetchAllActiveRequestByReceiverCredential(userCredential,pagination);
+    const {data,totalNumberOfDocs} = await requestRepo.fetchAllActiveRequestByReceiverCredential(userCredential,pagination);
 
+    let preparedPagination = prepareProperDataForPagination(pagination,totalNumberOfDocs);
     
+    return {activeRequests:data,preparedPagination};
 }
 
 
 module.exports = {
-    getAllRequestOfUser
+    getActiveRequestsOfUser
 }
