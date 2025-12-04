@@ -465,7 +465,7 @@ async function updateTenantData(tenantId, tenantData) {
 	const updatedTenant = await TenantModel.findOneAndUpdate(
 		{ _id: tenantId, isDeleted: false, isActive: true },
 		{ $set: newTenantData },
-		{ new: true }
+		{ new: true ,runValidators:true}
 	);
 
 	if (!updatedTenant) {

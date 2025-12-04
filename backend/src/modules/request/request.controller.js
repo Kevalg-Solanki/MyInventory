@@ -31,10 +31,7 @@ async function acceptRequest(req, res, next) {
 	try {
 		const requestId = req.params.requestId;
 
-
-		const userCredential = !req.user.email ? req.user.mobile : req.user.email;
-
-		const {activeRequests,preparedPagination} = await requestServices.getActiveRequestsOfUser(userCredential,pagination);
+		
 
 		return sendResponse(res,200,"All active requests fetched.",{activeRequests,pagination:preparedPagination});
 

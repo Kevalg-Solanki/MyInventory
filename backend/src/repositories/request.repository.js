@@ -28,6 +28,15 @@ async function fetchRequestByCombination(tenantId, credential) {
 	});
 }
 
+
+async function findRequestById(requestId){
+	const convertedRequestId = await convertStrToObjectId(requestId);
+
+	return await RequestModel.findById(convertedRequestId);
+}
+
+
+
 /**
  *
  * @param {string} credential - email/mobile of user to find with
@@ -59,8 +68,33 @@ async function fetchAllActiveRequestByReceiverCredential(
     return {data:allRequest,totalNumberOfDocs:totolNumberOfRequests};
 }
 
+
+/**
+ * @param {string || objectId} requestId - _id of request
+ * @param {object} updatedData - updated data of request
+ * @param {mongoose session || null} session - this function run query without session by deafult.
+ */
+async function updateRequestById(requestId,updatedData,session=null) {
+	const convertedReqId = await convertStrToObjectId(requestId);
+	
+	const options = {
+		new:true,
+		runValidators:true
+	}
+	
+	if(session) options.session=session;
+
+	return await RequestModel.findOneAndUpdate(
+		{_id:convertedReqId,isDeleted:false,isActive:true},
+		{ $set : updatedData},
+		options
+	)
+}
+
 module.exports = {
 	createRequestByData,
 	fetchRequestByCombination,
 	fetchAllActiveRequestByReceiverCredential,
+	findRequestById,
+	updateRequestById
 };
