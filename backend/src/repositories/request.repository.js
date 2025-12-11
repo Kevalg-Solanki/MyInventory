@@ -1,9 +1,11 @@
 //models
 const { RequestModel } = require("../modules/request/request.model");
+const utils = require("../utils");
 
 //utils
 const { convertStrToObjectId } = require("../utils");
 
+// -----------CREATE QUERY------------
 /**
  *
  * @param {object} requestData - request data to save
@@ -12,6 +14,9 @@ const { convertStrToObjectId } = require("../utils");
 async function createRequestByData(requestData) {
 	return await RequestModel.create(requestData);
 }
+
+//-----------------------------------------------------
+// -----------READ QUERY------------
 
 /**
  *
@@ -28,14 +33,11 @@ async function fetchRequestByCombination(tenantId, credential) {
 	});
 }
 
-
-async function findRequestById(requestId){
+async function fetchRequestById(requestId) {
 	const convertedRequestId = await convertStrToObjectId(requestId);
 
 	return await RequestModel.findById(convertedRequestId);
 }
-
-
 
 /**
  *
@@ -47,54 +49,51 @@ async function fetchAllActiveRequestByReceiverCredential(
 	credential,
 	pagination
 ) {
-	const [allRequest,totolNumberOfRequests] = await Promise.all([
+	const [allRequest, totolNumberOfRequests] = await Promise.all([
 		RequestModel.find({
 			receiverCredential: credential,
 			isDeleted: false,
 			isActive: true,
 		})
-        .select("-isDeleted -senderId -isActive -receiverCredential")
-		.sort(pagination.sort)
-		.skip(pagination.skip)
-		.limit(pagination.limit)
-		.lean(),
+			.select("-isDeleted -senderId -isActive -receiverCredential")
+			.sort(pagination.sort)
+			.skip(pagination.skip)
+			.limit(pagination.limit)
+			.lean(),
 		RequestModel.countDocuments({
 			receiverCredential: credential,
 			isDeleted: false,
 			isActive: true,
-		})
+		}),
 	]);
 
-    return {data:allRequest,totalNumberOfDocs:totolNumberOfRequests};
+	return { data: allRequest, totalNumberOfDocs: totolNumberOfRequests };
 }
 
+//-----------------------------------------------------
+// -----------UPDATE QUERY------------
 
 /**
  * @param {string || objectId} requestId - _id of request
  * @param {object} updatedData - updated data of request
  * @param {mongoose session || null} session - this function run query without session by deafult.
  */
-async function updateRequestById(requestId,updatedData,session=null) {
-	const convertedReqId = await convertStrToObjectId(requestId);
-	
-	const options = {
-		new:true,
-		runValidators:true
-	}
-	
-	if(session) options.session=session;
+async function updateRequestById(requestId, updatedData, session = null) {
+	const convertedReqId = utils.convertStrToObjectId(requestId);
+
+	const opts = utils.getDefaultQueryOpts(session);
 
 	return await RequestModel.findOneAndUpdate(
-		{_id:convertedReqId,isDeleted:false,isActive:true},
-		{ $set : updatedData},
-		options
-	)
+		{ _id: convertedReqId, isDeleted: false, isActive: true },
+		{ $set: updatedData },
+		opts
+	);
 }
 
 module.exports = {
 	createRequestByData,
 	fetchRequestByCombination,
 	fetchAllActiveRequestByReceiverCredential,
-	findRequestById,
-	updateRequestById
+	fetchRequestById,
+	updateRequestById,
 };

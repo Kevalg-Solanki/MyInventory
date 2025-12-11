@@ -347,6 +347,7 @@ async function assignRoleToMemberByIds(tenantId, roleId, memberId) {
 		memberId,
 		roleToAssign?._id
 	);
+	
 	console.log(updatedMember);
 	if (!updatedMember) throwAppError(CRUD_ERROR.UNABLE_TO_UPDATE);
 

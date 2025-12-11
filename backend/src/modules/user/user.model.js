@@ -19,16 +19,15 @@ const userSchema = new mongoose.Schema(
 			type: String,
 			trim: true,
 			lowercase: true,
-			unique: true,
-			sparse: true,
-
 			maxlength: 254,
+		
+			spare:true
 		},
 		mobile: {
 			type: String,
+
 			trim: true,
-			unique: true,
-			sparse: true,
+			spare:true,
 		},
 		tenants: [
 			{
@@ -62,20 +61,26 @@ const userSchema = new mongoose.Schema(
 );
 
 //keep email/mobile unique ignore deleted
-userSchema.index({
-	unique: true,
-	partialFilterExpression: {
-		isDeleted: { $ne: true },
-		email: { $type: "string" },
-	},
-});
-userSchema.index({
-	unique: true,
-	partialFilterExpression: {
-		isDeleted: { $ne: true },
-		mobile: { $type: "string" },
-	},
-});
+userSchema.index(
+	{ email: 1 },
+	{
+		unique: true,
+		partialFilterExpression: {
+			isDeleted:false ,
+			email: { $type: "string" },
+		},
+	}
+);
+userSchema.index(
+	{ mobile: 1 },
+	{
+		unique: true,
+		partialFilterExpression: {
+			isDeleted: false,
+			mobile: { $type: "string" },
+		},
+	}
+);
 
 //Indexing
 userSchema.index({ tenants: 1 });
@@ -89,7 +94,9 @@ userSchema.set("toJSON", {
 	},
 });
 
+
 const UserModel = mongoose.model("User", userSchema);
+
 
 //User Class
 class UserClass {
