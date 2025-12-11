@@ -21,7 +21,7 @@ async function verifyCredentialAndSendOtp(req, res, next) {
 
 		await authServices.assertUserDoesNotExistByCredential(credential);
 
-		await authServices.sendVericationOtp(credential, type);
+		await authServices.sendVerificationOtp(credential, type);
 
 		return sendResponse(res, 200, "Otp sent successfully");
 	} catch (error) {

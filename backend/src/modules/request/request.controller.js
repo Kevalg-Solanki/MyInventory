@@ -26,14 +26,14 @@ async function getAllActiveRequestOfUser(req, res, next) {
 }
 
 
-// GET /me
+// PATCH /:requestId/accept
 async function acceptRequest(req, res, next) {
 	try {
 		const requestId = req.params.requestId;
 
-		
+		const tenantId = await requestServices.acceptInviteRequestAndSetupMember(requestId,req.user);
 
-		return sendResponse(res,200,"All active requests fetched.",{activeRequests,pagination:preparedPagination});
+		return sendResponse(res,200,"Invite request accepted.",{tenantId});
 
 	} catch (error) {
 		next(error);
@@ -43,4 +43,5 @@ async function acceptRequest(req, res, next) {
 
 module.exports = {
 	getAllActiveRequestOfUser,
+	acceptRequest
 };

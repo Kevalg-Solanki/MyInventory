@@ -104,7 +104,7 @@ async function addTenantIdInUser(userData, tenantId, session) {
 		throwAppError(TENANT_ERROR.TENANT_ALREADY_CONNECTED_USER);
 	}
 
-	//Database query here cause of session
+	
 	//if not tenant id not exist than add to user
 	const updatedUser = await UserModel.findByIdAndUpdate(
 		{ _id: userData._id },

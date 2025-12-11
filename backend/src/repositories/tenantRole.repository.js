@@ -35,7 +35,7 @@ async function findAndCombinePermsFromAllRolesByRoleIds(roleIds) {
 
 	const permsDocs = await TenantRoleModel.aggregate(pipeline);
 
-	return permsDocs[0].permissions;
+	return permsDocs[0]?.permissions;
 }
 
 /**

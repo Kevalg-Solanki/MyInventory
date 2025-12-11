@@ -75,10 +75,29 @@ async function removeRoleIdFromMemberByIds(tenantId, memberId, roleIdToRemove) {
 	);
 }
 
+
+/**
+ * 
+ * @param {object} tenantMemberData 
+ * @param {mongooseSession} session -if using with transaction
+ * @returns 
+ */
+async function createTenantMemberFromData(tenantMemberData,session=null) {
+
+	const {tenantId,userId,nickName} = tenantMemberData
+	const memberModelToSave = new TenantMemberModel({
+		tenantId:tenantId,
+		userId:userId,
+		nickName:nickName
+	})
+
+	return await memberModelToSave.save(session? {session}:{});
+}
 module.exports = {
 	findTenantMemberByTenantAndMemberId,
 	findTenantMemberByIds,
 	addRoleIdToMemberByIds,
-	removeRoleIdFromMemberByIds
+	removeRoleIdFromMemberByIds,
+	createTenantMemberFromData
 	
 };

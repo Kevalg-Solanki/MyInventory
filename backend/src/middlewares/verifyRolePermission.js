@@ -78,7 +78,7 @@ const verifyRolePermission = (requiredPerms = []) => {
 
 			//Validate member have perms or not
 			if (!Array.isArray(memberPerms) || memberPerms.length == 0)
-				throwError(AUTH_ERROR.ACCESS_DENIED);
+				throwError(AUTH_ERROR.REQ_PERMS_NOT_FOUND);
 
 			//Using Sets for faster interation checks
 			const memberPermsSet = new Set(memberPerms);

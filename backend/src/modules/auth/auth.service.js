@@ -202,7 +202,7 @@ async function assertUserDoesNotExistByCredential(credential) {
  * @returns
  */
 
-async function sendVericationOtp(credential, type) {
+async function sendVerificationOtp(credential, type) {
 	try {
 		//send otp on the email/mobile.
 		const sendOtpResult = await sendOtp(
@@ -408,7 +408,7 @@ async function verifyOldPassAndSetNewPass(user, oldPassword, newPassword) {
 module.exports = {
 
 	assertUserDoesNotExistByCredential,
-	sendVericationOtp,
+	sendVerificationOtp,
 	getNewOtp,
 	saveUserInDatabase,
 	getUserRegistrationRequiredData,
