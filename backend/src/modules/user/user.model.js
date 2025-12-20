@@ -74,7 +74,9 @@ userSchema.index(
 userSchema.index(
 	{ mobile: 1 },
 	{
+
 		unique: true,
+		    
 		partialFilterExpression: {
 			isDeleted: false,
 			mobile: { $type: "string" },

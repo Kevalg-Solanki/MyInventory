@@ -1,4 +1,5 @@
 const { TenantRoleModel } = require("../modules/tenantRole/tenantRole.model");
+const utils = require("../utils");
 const { convertStrToObjectId } = require("../utils");
 
 
@@ -157,6 +158,27 @@ async function updateRoleByIds(tenantId,roleId,updatedRoleData) {
 /**
  * 
  * @param {string} tenantId - tenantId
+ * @param {string} roleId - roleId to update
+ * @param {object} updatedRoleData - Update role data
+ * @returns 
+ */
+async function incNumberOfUserAssignedByRoleId(tenantId,roleId,session=null) {
+	const convertedTenantId = await convertStrToObjectId(tenantId);
+	const convertedRoleId = await convertStrToObjectId(roleId);
+
+	const opts = utils.getDefaultQueryOpts(session);
+
+	return await TenantRoleModel.findOneAndUpdate(
+		{_id:convertedRoleId,tenantId:convertedTenantId,isDeleted:false},
+		{$inc:{ numberOfUserAssigned:1}},
+		opts
+	)
+}
+
+
+/**
+ * 
+ * @param {string} tenantId - tenantId
  * @param {string} roleId - roleId to delete
  * @returns - void
  */
@@ -179,5 +201,6 @@ module.exports = {
 	findRolesPermsByRoleIds,
 	saveCustomTenantRole,
 	updateRoleByIds,
+	incNumberOfUserAssignedByRoleId,
 	deleteRoleByIds
 };

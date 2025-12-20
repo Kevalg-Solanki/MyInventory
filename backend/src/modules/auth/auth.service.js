@@ -243,6 +243,7 @@ async function loginUser(userData) {
 	//1. find user in database
 	const userInDatabase = await userRepo.findUserByCredential(userData.credential);
 
+
 	//if user does not exist
 	if (!userInDatabase) {
 		throwAppError(USER_ERROR.USER_NOT_FOUND);
