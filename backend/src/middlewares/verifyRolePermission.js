@@ -59,6 +59,8 @@ const verifyRolePermission = (requiredPerms = []) => {
 			//find tenant 
 			const tenantData = await fetchTenantStatusById(tenantId);
 
+			if(!tenantData) throwError(TENANT_ERROR.TENANT_NOT_FOUND);
+			
 			if(tenantData?.isDeleted) throwError(TENANT_ERROR.TENANT_NOT_FOUND);
 
 			if(!tenantData?.isActive) throwError(TENANT_ERROR.TENANT_DEACTIVATED)

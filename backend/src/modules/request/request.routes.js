@@ -20,4 +20,11 @@ requestRouter.patch(
 	requestControllers.acceptRequest
 );
 
+//**PATCH reject request */
+requestRouter.patch(
+	"/:requestId/reject",
+	verifyToken,
+	requestControllers.rejectRequest
+);
+
 module.exports = requestRouter;

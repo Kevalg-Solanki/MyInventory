@@ -1,9 +1,6 @@
 
 
 
-const isEmpty = (obj) => Object.keys(obj).length === 0;
-
-
 /**
  * 
  * @param {string} page - req.query.page return "1" (string)
@@ -41,7 +38,7 @@ function parseSort(sortQuery=null){
 
         //example: acc["createdAt"] = 1
         //example: acc = {createdAt:1};
-        acc[key.replace("-","")]= value.startWith("-")? -1 : 1;
+        acc[key.replace("-","")]= value.startsWith("-")? -1 : 1;
         
         //example: return {createdAt:1};
         return acc;

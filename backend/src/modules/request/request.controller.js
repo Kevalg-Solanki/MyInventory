@@ -40,8 +40,21 @@ async function acceptRequest(req, res, next) {
 	}
 }
 
+async function rejectRequest(req,res,next) {
+	try {
+		const requestId = req.params.requestId;
+
+		await requestServices.rejectTenantInviteRequest(requestId,req.user);
+
+		return sendResponse(res,200,"Invite request rejected.");
+	} catch (error) {
+		next(error);		
+	}
+}
+
 
 module.exports = {
 	getAllActiveRequestOfUser,
-	acceptRequest
+	acceptRequest,
+	rejectRequest
 };

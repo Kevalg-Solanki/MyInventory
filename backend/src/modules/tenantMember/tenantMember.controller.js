@@ -40,7 +40,7 @@ async function inviteUserToTenant(req,res,next){
         
         await memberServices.sendUserJoinTenantRequest(tenantId,type,credential,req.user);
 
-        return sendResponse(res,200,"Invitation to platform and invite request send!.");
+        return sendResponse(res,200,"Invitation to tenant request send!.");
     }
     catch(error)
     {

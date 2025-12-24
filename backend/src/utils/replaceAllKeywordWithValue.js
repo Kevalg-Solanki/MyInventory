@@ -11,7 +11,7 @@ module.exports = function replaceAllKeywordWithValue(strToFillUp, dataToFill) {
 	for (const [key, value] of Object.entries(dataToFill)) {
 		filledStr = filledStr.replaceAll(key, value);
 	}
-	console.log(filledStr)
+
 	return filledStr;
 }
 

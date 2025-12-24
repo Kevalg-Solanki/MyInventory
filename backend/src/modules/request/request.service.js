@@ -1,5 +1,5 @@
 //constants
-const { REQ_ERROR, TENANT_ERROR } = require("../../constants");
+const { REQ_ERROR, TENANT_ERROR, CRUD_ERROR } = require("../../constants");
 
 //repositories
 const tenantRepo = require("../../repositories/tenant.repository");
@@ -18,6 +18,7 @@ const { default: mongoose } = require("mongoose");
  *
  * @param {object} requestData - request which is featched by requestId
  * @param {string} userCredential - email/mobile user loged in with
+ * @return {void || never} 
  */
 async function validateRequest(requestData, userCredential) {
 	//validate it is user request or not
@@ -34,9 +35,9 @@ async function validateRequest(requestData, userCredential) {
 	//request active or not
 	if (!requestData.isActive) {
 		const error = statusErrors[requestData.requestStatus];
-		if (!error) throwAppError(error);
+		if (error) throwAppError(error);
 	}
-
+	console.log(requestData)
 	return;
 }
 
@@ -106,7 +107,7 @@ async function getActiveRequestsOfUser(userCredential, pagination) {
  *
  * @param {string || objectId} requestId - request id to accept
  * @param {object} userData - user data of requester
- * @returns {objectId} - tenantId
+ * @returns {objectId || never} - tenantId
  */
 async function acceptInviteRequestAndSetupMember(requestId, userData) {
 	const requestData = await requestRepo.fetchRequestById(requestId);
@@ -158,7 +159,41 @@ async function acceptInviteRequestAndSetupMember(requestId, userData) {
 	}
 }
 
+
+// /:requestId/reject
+/**
+ *
+ * @param {string || objectId} requestId - request id to reject
+ * @param {object} userData - user data of requester
+ * @returns {void || never} - void
+ */
+async function rejectTenantInviteRequest(requestId,userData)
+{
+
+	//1. check request exist
+	const requestData = await requestRepo.fetchRequestById(requestId);
+
+	console.log(requestData);
+	if(!requestData) throwAppError(REQ_ERROR.REQUEST_NOT_FOUND);
+
+	let credential = !userData.email ? userData.mobile : userData.email;
+
+	//2. validate request
+	await validateRequest(requestData,credential);
+
+	//3. since its just reject nothing more to do 
+	const updatedRequest = await requestRepo.updateRequestById(requestId,{ requestStatus:"rejected",isActive:false});
+	
+	console.log(updatedRequest);
+	//if not updated
+	if(!updatedRequest) throwAppError (CRUD_ERROR.UNABLE_TO_UPDATE);
+
+	//return if updated
+	return;
+}
+
 module.exports = {
 	getActiveRequestsOfUser,
 	acceptInviteRequestAndSetupMember,
+	rejectTenantInviteRequest
 };

@@ -44,7 +44,7 @@ async function insertTenantIdIntoUserById(tenantIdToAdd,userId,session=null){
 	const Opts = utils.getDefaultQueryOpts(session);
 
 	return await UserModel.findOneAndUpdate(
-		{_id:convertedUserId,isDeleted:false,isActive:false},
+		{_id:convertedUserId,isDeleted:false,isActive:true},
 		{$addToSet:{tenants:convertedTenantId}},
 		Opts
 	)

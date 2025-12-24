@@ -128,15 +128,16 @@ async function sendUserJoinTenantRequest(
 	credential,
 	invitorUserData
 ) {
-	//Check user exist with credential
+	//1. Check user exist with credential
 	const userInDatabase = await assertUserExistByCredential(credential);
 	if (!userInDatabase) throwAppError(USER_ERROR.USER_NOT_FOUND);
+	if(userInDatabase && !userInDatabase.isActive) throwAppError(USER_ERROR.USER_DEACTIVATED);
 
-	//check user is not already member of the tenant
+	//2. check user is not already member of the tenant
 	const isTenantMember = await memberRepo.findTenantMemberByIds(tenantId,userInDatabase?._id);
 	if(isTenantMember) throwAppError(MEMBER_ERROR.ALREADY_TENANT_MEMBER);
 
-	//check request is not sent alread.
+	//3. check request is not sent alread.
 	const requestInDatabase = await requestRepo.fetchRequestByCombination(
 		tenantId,
 		credential
@@ -144,7 +145,7 @@ async function sendUserJoinTenantRequest(
 
 	if (requestInDatabase) throwAppError(REQ_ERROR.REQUEST_ALREADY_SENT);
 
-	//Send invitation on email/mobile
+	//4. Send invitation on email/mobile
 	const tenantData = await tenantRepo.fetchSelectedTenantFieldsById(
 		tenantId,
 		"_id tenantName tenantCategory ownerId street landmark city state country zip"
@@ -168,9 +169,8 @@ async function sendUserJoinTenantRequest(
 		throwAppError(COMM_ERROR.UNSUPPORTED_CREDENTIAL_TYPE);
 	}
 
-	//Open the invite request for the user to tenant
+	//5. Open the invite request for the user to tenant
 
-	console.log(payload?.invitorName);
 	//replace keyword
 	let reqMessage = replaceAllKeywordWithValue(
 		REQUEST_TYPE.TENANT_INVITE_REQ.message,

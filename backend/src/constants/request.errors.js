@@ -5,7 +5,7 @@ module.exports = {
     //404
     REQUEST_NOT_FOUND:{
         code:"REQUEST_NOT_FOUND",
-        httpStatus:409,
+        httpStatus:404,
         message:"Request not found."
     },
     //409
