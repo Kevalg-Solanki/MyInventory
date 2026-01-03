@@ -33,19 +33,7 @@ tenantMemberRouter.post(
 	memberControllers.inviteUserToTenant
 );
 
-//**Get all request sent from tenant.
-tenantMemberRouter.get(
-	"/:tenantId",
-	verifyToken,
-	
-)
 
-//**PATCH cancel request */
-requestRouter.patch(
-	"/:tenantId/cancel-mine/:requestId",
-	verifyToken,
-	requestControllers.rejectRequest
-);
 
 
 module.exports = tenantMemberRouter;

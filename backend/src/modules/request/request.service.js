@@ -192,6 +192,17 @@ async function rejectTenantInviteRequest(requestId,userData)
 	return;
 }
 
+
+// /:tenantId/cancel-mine/:requestId
+async function cancelMyTenantInviteRequest(tenantId,requestId,userData) {
+
+	//1. verify request exist 
+	const requestData = await requestRepo.fetchRequestById(requestId);
+
+	if(!requestData) throwAppError(REQ_ERROR.REQUEST_NOT_FOUND);
+
+	
+}
 module.exports = {
 	getActiveRequestsOfUser,
 	acceptInviteRequestAndSetupMember,

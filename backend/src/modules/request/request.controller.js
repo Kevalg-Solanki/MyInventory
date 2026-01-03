@@ -52,6 +52,21 @@ async function rejectRequest(req,res,next) {
 	}
 }
 
+async function cancelRequest(req,res,next) {
+	try
+	{
+		const {tenantId,requestId} = req.params;
+		console.log(req.query);
+
+		
+		return sendResponse(res,200,"Invite request sent by you cancelled.")
+	}
+	catch(error)
+	{
+		next(error);
+	}
+}
+
 
 module.exports = {
 	getAllActiveRequestOfUser,

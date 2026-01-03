@@ -1,4 +1,8 @@
+//constants
+const PERMS_SET = require("../../constants/permSets");
+
 //middlewares
+const verifyRolePermission = require("../../middlewares/verifyRolePermission");
 const verifyToken = require("../../middlewares/verifyToken");
 
 const requestControllers = require("./request.controller");
@@ -26,5 +30,17 @@ requestRouter.patch(
 	verifyToken,
 	requestControllers.rejectRequest
 );
+
+
+//**PATCH cancel invite request sent by self(member) from tenant  */
+requestRouter.patch(
+	"/:tenantId/cancel-mine/:requestId",
+	verifyToken,
+	verifyRolePermission(PERMS_SET.REQUEST_CANCEL_SELF_TENANT_INVITE_PERMS),
+	requestControllers.rejectRequest
+);
+
+
+
 
 module.exports = requestRouter;
