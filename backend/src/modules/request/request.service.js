@@ -18,18 +18,31 @@ const { default: mongoose } = require("mongoose");
  *
  * @param {object} requestData - request which is featched by requestId
  * @param {string} userCredential - email/mobile user loged in with
- * @return {void || never} 
+ * @return {void || never}
  */
-async function validateRequest(requestData, userCredential) {
+async function validateReqUpdater(requestData, valueToValidate) {
 	//validate it is user request or not
-	if (requestData.receiverCredential != userCredential)
+	if (
+		requestData.receiverCredential != valueToValidate &&
+		requestData.senderId != valueToValidate
+	)
 		throwAppError(REQ_ERROR.REQUEST_NOT_FOUND);
 
-    
+	
+	console.log(requestData);
+	return;
+}
+
+/**
+ *
+ * @param {object} requestData - request which is featched by requestId
+ * @return {void || never}
+ */
+async function validateReqStatus(requestData) {
 	const statusErrors = {
-		"cancelled": REQ_ERROR.REQUEST_ALREADY_CANCELLED,
-		"rejected": REQ_ERROR.REQUEST_ALREADY_REJECTED,
-		"accepted": REQ_ERROR.REQUEST_ALREADY_ACCEPTED,
+		cancelled: REQ_ERROR.REQUEST_ALREADY_CANCELLED,
+		rejected: REQ_ERROR.REQUEST_ALREADY_REJECTED,
+		accepted: REQ_ERROR.REQUEST_ALREADY_ACCEPTED,
 	};
 
 	//request active or not
@@ -37,7 +50,7 @@ async function validateRequest(requestData, userCredential) {
 		const error = statusErrors[requestData.requestStatus];
 		if (error) throwAppError(error);
 	}
-	console.log(requestData)
+
 	return;
 }
 
@@ -116,8 +129,9 @@ async function acceptInviteRequestAndSetupMember(requestId, userData) {
 
 	let credential = !userData.email ? userData.mobile : userData.email;
 
-	//validate request
-	await validateRequest(requestData, credential);
+	//validate request receiver
+	await validateReqUpdater(requestData, credential);
+	await validateReqStatus(requestData);
 
 	//check tenant status
 	await checkTenantStatus(requestData.tenantId);
@@ -159,7 +173,6 @@ async function acceptInviteRequestAndSetupMember(requestId, userData) {
 	}
 }
 
-
 // /:requestId/reject
 /**
  *
@@ -167,26 +180,28 @@ async function acceptInviteRequestAndSetupMember(requestId, userData) {
  * @param {object} userData - user data of requester
  * @returns {void || never} - void
  */
-async function rejectTenantInviteRequest(requestId,userData)
-{
-
+async function rejectTenantInviteRequest(requestId, userData) {
 	//1. check request exist
 	const requestData = await requestRepo.fetchRequestById(requestId);
 
 	console.log(requestData);
-	if(!requestData) throwAppError(REQ_ERROR.REQUEST_NOT_FOUND);
+	if (!requestData) throwAppError(REQ_ERROR.REQUEST_NOT_FOUND);
 
 	let credential = !userData.email ? userData.mobile : userData.email;
 
-	//2. validate request
-	await validateRequest(requestData,credential);
+	//2. validate request receiver
+	await validateReqUpdater(requestData, credential);
+	await validateReqStatus(requestData);
 
-	//3. since its just reject nothing more to do 
-	const updatedRequest = await requestRepo.updateRequestById(requestId,{ requestStatus:"rejected",isActive:false});
-	
+	//3. since its just reject nothing more to do
+	const updatedRequest = await requestRepo.updateRequestById(requestId, {
+		requestStatus: "rejected",
+		isActive: false,
+	});
+
 	console.log(updatedRequest);
 	//if not updated
-	if(!updatedRequest) throwAppError (CRUD_ERROR.UNABLE_TO_UPDATE);
+	if (!updatedRequest) throwAppError(CRUD_ERROR.UNABLE_TO_UPDATE);
 
 	//return if updated
 	return;
@@ -194,17 +209,67 @@ async function rejectTenantInviteRequest(requestId,userData)
 
 
 // /:tenantId/cancel-mine/:requestId
-async function cancelMyTenantInviteRequest(tenantId,requestId,userData) {
+/**
+ * 
+ * @param {string|| objectId} tenantId 
+ * @param {string|| objectId} requestId 
+ * @param {object} userData - user data of requester
+ * @returns {void || never} - void
+ */
+async function cancelMyTenantInviteRequest(tenantId, requestId, userData) {
+	//1. verify request exist
+	const requestData = await requestRepo.fetchRequestByIds(tenantId,requestId);
 
-	//1. verify request exist 
-	const requestData = await requestRepo.fetchRequestById(requestId);
+	if (!requestData) throwAppError(REQ_ERROR.REQUEST_NOT_FOUND);
 
-	if(!requestData) throwAppError(REQ_ERROR.REQUEST_NOT_FOUND);
+	//2. validate request updater is sender of this request
+	await validateReqUpdater(requestData, userData._id);
+	//validate request
+	await validateReqStatus(requestData);
 
-	
+	//3. update request to cancelled
+	const updatedRequest = await requestRepo.updateRequestById(requestId,{
+		requestStatus:"cancelled",
+		isActive:false,
+	})
+
+	if(!updatedRequest) throwAppError(CRUD_ERROR.UNABLE_TO_UPDATE);
+
+	return;
+
+}
+
+// /:tenantId/cancel/:requestId
+/**
+ * 
+ * @param {string|| objectId} tenantId 
+ * @param {string|| objectId} requestId 
+ * @returns {void || never} - void
+ */
+async function cancelTenantInviteRequest(tenantId, requestId) {
+	//1. verify request exist
+	const requestData = await requestRepo.fetchRequestByIds(tenantId,requestId,"isActive requestStatus");
+
+	if (!requestData) throwAppError(REQ_ERROR.REQUEST_NOT_FOUND);
+
+	//2. "NOTE"
+	await validateReqStatus(requestData);
+
+	//3. update request to cancelled
+	const updatedRequest = await requestRepo.updateRequestById(requestId,{
+		requestStatus:"cancelled",
+		isActive:false,
+	})
+
+	if(!updatedRequest) throwAppError(CRUD_ERROR.UNABLE_TO_UPDATE);
+
+	return;
+
 }
 module.exports = {
 	getActiveRequestsOfUser,
 	acceptInviteRequestAndSetupMember,
-	rejectTenantInviteRequest
+	rejectTenantInviteRequest,
+	cancelMyTenantInviteRequest,
+	cancelTenantInviteRequest
 };

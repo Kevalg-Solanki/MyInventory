@@ -37,7 +37,15 @@ requestRouter.patch(
 	"/:tenantId/cancel-mine/:requestId",
 	verifyToken,
 	verifyRolePermission(PERMS_SET.REQUEST_CANCEL_SELF_TENANT_INVITE_PERMS),
-	requestControllers.rejectRequest
+	requestControllers.cancelMyInviteRequest
+);
+
+//**PATCH cancel invite request sent from tenant  */
+requestRouter.patch(
+	"/:tenantId/cancel/:requestId",
+	verifyToken,
+	verifyRolePermission(PERMS_SET.REQUEST_CANCEL_TENANT_INVITE_PERMS),
+	requestControllers.cancelInviteRequest
 );
 
 

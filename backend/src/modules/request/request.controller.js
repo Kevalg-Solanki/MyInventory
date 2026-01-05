@@ -40,6 +40,7 @@ async function acceptRequest(req, res, next) {
 	}
 }
 
+// PATCH /:requestId/reject
 async function rejectRequest(req,res,next) {
 	try {
 		const requestId = req.params.requestId;
@@ -52,14 +53,35 @@ async function rejectRequest(req,res,next) {
 	}
 }
 
-async function cancelRequest(req,res,next) {
+// PATCH /:tenantId/cancel-mine/:requestId
+async function cancelMyInviteRequest(req,res,next) {
 	try
 	{
 		const {tenantId,requestId} = req.params;
 		console.log(req.query);
 
+		await requestServices.cancelMyTenantInviteRequest(tenantId,requestId,req.user);
 		
-		return sendResponse(res,200,"Invite request sent by you cancelled.")
+		return sendResponse(res,200,"Invite request sent by you cancelled.");
+	}
+	catch(error)
+	{
+		next(error);
+	}
+}
+
+
+
+// PATCH /:tenantId/cancel/:requestId
+async function cancelInviteRequest(req,res,next) {
+	try
+	{
+		const {tenantId,requestId} = req.params;
+		console.log(req.query);
+
+		await requestServices.cancelTenantInviteRequest(tenantId,requestId);
+
+		return sendResponse(res,200,"Invite request cancelled.");
 	}
 	catch(error)
 	{
@@ -71,5 +93,7 @@ async function cancelRequest(req,res,next) {
 module.exports = {
 	getAllActiveRequestOfUser,
 	acceptRequest,
-	rejectRequest
+	rejectRequest,
+	cancelMyInviteRequest,
+	cancelInviteRequest
 };

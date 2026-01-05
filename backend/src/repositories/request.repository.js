@@ -33,10 +33,40 @@ async function fetchRequestByCombination(tenantId, credential) {
 	});
 }
 
-async function fetchRequestById(requestId) {
+/**
+ *
+ * @param {string} tenantId -id of tenant to find request
+ * @param {string} selectedDataQuery - selected fields to get e.g "tenantName tenantCategory ownerId"
+ * @returns
+ */
+async function fetchRequestById(requestId, selectedDataQuery = "") {
 	const convertedRequestId = await convertStrToObjectId(requestId);
 
-	return await RequestModel.findById(convertedRequestId);
+	return await RequestModel.findOne({
+		_id: convertedRequestId,
+		isDeleted: false,
+	})
+		.select(selectedDataQuery)
+		.lean();
+}
+
+/**
+ *
+ * @param {String} tenantId - id of tenant to find request of
+ * @param {String} requestId - id of reuqest
+ * @param {string} selectedDataQuery - selected fields to get e.g "tenantName tenantCategory ownerId"
+ * @returns
+ */
+async function fetchRequestByIds(tenantId, requestId,selectedDataQuery = "") {
+	const convertedId = await convertStrToObjectId(tenantId);
+	const convertedReqId = await convertStrToObjectId(requestId);
+
+	return await RequestModel.findOne({
+		_id: convertedReqId,
+		tenantId: convertedId,
+		isDeleted: false,
+	}).select(selectedDataQuery)
+	.lean();
 }
 
 /**
@@ -95,5 +125,6 @@ module.exports = {
 	fetchRequestByCombination,
 	fetchAllActiveRequestByReceiverCredential,
 	fetchRequestById,
+	fetchRequestByIds,
 	updateRequestById,
 };
