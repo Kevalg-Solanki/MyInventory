@@ -199,6 +199,12 @@ async function sendUserJoinTenantRequest(
 	return;
 }
 
+// GET /:tenantId
+async function getAllTenantMemberListWithRoles(pagination,)
+{
+
+}
+
 module.exports = {
 	inviteUserToPlatformAndSendInviteRequest,
 	sendUserJoinTenantRequest,

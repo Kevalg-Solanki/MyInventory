@@ -6,16 +6,88 @@ const {
 //utils
 const utils = require("../utils");
 
+async function fetchAllTenantMemberWithRolesByTenantId(tenantId, pagination) {
+	const convertedId = await utils.convertStrToObjectId(tenantId);
+
+	try {
+		const pipeline = [
+			//1. find document which match values.
+			{ $match: { tenantId: convertedId, isDeleted: false } },
+			//2. take only fields that needed.
+			{
+				$project: {
+					nickName: 1,
+					roles: 1,
+					isActive: 1,
+				},
+			},
+			{
+				$lookup: {
+					from: "tenant-roles", //from which collection
+					localField: "$roles", //using projected variable
+					foreignField: "_id", //with which field
+					as: "roleDocs", //name of array
+				},
+			},
+			{
+				//take needed fields only
+				$project: {
+					memberId: "$_id",
+					nickName: 1,
+					isActive: 1,
+					roles: {
+						$cond: [
+							//condition operator
+							{ $gt: [{ $size: "roleDocs" }, 0] }, // size of docs array greaterthan 0
+							//if
+							{
+								$map: {
+									//iterate through array and create map
+									input: "$roleDocs", //do process on this
+									as: "role", //output name
+									in: {
+										roleName: "$$role.roleName", //roleName field from output doc
+										roleColor: "$$role.roleColor", //roleColor field from output doc
+									},
+								},
+							},
+							//else
+							[],
+						],
+					},
+				},
+			},
+			//pipeline for pagination limit and document counts
+			{
+				$facet: {
+					data: [
+						{ $sort: { ...pagination.sortQuery } },
+						{ $skip: pagination.skip },
+						{ $limit: pagination.limit },
+					],
+					totalCount: [{ $count: "total" }],
+				},
+			},
+		];
+
+		//
+		return await TenantMemberModel.aggregate(pipeline);
+	} catch (error) {
+		throw error;
+	}
+}
+
 /**
  * @param {stirng} tenantId
  * @param {string} tenantMemberId
  * @returns {object} - null if not found
  */
-async function findTenantMemberByTenantAndMemberId(tenantId, tenantMemberId) {
+async function fetchTenantMemberByTenantAndMemberId(tenantId, tenantMemberId) {
 	console.log(tenantMemberId, tenantId);
 	if (!tenantId || !tenantMemberId) return null;
 	const convertedMemberId = await utils.convertStrToObjectId(tenantMemberId);
 	console.log(convertedMemberId);
+
 	return await TenantMemberModel.findOne({
 		_id: convertedMemberId,
 		tenantId,
@@ -100,7 +172,7 @@ async function createTenantMemberFromData(tenantMemberData, session = null) {
 	return await memberModelToSave.save(session ? { session } : {});
 }
 module.exports = {
-	findTenantMemberByTenantAndMemberId,
+	fetchTenantMemberByTenantAndMemberId,
 	findTenantMemberByIds,
 	insertRoleIdIntoMemberByIds,
 	removeRoleIdFromMemberByIds,

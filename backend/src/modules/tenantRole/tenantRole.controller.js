@@ -6,27 +6,14 @@ const sendResponse = require("../../utils/sendResponse");
 const throwAppError = require("../../utils/throwAppError");
 
 //services
-const {
-	getRoleListWithoutPermsByTenantId,
-	getRoleListWithPermsByTenantId,
-	getRoleDetailsWithoutPermsByIds,
-	getRoleDetailsWithPermsByIds,
-	getMemberRolesWithoutPermsByIds,
-	getMemberCombinedPermsByIds,
-	removeRoleFromMemberByIds,
-	createCustomRoleForTenant,
-	updateTenantCustomRole,
-	getMemberRolesWithPermsByIds,
-	assignRoleToMemberByIds,
-	deleteTenantCustomRole,
-} = require("./tenantRole.service");
+const tenantRoleService = require("./tenantRole.service");
 
 //tenantRole/:tenantId
 async function getTenantAllRoleListWithoutPerms(req, res, next) {
 	try {
 		const { tenantId } = req.params;
 
-		const roleList = await getRoleListWithoutPermsByTenantId(tenantId);
+		const roleList = tenantRoleService.getRoleListWithoutPermsByTenantId(tenantId);
 
 		return sendResponse(res, 200, "Roles fetched successfully.", { roleList });
 	} catch (error) {
@@ -39,7 +26,7 @@ async function getTenantAllRoleListWithPerms(req, res, next) {
 	try {
 		const { tenantId } = req.params;
 
-		const roleList = await getRoleListWithPermsByTenantId(tenantId);
+		const roleList = tenantRoleService.getRoleListWithPermsByTenantId(tenantId);
 
 		return sendResponse(
 			res,
@@ -57,7 +44,7 @@ async function getTenantRoleDetailsWithoutPerms(req, res, next) {
 	try {
 		const { tenantId, roleId } = req.params;
 
-		const roleDetails = await getRoleDetailsWithoutPermsByIds(tenantId, roleId);
+		const roleDetails = tenantRoleService.getRoleDetailsWithoutPermsByIds(tenantId, roleId);
 
 		return sendResponse(res, 200, "Role details fetched successfully.", {
 			roleDetails,
@@ -72,7 +59,7 @@ async function getTenantRoleDetailsWithPerms(req, res, next) {
 	try {
 		const { tenantId, roleId } = req.params;
 
-		const roleDetailsWithPerms = await getRoleDetailsWithPermsByIds(
+		const roleDetailsWithPerms = tenantRoleService.getRoleDetailsWithPermsByIds(
 			tenantId,
 			roleId
 		);
@@ -92,7 +79,7 @@ async function getTenantMemberRolesWithoutPerms(req, res, next) {
 
 		if (!memberId) throwAppError(MEMBER_ERROR.MEMBER_NOT_FOUND);
 
-		const memberRolesWithoutPerms = await getMemberRolesWithoutPermsByIds(
+		const memberRolesWithoutPerms = tenantRoleService.getMemberRolesWithoutPermsByIds(
 			tenantId,
 			memberId
 		);
@@ -112,7 +99,7 @@ async function getTenantMemberRolesWithPerms(req, res, next) {
 
 		if (!memberId) throwAppError(MEMBER_ERROR.MEMBER_NOT_FOUND);
 
-		const memberRolesWithPerms = await getMemberRolesWithPermsByIds(
+		const memberRolesWithPerms = tenantRoleService.getMemberRolesWithPermsByIds(
 			tenantId,
 			memberId
 		);
@@ -137,7 +124,7 @@ async function getTenantMemberCombinedPerms(req, res, next) {
 
 		if (!memberId) throwAppError(MEMBER_ERROR.MEMBER_NOT_FOUND);
 
-		const memberCombinedPerms = await getMemberCombinedPermsByIds(
+		const memberCombinedPerms = tenantRoleService.getMemberCombinedPermsByIds(
 			tenantId,
 			memberId
 		);
@@ -155,7 +142,7 @@ async function createCustomRole(req, res, next) {
 	try {
 		const { tenantId } = req.params;
 
-		const savedCustomRole = await createCustomRoleForTenant(tenantId, req.body);
+		const savedCustomRole = tenantRoleService.createCustomRoleForTenant(tenantId, req.body);
 
 		return sendResponse(res, 201, "New role created.", { savedCustomRole });
 	} catch (error) {
@@ -170,7 +157,7 @@ async function updateCustomRole(req, res, next) {
 		const { include } = req.query;
 
 		const updatePerms = include === "permissions";
-		const updatedCustomRole = await updateTenantCustomRole(
+		const updatedCustomRole = tenantRoleService.updateTenantCustomRole(
 			tenantId,
 			roleId,
 			req.body,
@@ -190,7 +177,7 @@ async function assignRoleToTenantMember(req, res, next) {
 	try {
 		const { tenantId, roleId, memberId } = req.params;
 
-		const updatedMember = await assignRoleToMemberByIds(tenantId,roleId,memberId);
+		const updatedMember = tenantRoleService.assignRoleToMemberByIds(tenantId,roleId,memberId);
 
 		return sendResponse(res,200,"Role assigned.",{
 			updatedMember
@@ -205,7 +192,7 @@ async function removeRoleFromTenantMember(req, res, next) {
 	try {
 		const { tenantId, roleId, memberId } = req.params;
 		console.log(tenantId,roleId,memberId)
-		const updatedMember = await removeRoleFromMemberByIds(tenantId,roleId,memberId);
+		const updatedMember = tenantRoleService.removeRoleFromMemberByIds(tenantId,roleId,memberId);
 
 		return sendResponse(res,200,"Role removed.",{
 			updatedMember
@@ -220,7 +207,7 @@ async function deleteCustomRole(req, res, next) {
 	try {
 		const { tenantId, roleId } = req.params;
 	
-		await deleteTenantCustomRole(tenantId,roleId);
+		tenantRoleService.deleteTenantCustomRole(tenantId,roleId);
 
 		return sendResponse(res,200,"Role deleted.");
 	} catch (error) {

@@ -33,7 +33,13 @@ tenantMemberRouter.post(
 	memberControllers.inviteUserToTenant
 );
 
-
+//**Get all tenant member
+tenantMemberRouter.get(
+	"/:tenantId",
+	verifyToken,
+	verifyRolePermission(PERMS_SET.TENANT_MEMBER_GET_ALL_PERMS),
+	memberControllers.getAllTenantMembers
+)
 
 
 module.exports = tenantMemberRouter;

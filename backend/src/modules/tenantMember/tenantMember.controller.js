@@ -7,6 +7,7 @@ const sendResponse = require("../../utils/sendResponse.js");
 
 //memberServices
 const memberServices = require("./tenantMember.service");
+const paginationHandler = require("../../utils/paginationHandler.js");
 
 
 
@@ -41,6 +42,24 @@ async function inviteUserToTenant(req,res,next){
         await memberServices.sendUserJoinTenantRequest(tenantId,type,credential,req.user);
 
         return sendResponse(res,200,"Invitation to tenant request send!.");
+    }
+    catch(error)
+    {
+        next(error);
+    }
+}
+
+//**POST /:tenantId
+async function getAllTenantMembers(req,res,next) {
+    try
+    {
+        const pagination = paginationHandler(
+            req.query?.page,
+            req.query?.limit,
+            req.query?.sort
+        );
+
+        
     }
     catch(error)
     {

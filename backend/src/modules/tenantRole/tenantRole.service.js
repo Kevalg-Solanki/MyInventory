@@ -188,7 +188,7 @@ async function getMemberRolesWithoutPermsByIds(tenantId, memberId) {
 	try {
 		//find tenant member
 		const tenantMember =
-			await tenantMemberRepo.findTenantMemberByTenantAndMemberId(
+			await tenantMemberRepo.fetchTenantMemberByTenantAndMemberId(
 				tenantId,
 				memberId
 			);
@@ -215,7 +215,7 @@ async function getMemberRolesWithPermsByIds(tenantId, memberId) {
 	try {
 		//find tenant member
 		const tenantMember =
-			await tenantMemberRepo.findTenantMemberByTenantAndMemberId(
+			await tenantMemberRepo.fetchTenantMemberByTenantAndMemberId(
 				tenantId,
 				memberId
 			);
@@ -245,7 +245,7 @@ async function getMemberCombinedPermsByIds(tenantId, memberId) {
 	try {
 		//find tenant member
 		const tenantMember =
-			await tenantMemberRepo.findTenantMemberByTenantAndMemberId(
+			await tenantMemberRepo.fetchTenantMemberByTenantAndMemberId(
 				tenantId,
 				memberId
 			);
@@ -352,7 +352,7 @@ async function updateTenantCustomRole(
 async function assignRoleToMemberByIds(tenantId, roleId, memberId) {
 	//find tenant member
 	const tenantMember =
-		await tenantMemberRepo.findTenantMemberByTenantAndMemberId(
+		await tenantMemberRepo.fetchTenantMemberByTenantAndMemberId(
 			tenantId,
 			memberId
 		);
@@ -409,7 +409,7 @@ async function assignRoleToMemberByIds(tenantId, roleId, memberId) {
 async function removeRoleFromMemberByIds(tenantId, roleId, memberId) {
 	//find tenant member
 	const tenantMember =
-		await tenantMemberRepo.findTenantMemberByTenantAndMemberId(
+		await tenantMemberRepo.fetchTenantMemberByTenantAndMemberId(
 			tenantId,
 			memberId
 		);
