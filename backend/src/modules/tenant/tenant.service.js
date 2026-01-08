@@ -340,6 +340,7 @@ async function getUserTenantAndRoleDataById(userId, tenantId) {
 					isActive: 1,
 				},
 			},
+			//now have to get documents from other collection.
 			{
 				$lookup: {
 					from: "tenant-members",

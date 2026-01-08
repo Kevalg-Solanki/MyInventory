@@ -9,7 +9,7 @@
  * @returns {object} - {page,limit,sort}
  */
 function paginationHandler(page,limit,sortQuery=null){
-
+                                                        //base
     const convertedPage = Math.max(1,parseInt(page || "1",10)||1);
     const convertedLimit = Math.max(1,parseInt(limit || "10",10)||10);
     
@@ -42,7 +42,7 @@ function parseSort(sortQuery=null){
         
         //example: return {createdAt:1};
         return acc;
-    },{});
+    },{});  
 
 
 }

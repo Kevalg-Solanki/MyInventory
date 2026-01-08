@@ -218,7 +218,7 @@ async function rejectTenantInviteRequest(requestId, userData) {
  */
 async function cancelMyTenantInviteRequest(tenantId, requestId, userData) {
 	//1. verify request exist
-	const requestData = await requestRepo.fetchRequestByIds(tenantId,requestId);
+	const requestData = await requestRepo.fetchRequestByIds(tenantId,requestId,"receiverCredential senderId isActive requestStatus");
 
 	if (!requestData) throwAppError(REQ_ERROR.REQUEST_NOT_FOUND);
 
