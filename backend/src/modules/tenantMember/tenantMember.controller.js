@@ -53,13 +53,17 @@ async function inviteUserToTenant(req,res,next){
 async function getAllTenantMembers(req,res,next) {
     try
     {
+        const tenantId = req.params?.tenantId;
         const pagination = paginationHandler(
             req.query?.page,
             req.query?.limit,
             req.query?.sort
         );
 
-        
+        const {allMemberList,preparedPagination} = await memberServices.getAllTenantMemberListWithRoles(tenantId,pagination);
+
+
+        return sendResponse(res,200,"All members fetched.",{allMemberList,preparedPagination});
     }
     catch(error)
     {
@@ -69,5 +73,6 @@ async function getAllTenantMembers(req,res,next) {
 
 module.exports = {
     inviteUserToPlatformAndTenant,
-    inviteUserToTenant
+    inviteUserToTenant,
+    getAllTenantMembers
 }

@@ -14,8 +14,8 @@ function paginationHandler(page,limit,sortQuery=null){
     const convertedLimit = Math.max(1,parseInt(limit || "10",10)||10);
     
     //skip
-    const skip = (convertedPage-1) * limit;
-
+    const skip = (convertedPage-1) * convertedLimit;
+    console.log(skip);
     const properSort= parseSort(sortQuery);
 
     return {page:convertedPage,limit:convertedLimit,skip,sort:properSort};

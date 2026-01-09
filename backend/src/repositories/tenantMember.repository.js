@@ -8,7 +8,7 @@ const utils = require("../utils");
 
 async function fetchAllTenantMemberWithRolesByTenantId(tenantId, pagination) {
 	const convertedId = await utils.convertStrToObjectId(tenantId);
-
+	console.log(pagination)
 	try {
 		const pipeline = [
 			//1. find document which match values.
@@ -24,7 +24,7 @@ async function fetchAllTenantMemberWithRolesByTenantId(tenantId, pagination) {
 			{
 				$lookup: {
 					from: "tenant-roles", //from which collection
-					localField: "$roles", //using projected variable
+					localField: "roles", //using projected variable
 					foreignField: "_id", //with which field
 					as: "roleDocs", //name of array
 				},
@@ -32,13 +32,14 @@ async function fetchAllTenantMemberWithRolesByTenantId(tenantId, pagination) {
 			{
 				//take needed fields only
 				$project: {
+					_id:0,
 					memberId: "$_id",
 					nickName: 1,
 					isActive: 1,
 					roles: {
 						$cond: [
 							//condition operator
-							{ $gt: [{ $size: "roleDocs" }, 0] }, // size of docs array greaterthan 0
+							{ $gt: [{ $size: "$roleDocs" }, 0] }, // size of docs array greaterthan 0
 							//if
 							{
 								$map: {
@@ -61,17 +62,21 @@ async function fetchAllTenantMemberWithRolesByTenantId(tenantId, pagination) {
 			{
 				$facet: {
 					data: [
-						{ $sort: { ...pagination.sortQuery } },
+						{ $sort: pagination.sort },
 						{ $skip: pagination.skip },
 						{ $limit: pagination.limit },
 					],
-					totalCount: [{ $count: "total" }],
+					totalNumberOfDocs: [{ $count: "total" }],
 				},
 			},
 		];
 
 		//
-		return await TenantMemberModel.aggregate(pipeline);
+		const allMembers = await TenantMemberModel.aggregate(pipeline);
+
+		return {data:allMembers[0].data,totalNumberOfDocs:allMembers[0].totalNumberOfDocs[0].total}	
+		
+
 	} catch (error) {
 		throw error;
 	}
@@ -101,7 +106,7 @@ async function fetchTenantMemberByTenantAndMemberId(tenantId, tenantMemberId) {
  * @param {string} userId
  * @returns {Object} - null if not found
  */
-async function findTenantMemberByIds(tenantId, userId) {
+async function fetchTenantMemberByIds(tenantId, userId) {
 	if (!tenantId || !userId) return null;
 	return await TenantMemberModel.findOne({
 		tenantId,
@@ -172,8 +177,9 @@ async function createTenantMemberFromData(tenantMemberData, session = null) {
 	return await memberModelToSave.save(session ? { session } : {});
 }
 module.exports = {
+	fetchAllTenantMemberWithRolesByTenantId,
 	fetchTenantMemberByTenantAndMemberId,
-	findTenantMemberByIds,
+	fetchTenantMemberByIds,
 	insertRoleIdIntoMemberByIds,
 	removeRoleIdFromMemberByIds,
 	createTenantMemberFromData,

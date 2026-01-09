@@ -20,6 +20,7 @@ const throwAppError = require("../../utils/throwAppError");
 const { sendSms } = require("../../utils/smsService.js");
 const { sendMail } = require("../../utils/emailService.js");
 const replaceAllKeywordWithValue = require("../../utils/replaceAllKeywordWithValue.js");
+const prepareProperDataForPagination = require("../../utils/prepareProperDataForPagination.js");
 
 
 
@@ -134,7 +135,7 @@ async function sendUserJoinTenantRequest(
 	if(userInDatabase && !userInDatabase.isActive) throwAppError(USER_ERROR.USER_DEACTIVATED);
 
 	//2. check user is not already member of the tenant
-	const isTenantMember = await memberRepo.findTenantMemberByIds(tenantId,userInDatabase?._id);
+	const isTenantMember = await memberRepo.fetchTenantMemberByIds(tenantId,userInDatabase?._id);
 	if(isTenantMember) throwAppError(MEMBER_ERROR.ALREADY_TENANT_MEMBER);
 
 	//3. check request is not sent alread.
@@ -200,12 +201,18 @@ async function sendUserJoinTenantRequest(
 }
 
 // GET /:tenantId
-async function getAllTenantMemberListWithRoles(pagination,)
+async function getAllTenantMemberListWithRoles(tenantId,pagination)
 {
+	//Get all member list.
+	const {data,totalNumberOfDocs} = await memberRepo.fetchAllTenantMemberWithRolesByTenantId(tenantId,pagination);
 
+	let preparedPagination = prepareProperDataForPagination(pagination,totalNumberOfDocs);
+
+	return {allMemberList: data, preparedPagination};
 }
 
 module.exports = {
 	inviteUserToPlatformAndSendInviteRequest,
 	sendUserJoinTenantRequest,
+	getAllTenantMemberListWithRoles
 };

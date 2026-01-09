@@ -5,7 +5,7 @@ const { RESTRICTED_PERMS } = require("../constants/permSets.js");
 
 //repositories
 const {
-	findTenantMemberByIds,
+	fetchTenantMemberByIds,
 } = require("../repositories/tenantMember.repository.js");
 const {
 	findAndCombinePermsFromAllRolesByRoleIds,
@@ -66,7 +66,7 @@ const verifyRolePermission = (requiredPerms = []) => {
 			if(!tenantData?.isActive) throwError(TENANT_ERROR.TENANT_DEACTIVATED)
 			
 			//Verify user is member of tenant or not
-			const tenantMember = await findTenantMemberByIds(tenantId,req.user._id);
+			const tenantMember = await fetchTenantMemberByIds(tenantId,req.user._id);
 
 			if (!tenantMember) return throwError(AUTH_ERROR.UNAUTHORIZED_ACCESS);
 

@@ -291,6 +291,7 @@ async function getUserConnectedTenantsAndRoleData(userId, tenantIds) {
 			},
 			{
 				$project: {
+					_id:0,
 					tenantId: "$_id",
 					tenantName: 1,
 					tenantCategory: 1,
