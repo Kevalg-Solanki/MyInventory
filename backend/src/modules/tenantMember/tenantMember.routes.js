@@ -24,6 +24,22 @@ tenantMemberRouter.post(
 	memberControllers.inviteUserToPlatformAndTenant
 );
 
-//
+//**Sent invite to tenant
+tenantMemberRouter.post(
+	"/:tenantId/invite-tenant",
+	verifyToken,
+	verifyRolePermission(PERMS_SET.REQUEST_SEND_TENANT_INVITE_PERMS),
+    validateRequest(memberValidators.inviteToTenantSchema),
+	memberControllers.inviteUserToTenant
+);
+
+//**Get all tenant member
+tenantMemberRouter.get(
+	"/:tenantId",
+	verifyToken,
+	verifyRolePermission(PERMS_SET.TENANT_MEMBER_GET_ALL_PERMS),
+	memberControllers.getAllTenantMembers
+)
+
 
 module.exports = tenantMemberRouter;

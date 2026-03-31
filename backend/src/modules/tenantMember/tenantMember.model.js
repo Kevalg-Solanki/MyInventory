@@ -40,12 +40,12 @@ const tenantMemberSchema = new mongoose.Schema(
 
 tenantMemberSchema.index(
     {userId:1,tenantId:1},
-    {unique:true, partialFilterExpression:{isDeleted:{$ne:true}}}
+    {unique:true, partialFilterExpression:{isDeleted:false}}
 );
 
 tenantMemberSchema.index(
     {tenantId:1,roles:1},
-    {unique:true, partialFilterExpression:{isDeleted:{$ne:true}}}
+    {unique:true, partialFilterExpression:{isDeleted:false}}
 );
 
 tenantMemberSchema.set("toJSON", {

@@ -14,7 +14,7 @@ const tenantSchema = new mongoose.Schema(
 		},
 		tenantName: {	
 			type: String,
-			unique: true,
+			
 			required: true,
 			maxlength: [100, "Maximum length of tenant name exceeded"],
 		},
@@ -96,9 +96,11 @@ const tenantSchema = new mongoose.Schema(
 );
 
 //keep tenant name unquie but ignore deleted tenants
-tenantSchema.index({
+tenantSchema.index(
+	{tenantName:1},
+	{
 	unique: true,
-	partialFilterExpression: { isDeleted: { $ne: true } },
+	partialFilterExpression: { isDeleted: false },
 });
 
 tenantSchema.index({ ownerId: 1 });

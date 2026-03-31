@@ -5,7 +5,7 @@ const { RESTRICTED_PERMS } = require("../constants/permSets.js");
 
 //repositories
 const {
-	findTenantMemberByIds,
+	fetchTenantMemberByIds,
 } = require("../repositories/tenantMember.repository.js");
 const {
 	findAndCombinePermsFromAllRolesByRoleIds,
@@ -59,12 +59,14 @@ const verifyRolePermission = (requiredPerms = []) => {
 			//find tenant 
 			const tenantData = await fetchTenantStatusById(tenantId);
 
+			if(!tenantData) throwError(TENANT_ERROR.TENANT_NOT_FOUND);
+			
 			if(tenantData?.isDeleted) throwError(TENANT_ERROR.TENANT_NOT_FOUND);
 
 			if(!tenantData?.isActive) throwError(TENANT_ERROR.TENANT_DEACTIVATED)
 			
 			//Verify user is member of tenant or not
-			const tenantMember = await findTenantMemberByIds(tenantId,req.user._id);
+			const tenantMember = await fetchTenantMemberByIds(tenantId,req.user._id);
 
 			if (!tenantMember) return throwError(AUTH_ERROR.UNAUTHORIZED_ACCESS);
 
@@ -78,7 +80,7 @@ const verifyRolePermission = (requiredPerms = []) => {
 
 			//Validate member have perms or not
 			if (!Array.isArray(memberPerms) || memberPerms.length == 0)
-				throwError(AUTH_ERROR.ACCESS_DENIED);
+				throwError(AUTH_ERROR.REQ_PERMS_NOT_FOUND);
 
 			//Using Sets for faster interation checks
 			const memberPermsSet = new Set(memberPerms);

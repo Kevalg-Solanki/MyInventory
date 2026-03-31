@@ -4,24 +4,13 @@ const verifyToken = require("../../middlewares/verifyToken.js");
 const verifyRolePermission = require("../../middlewares/verifyRolePermission.js");
 
 //validator
-const {
-	createTenantSchema,
-	updateTenantSchema,
-} = require("./tenant.validation.js");
+const tenantValidators = require("./tenant.validation.js");
 
 //constants
 const PERMS_SET = require("../../constants/permSets.js");
 
 //controller
-const {
-	createTenant,
-	getTenantData,
-	getTenantsConnectedToUser,
-	loginInTenant,
-	updateTenant,
-	deactivateTenant,
-	deleteTenant,
-} = require("./tenant.controller.js");
+const tenantControllers = require("./tenant.controller.js");
 
 //create router
 const tenantRouter = require("express").Router();
@@ -32,19 +21,19 @@ const tenantRouter = require("express").Router();
 tenantRouter.post(
 	"/",
 	verifyToken,
-	validateRequest(createTenantSchema),
-	createTenant
+	validateRequest(tenantValidators.createTenantSchema),
+	tenantControllers.createTenant
 );
 
 //**Get tenants user joined/owned
-tenantRouter.get("/mine", verifyToken, getTenantsConnectedToUser);
+tenantRouter.get("/mine", verifyToken, tenantControllers.getTenantsConnectedToUser);
 
 //**Login into tenant
 tenantRouter.post(
 	"/login",
 	verifyToken,
 	verifyRolePermission(PERMS_SET.TENANT_LOGIN_PERMS),
-	loginInTenant
+	tenantControllers.loginInTenant
 );
 
 //**Delete tenant
@@ -52,7 +41,7 @@ tenantRouter.delete(
 	"/:tenantId",
 	verifyToken,
 	verifyRolePermission(PERMS_SET.RESTRICTED_PERMS),
-	deleteTenant
+	tenantControllers.deleteTenant
 );
 
 //--DYNAMIC PATHS
@@ -62,7 +51,7 @@ tenantRouter.get(
 	"/:tenantId",
 	verifyToken,
 	verifyRolePermission(PERMS_SET.TENANT_GET_ALL_DATA_PERMS),
-	getTenantData
+	tenantControllers.getTenantData
 );
 
 //**Update tenant
@@ -70,8 +59,8 @@ tenantRouter.patch(
 	"/:tenantId",
 	verifyToken,
 	verifyRolePermission(PERMS_SET.TENANT_UPDATE_PERMS),
-	validateRequest(updateTenantSchema),
-	updateTenant
+	validateRequest(tenantValidators.updateTenantSchema),
+	tenantControllers.updateTenant
 );
 
 //**Deactivate tenant
@@ -79,7 +68,7 @@ tenantRouter.patch(
 	"/deactivate/:tenantId",
 	verifyToken,
 	verifyRolePermission(PERMS_SET.RESTRICTED_PERMS),
-	deactivateTenant
+	tenantControllers.deactivateTenant
 );
 
 module.exports = tenantRouter;

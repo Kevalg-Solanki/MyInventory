@@ -5,8 +5,9 @@ const { TENANT_ERROR } = require("../../constants");
 const throwAppError = require("../../utils/throwAppError");
 const sendResponse = require("../../utils/sendResponse.js");
 
-//services
-const services = require("./tenantMember.service");
+//memberServices
+const memberServices = require("./tenantMember.service");
+const paginationHandler = require("../../utils/paginationHandler.js");
 
 
 
@@ -20,7 +21,7 @@ async function inviteUserToPlatformAndTenant(req,res,next){
 
         if(!tenantId) throwAppError(TENANT_ERROR.TENANT_NOT_FOUND)
         
-        await services.inviteUserToPlatformAndSendInviteRequest(tenantId,type,credential,req.user);
+        await memberServices.inviteUserToPlatformAndSendInviteRequest(tenantId,type,credential,req.user);
 
         return sendResponse(res,200,"Invitation to platform and invite request send!.");
     }
@@ -30,7 +31,48 @@ async function inviteUserToPlatformAndTenant(req,res,next){
     }
 }
 
+//**POST /:tenantId/invite-tenant
+async function inviteUserToTenant(req,res,next){
+    try{
+        const {type,credential} = req.body;
+        const {tenantId} = req.params;
+
+        if(!tenantId) throwAppError(TENANT_ERROR.TENANT_NOT_FOUND)
+        
+        await memberServices.sendUserJoinTenantRequest(tenantId,type,credential,req.user);
+
+        return sendResponse(res,200,"Invitation to tenant request send!.");
+    }
+    catch(error)
+    {
+        next(error);
+    }
+}
+
+//**POST /:tenantId
+async function getAllTenantMembers(req,res,next) {
+    try
+    {
+        const tenantId = req.params?.tenantId;
+        const pagination = paginationHandler(
+            req.query?.page,
+            req.query?.limit,
+            req.query?.sort
+        );
+
+        const {allMemberList,preparedPagination} = await memberServices.getAllTenantMemberListWithRoles(tenantId,pagination);
+
+
+        return sendResponse(res,200,"All members fetched.",{allMemberList,preparedPagination});
+    }
+    catch(error)
+    {
+        next(error);
+    }
+}
 
 module.exports = {
-    inviteUserToPlatformAndTenant
+    inviteUserToPlatformAndTenant,
+    inviteUserToTenant,
+    getAllTenantMembers
 }
