@@ -2,7 +2,13 @@ const PERMS = require("./permission");
 
 /**
  * Defines permissions which are trigger permissions, if trigger permission found permission defined will 
- * auto added to that permission of role
+ * auto added to that permission of role.
+ */
+
+/**
+ * NOTE :- This file used instead permSets for more clearity and
+ * 			making auto enable permission easy to maintain.
+ * (Currently implementation for more structered and clear one is in pending task list. )
  */
 
 
@@ -26,6 +32,44 @@ const ROLE_ASSIGN_REMOVE = [
 	PERMS.ROLE_GET_MEMBER_ROLES_WITH_PERM,
 ];
 
+
+
+//requests
+const REQUEST_GET_TENANT_ALL= [
+	PERMS.REQUEST_GET_TENANT_SELF
+]
+
+
+const REQUEST_SEND_TENANT_INVITE = [
+	PERMS.REQUEST_GET_TENANT_SELF,
+	PERMS.REQUEST_CANCEL_SELF_TENANT_INVITE
+]
+
+const REQUEST_SEND_PLATFORM_INVITE = [
+	PERMS.REQUEST_GET_TENANT_SELF,
+	PERMS.REQUEST_SEND_TENANT_INVITE,
+	PERMS.REQUEST_CANCEL_SELF_TENANT_INVITE
+]
+
+const REQUEST_CANCEL_TENANT_INVITE = [
+	PERMS.REQUEST_GET_TENANT_ALL,
+	PERMS.REQUEST_SEND_TENANT_INVITE,
+	PERMS.REQUEST_SEND_PLATFORM_INVITE,
+	PERMS.REQUEST_CANCEL_SELF_TENANT_INVITE
+]
+
+const REQUEST_CANCEL_SELF_TENANT_INVITE= [
+	PERMS.REQUEST_GET_TENANT_SELF,
+	PERMS.REQUEST_SEND_TENANT_INVITE,
+
+];
+
+
+
+
+
+
+
 module.exports = {
 	TENANT_UPDATE,
 	ROLE_GET_ALL_WITH_PERM,
@@ -34,4 +78,9 @@ module.exports = {
 	ROLE_CREATE,
 	ROLE_UPDATE,
 	ROLE_ASSIGN_REMOVE,
+	REQUEST_CANCEL_SELF_TENANT_INVITE,
+	REQUEST_SEND_PLATFORM_INVITE,
+	REQUEST_GET_TENANT_ALL,
+	REQUEST_SEND_TENANT_INVITE,
+	REQUEST_CANCEL_TENANT_INVITE,
 };

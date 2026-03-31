@@ -42,10 +42,7 @@ const tenantRoleSchema = new mongoose.Schema(
 
 
 
-tenantRoleSchema.index(
-    {tenantId:1,roleName:1},
-    {unique:true, partialFilterExpression:{isDeleted:{$ne:true}}}
-);
+
 
 tenantRoleSchema.index({tenantId:1,isDeleted:1});
 

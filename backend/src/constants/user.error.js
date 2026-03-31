@@ -4,14 +4,14 @@ module.exports = {
 		code: "USER_DEACTIVATED",
 		httpStatus: 403,
 		message:
-			"Your account is deactivated. Please activate it using the email sent to you.",
+			"This account is deactivated.",
 	},
 
 	//--404
 	USER_NOT_FOUND: {
 		code: "USER_NOT_FOUND",
 		httpStatus: 404,
-		message: "User not found. Please signUp first.",
+		message: "User not found.",
 	},
 
 	//--409

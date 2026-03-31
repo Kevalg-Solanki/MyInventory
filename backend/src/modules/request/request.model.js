@@ -29,7 +29,7 @@ const requestSchema = new mongoose.Schema(
 		},
 		requestStatus: {
 			type: String,
-			enum: ["pending", "accepted", "rejected"],
+			enum: ["pending", "accepted", "rejected","cancelled"],
 			default: "pending",
 			required: true,
 		},
@@ -41,7 +41,7 @@ const requestSchema = new mongoose.Schema(
 		requestMessage: {
 			type: String,
 			required: true,
-			maxlength: 50,
+			maxlength: 100,
 		},
 		isDeleted: {
 			type: Boolean,

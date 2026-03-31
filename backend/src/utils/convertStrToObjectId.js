@@ -12,7 +12,7 @@ const throwAppError = require("./throwAppError");
  * @param {string} strId - id as string to convert
  * @returns {ObjectId} - converted ObjectId
  */
-module.exports = async function convertStrToObjectId(strId) {
+module.exports = function convertStrToObjectId(strId) {
 	if (!ObjectId.isValid(strId)) {
 		throwAppError(ID_ERROR.OBJECTID_INVALID);
 	}

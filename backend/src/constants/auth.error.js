@@ -72,7 +72,13 @@ module.exports = {
 		ACCESS_DENIED: {
 			code: "ACCESS_DENIED",
 			httpStatus: 403,
+
 			message: "Access denied.",
+		},
+		REQ_PERMS_NOT_FOUND: {
+			code: "REQ_PERMS_NOT_FOUND",
+			httpStatus: 403,
+			message: "Don't have permission for this.",
 		},
 	},
 };

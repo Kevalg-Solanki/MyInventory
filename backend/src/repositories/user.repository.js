@@ -1,6 +1,7 @@
 //models
 const { UserModel } = require("../modules/user/user.model");
-const { convertStrToObjectId } = require("../utils");
+const utils = require("../utils");
+
 
 
 
@@ -28,6 +29,29 @@ async function findUserByCredential(credential) {
 	});
 }
 
+
+/**
+ * 
+ * @param {string || objectId} tenantIdToAdd - tenant id to add
+ * @param {string || objectId} userId - add to this user with this id
+ * @param {mongooseSession || void} session - session if required
+ * @returns {object || null} updated user data
+ */
+async function insertTenantIdIntoUserById(tenantIdToAdd,userId,session=null){
+	const convertedTenantId = utils.convertStrToObjectId(tenantIdToAdd);
+	const convertedUserId = utils.convertStrToObjectId(userId);
+
+	const Opts = utils.getDefaultQueryOpts(session);
+
+	return await UserModel.findOneAndUpdate(
+		{_id:convertedUserId,isDeleted:false,isActive:true},
+		{$addToSet:{tenants:convertedTenantId}},
+		Opts
+	)
+
+}
+
+
 /**
  * 
  * @param {string} userId 
@@ -47,5 +71,7 @@ async function updateUserById(userId,updatedUserData){
 module.exports = {
     findUserById,
     findUserByCredential,
-	updateUserById
+	insertTenantIdIntoUserById,
+	updateUserById,
+
 }

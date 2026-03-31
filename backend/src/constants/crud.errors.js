@@ -3,7 +3,7 @@ module.exports = {
 	UPDATABLE_FIELDS_MISSING: {
 		code: "UPDATABLE_FIELDS_MISSING",
 		httpStatus: 400,
-		message: "Not updatable fields found",
+		message: "No updatable fields found",
 	},
 	UNABLE_TO_UPDATE:{
 		code:"UNABLE_TO_UPDATE",
