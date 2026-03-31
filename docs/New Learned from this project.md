@@ -32,5 +32,25 @@ type: Joi.string().valid("email","mobile").required(),
 6.how to switch and create new branch
 7.how to save changes temporary using "git stash"
 8.how to switch branch using "git switch <branch-name>
-9.how to 
+9.write clear code that any team member can understand
+10.Don't reapet code if code reapete wrap it in the function 
+11.Always write bussines logic,data base query in the services not in controller
+12.controller should only call service functin and handle http response
+13.All response should have consistant structure
+14.how to merge branches
+15.how to delete branches after pushing from local and remote
+16.Keep README updated
+17.One function should only to one thing
+18.Modulrization
+
+19.start session with mongoose for multiple write to ensure proper work of api by all write completions and avoding
+one write fails and other all completed which created issues
+20.make files for helper function which used across the app in folder 'utils' and make index.js file which export this all
+helper function so all helper function can exported simply from one path and avoid single big file of helper function 
+21.aggregate pipline how to group and convert object into flat array with query
+22.validate permission array coming from request in joi which allow only value stored in pre defined Object
+23.restrict duplicate value in array in joi
+24.Joi let pass validation for text type data from request have to enforce json format for request body
+25.use select() in mongoose to get only selected data which is faster
+26.use lean() with select() if data required in read only  		
 

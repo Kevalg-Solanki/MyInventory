@@ -2,66 +2,108 @@
 const nodemailer = require("nodemailer");
 
 //constants
-const ERROR = require("../constants/errors.js");
+const { COMM_ERROR } = require("../constants/index.js");
 const SENDER_EMAIL = process.env.EMAIL_USER;
+const { OTP_TYPE, MESSAGE_TYPE } = require("../constants/messageType.js");
 
 //template prepare services
 const {
 	prepareVerifyCredentialEmailTemplate,
 	prepareForgotPassEmailTemplate,
+	prepareTenantDeactivationEmailTemplate,
+	prepareTenantDeleteEmailTemplate,
+	prepareUserDeactivationEmailTemplate,
+	prepareTenantInviteEmailTemplate,
+	preparePlatformInviteEmailTemplate
 } = require("./prepareEmailFromTemplate.js");
-const AppError = require("./appErrorHandler.js");
-const { OTP_TYPE } = require("../constants/auth.js");
+
+//utils
+const throwAppError = require("./throwAppError.js");
 
 //sender mail
-
 
 /**
  * -function used for choose which template to prepare according to the type
  *
  * @param {string} type - type of otp (e.g verify-credential, forgot-password)
  * @param {string} destination - email
- * @param {number} otp - otp
- * @param {number} expireIn - time set to expire Otp (In Minutes) default - 5 Minutes
+ * @param {Object} metadata - data to include in email
  * @return {Object} - otp sent success or fail and error
  */
 
-const sendMail = async (type, destination, otp, expireIn) => {
+async function sendMail(type, destination, metadata = {}) {
 	try {
 		let preparedEmailTemplate;
 
 		//select which template to prepare
 		switch (type) {
+			//--AUTH
 			case OTP_TYPE.VERIFY_CREDENTIAL:
 				preparedEmailTemplate = await prepareVerifyCredentialEmailTemplate(
 					destination,
-					otp,
-					expireIn
+					metadata
 				);
-			
+				break;
+
 			case OTP_TYPE.FORGOT_PASSWORD:
 				preparedEmailTemplate = await prepareForgotPassEmailTemplate(
 					destination,
-					otp,
-					expireIn
+					metadata
 				);
+				break;
+
+			//--TENANT: DEACTIVATE, DELETE, PLATFORM-AND-TENANT-INVITE
+			//DEACTIVATED
+			case MESSAGE_TYPE.TENANT_DEACTIVATED_MSG:
+				preparedEmailTemplate = await prepareTenantDeactivationEmailTemplate(
+					destination,
+					metadata
+				);
+				break;
+			//DELETED
+			case MESSAGE_TYPE.TENANT_DELETED_MSG:
+				preparedEmailTemplate = await prepareTenantDeleteEmailTemplate(
+					destination,
+					metadata
+				);
+				break;
+			//PLATFORM-INVITE
+			case MESSAGE_TYPE.PLATFORM_INVITE:
+				preparedEmailTemplate = await preparePlatformInviteEmailTemplate(
+					destination,
+					metadata
+				);
+				break;
+
+			case MESSAGE_TYPE.TENANT_INVITE:
+				preparedEmailTemplate = await prepareTenantInviteEmailTemplate(
+					destination,
+					metadata
+				);
+				break;
+			//--USER: DEACTIVATE
+			case MESSAGE_TYPE.USER_DEACTIVATED_MSG:
+				preparedEmailTemplate = await prepareUserDeactivationEmailTemplate(
+					destination,
+					metadata
+				);
+				break;
+
+			default:
+				preparedEmailTemplate = null;
 		}
 
 		//if there is not template for type of email
 		if (!preparedEmailTemplate) {
-
-			let error = ERROR.TEMPLATE_NOT_FOUND;
-			throw new AppError(error?.message,error?.code,error?.httpStatus);
+			throwAppError(COMM_ERROR.TEMPLATE_NOT_FOUND);
 		}
-
 
 		//now send prepared email data to the sendEmailService
 		return await sendMailService(preparedEmailTemplate);
-
 	} catch (error) {
 		throw error;
 	}
-};
+}
 
 //Create transporter object
 const tranposter = nodemailer.createTransport({
@@ -84,7 +126,7 @@ const tranposter = nodemailer.createTransport({
  * @returns {Object} - response
  */
 
-const sendMailService = async ({ email, subject, text, htmlTemplate }) => {
+async function sendMailService({ email, subject, text, htmlTemplate }) {
 	try {
 		//prepare object of email to send
 		const emailToSent = {
@@ -100,11 +142,10 @@ const sendMailService = async ({ email, subject, text, htmlTemplate }) => {
 
 		console.log("Email sent: ", info.response);
 		return true;
-
 	} catch (error) {
-		throw error
+		throw error;
 	}
-};
+}
 
 module.exports = {
 	sendMailService,

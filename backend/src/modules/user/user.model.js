@@ -4,16 +4,16 @@ const bcrypt = require("bcrypt");
 
 const userSchema = new mongoose.Schema(
 	{
-		profilePicture: { type: String },
+		profilePicture: { type: String, trim: true },
 		firstName: {
 			type: String,
 			required: true,
-			index: "text",
+			maxlength: 50,
 		},
 		lastName: {
 			type: String,
 			required: true,
-			index: "text",
+			maxlength: 50,
 		},
 		email: {
 			type: String,
@@ -21,21 +21,19 @@ const userSchema = new mongoose.Schema(
 			lowercase: true,
 			unique: true,
 			sparse: true,
-			index: "text",
+
+			maxlength: 254,
 		},
 		mobile: {
 			type: String,
 			trim: true,
 			unique: true,
 			sparse: true,
-			index: "text",
 		},
 		tenants: [
 			{
-				tenantId: {
-					type: mongoose.Schema.Types.ObjectId,
-					ref: "Tenant",
-				},
+				type: mongoose.Schema.Types.ObjectId,
+				ref: "Tenant",
 			},
 		],
 		password: {
@@ -63,13 +61,32 @@ const userSchema = new mongoose.Schema(
 	{ timestamps: true }
 );
 
-//Indexing
-userSchema.index({ "tenants.tenantId": 1 });
+//keep email/mobile unique ignore deleted
 userSchema.index({
-	firstName: "text",
-	lastName: "text",
-	email: "text",
-	mobile: "text",
+	unique: true,
+	partialFilterExpression: {
+		isDeleted: { $ne: true },
+		email: { $type: "string" },
+	},
+});
+userSchema.index({
+	unique: true,
+	partialFilterExpression: {
+		isDeleted: { $ne: true },
+		mobile: { $type: "string" },
+	},
+});
+
+//Indexing
+userSchema.index({ tenants: 1 });
+
+//Strip fields/remove fields
+userSchema.set("toJSON", {
+	transform(doc, ret) {
+		delete ret.__v;
+		delete ret.isDeleted;
+		return ret;
+	},
 });
 
 const UserModel = mongoose.model("User", userSchema);
@@ -77,10 +94,11 @@ const UserModel = mongoose.model("User", userSchema);
 //User Class
 class UserClass {
 	constructor(userData) {
-		Object.assign(this, userData._doc); //copy DB fields into class
+		const src = userData?._doc || userData;
+		Object.assign(this, src); //copy DB fields into class
 	}
 
-	async getUserInfo() {
+	getUserInfo() {
 		return {
 			_id: this._id,
 			firstName: this.firstName,
@@ -91,7 +109,7 @@ class UserClass {
 		};
 	}
 
-	async isUserAccountActive() {
+	isUserAccountActive() {
 		return this.isActive ? true : false;
 	}
 
@@ -100,7 +118,6 @@ class UserClass {
 	 * @return {boolean} - return password is matched or not
 	 */
 	async verifyPassword(password) {
-		console.log(password,this.password);
 		return await bcrypt.compare(password, this.password);
 	}
 }

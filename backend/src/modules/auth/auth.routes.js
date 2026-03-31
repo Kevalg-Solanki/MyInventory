@@ -1,5 +1,8 @@
 //middlewares
 const validateRequest = require("../../middlewares/validateRequest");
+const verifyToken = require("../../middlewares/verifyToken.js");
+
+
 
 //validations
 const { verifyCredentialSchema, 
@@ -24,7 +27,6 @@ const { verifyCredentialAndSendOtp,
         resetPassword,
         getUserDataById
     } = require("./auth.controller.js");
-const verifyToken = require("../../middlewares/verifyToken.js");
 
 
 //create router

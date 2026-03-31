@@ -3,12 +3,19 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 
 //constants
-const ERROR = require("../../constants/errors.js");
-const { OTP_TYPE, SESSION_OTP_TYPE } = require("../../constants/auth.js");
+const { PASS_ERROR, TOKEN_ERROR, USER_ERROR } = require("../../constants");
+const { OTP_TYPE, SESSION_OTP_TYPE } = require("../../constants/messageType.js");
 
 //models
 const otpModel = require("../otp/otp.model");
 const { UserModel, UserClass } = require("../user/user.model");
+const UserSettingModel = require("../settings/userSettings.model.js");
+
+//repositories
+const {
+	findUserById,
+	findUserByCredential,
+} = require("../../repositories/user.repository.js");
 
 //utils
 const { generateOtp } = require("../../utils/otpGenerator.js");
@@ -18,80 +25,51 @@ const {
 } = require("../../utils/jwtTokenService.js");
 const { sendOtp } = require("../otp/otp.service.js");
 const validateOtp = require("../../utils/validateOtp.js");
-const AppError = require("../../utils/appErrorHandler.js");
-const sendResponse = require("../../utils/sendResponse.js");
-
-/**
- * -find user with credential in database
- * @param {string} credential - credential with find user
- * @return {Object} - if user exist returns user info or if not then returns null
- */
-
-const findUserWithCredential = async (credential) => {
-	//find and return user
-	return await UserModel.findOne({
-		$or: [{ email: credential }, { mobile: credential }],
-		isDeleted: false,
-	});
-};
-
-/**
- * -find user with id in database
- * @param {string} credential - id with find user
- * @return {Object} - if user exist returns user info or if not then returns null
- */
-
-const findUserWithId = async (userId) => {
-	return await UserModel.findOne({ _id: userId, isDeleted: false });
-};
+const throwAppError = require("../../utils/throwAppError.js");
 
 /**
  *
  * @param {string} credential - email/mobile
  * @returns {Object}
  */
-const checkUserExistAndActive = async (credential) => {
-	const userInDatabase = await findUserWithCredential(credential);
+async function assertUserExistAndActiveByCredential(credential) {
+	const userInDatabase = await findUserByCredential(credential);
 
 	if (!userInDatabase) {
-		let error = ERROR.USER_NOT_FOUND;
-		throw new AppError(error?.message, error?.code, error?.httpStatus);
+		throwAppError(USER_ERROR.USER_NOT_FOUND);
 	}
 
 	const user = new UserClass(userInDatabase);
 
 	//check user active
 	if (!user.isUserAccountActive()) {
-		let error = ERROR.USER_DEACTIVATED;
-		throw new AppError(error?.message, error?.code, error?.httpStatus);
+		throwAppError(USER_ERROR.USER_DEACTIVATED);
 	}
 
 	return userInDatabase;
-};
+}
 
 /**
  *
  * @param {string} userId - userId
  * @returns {Object}
  */
-const checkUserWithIdExistAndActive = async (userId) => {
-	const userInDatabase = await findUserWithId(userId);
+async function assertUseExistAndActiveById(userId) {
+	const userInDatabase = await findUserById(userId);
 
 	if (!userInDatabase) {
-		let error = ERROR.USER_NOT_FOUND;
-		throw new AppError(error?.message, error?.code, error?.httpStatus);
+		throwAppError(USER_ERROR.USER_NOT_FOUND);
 	}
 
 	const user = new UserClass(userInDatabase);
 
 	//check user active
 	if (!user.isUserAccountActive()) {
-		let error = ERROR.USER_DEACTIVATED;
-		throw new AppError(error?.message, error?.code, error?.httpStatus);
+		throwAppError(USER_ERROR.USER_DEACTIVATED);
 	}
 
 	return userInDatabase;
-};
+}
 
 /**
  * -find user with credential in database
@@ -99,7 +77,7 @@ const checkUserWithIdExistAndActive = async (userId) => {
  * @param {string} type - type of otp
  * @return {Object} - returns newOtp
  */
-const getNewOtp = async (destination, type) => {
+async function getNewOtp(destination, type) {
 	//generate new otp for registration
 	//clear all existing otp for user first
 	await otpModel.deleteMany({
@@ -124,7 +102,7 @@ const getNewOtp = async (destination, type) => {
 	await otpToSaveInDatabase.save();
 
 	return newOtp;
-};
+}
 
 /**
  *
@@ -132,9 +110,12 @@ const getNewOtp = async (destination, type) => {
  * @param {string} newPassword - new hashed password
  * @returns {Object} - response
  */
-const setNewPassword = async (credential, newPassword) => {
+async function setNewPassword(credential, newPassword) {
 	//hash password
-	const hashedPassword = await bcrypt.hash(newPassword, 10);
+	const hashedPassword = await bcrypt.hash(
+		newPassword,
+		Number(process.env.HASH_COST_FACTOR)
+	);
 	//set new password
 	const updatedUser = await UserModel.findOneAndUpdate(
 		{ $or: [{ email: credential }, { mobile: credential }] },
@@ -143,17 +124,19 @@ const setNewPassword = async (credential, newPassword) => {
 	);
 
 	return updatedUser;
-};
+}
 
 /**
  * @param {ObjectId} userId - userId for finding user
  * @param {string} newPassword - new password to set
  * @return {Object} - updated user
  */
-const setNewPasswordWithId = async (userId, newPassword) => {
-	console.log("user",newPassword)
+async function setNewPasswordById(userId, newPassword) {
 	//hash password
-	const hashedPassword = await bcrypt.hash(newPassword, 10);
+	const hashedPassword = await bcrypt.hash(
+		newPassword,
+		Number(process.env.HASH_COST_FACTOR)
+	);
 	//set new password
 	const updatedUser = await UserModel.findOneAndUpdate(
 		{ _id: userId },
@@ -162,16 +145,19 @@ const setNewPasswordWithId = async (userId, newPassword) => {
 	);
 
 	return updatedUser;
-};
+}
 
 /**
  *
  * @param {Object} userData - user data to save
  * @return {Object}- saved user data
  */
-const saveUserInDatabase = async (userData) => {
+async function saveUserInDatabase(userData) {
 	//1.hash password
-	const hashedPassword = await bcrypt.hash(userData?.password, 10);
+	const hashedPassword = await bcrypt.hash(
+		userData?.password,
+		Number(process.env.HASH_COST_FACTOR)
+	);
 
 	//2.save user in database
 	const userToSave = new UserModel({
@@ -186,25 +172,31 @@ const saveUserInDatabase = async (userData) => {
 	//save and get saved user informations
 	const savedUser = await userToSave.save();
 
+	//3.create user settings object
+	const userSettingToSave = new UserSettingModel({
+		userId: savedUser._id
+	});
+
+	await userSettingToSave.save();
+
 	return savedUser;
-};
+}
 
 /**
  * @param {string} credential - actual email/mobile
  * @param {string} type - "email" or "mobile"
  */
-const checkUserExist = async (credential) => {
+async function assertUserDoesNotExistByCredential(credential) {
 	//check if user exist
-	const existingUserInDatabase = await findUserWithCredential(credential);
+	const existingUserInDatabase = await findUserByCredential(credential);
 
 	//if user exist in data base then throw error
 	if (existingUserInDatabase) {
-		let error = ERROR.USER_EXISTS;
-		throw new AppError(error?.message, error?.code, error?.httpStatus);
+		throwAppError(USER_ERROR.USER_EXISTS);
 	}
 
 	//if user does not exist return
-};
+}
 
 /**
  *
@@ -213,7 +205,7 @@ const checkUserExist = async (credential) => {
  * @returns
  */
 
-const sendVericationOtp = async (credential, type) => {
+async function sendVericationOtp(credential, type) {
 	try {
 		//send otp on the email/mobile.
 		const sendOtpResult = await sendOtp(
@@ -225,29 +217,38 @@ const sendVericationOtp = async (credential, type) => {
 
 		//if failed to sent otp
 		if (!sendOtpResult) {
-			let error = ERROR.EMAIL_SEND_FAILED;
-			throw new AppError(error?.message, error?.code, error?.httpStatus);
+			throwAppError(COMM_ERROR.EMAIL_SEND_FAILED);
 		}
 
 		//if otp sent return
 	} catch (error) {
 		throw error;
 	}
-};
+}
+
+async function getUserRegistrationRequiredData(savedUser) {
+	const user = new UserClass(savedUser);
+
+	const payload = await user.getUserInfo();
+
+	const accessToken = generateAccessToken(payload);
+	const refreshToken = generateRefreshToken(payload);
+
+	return { accessToken, refreshToken, userData: payload };
+}
 
 /**
  *
  * @param {Object} userData - user data recieved in request
  * @returns - userDetails from database and tokens
  */
-const loginUser = async (userData) => {
+async function loginUser(userData) {
 	//1. find user in database
-	const userInDatabase = await findUserWithCredential(userData.credential);
+	const userInDatabase = await findUserByCredential(userData.credential);
 
 	//if user does not exist
 	if (!userInDatabase) {
-		let error = ERROR.USER_NOT_FOUND;
-		throw new AppError(error?.message, error?.code, error?.httpStatus);
+		throwAppError(USER_ERROR.USER_NOT_FOUND);
 	}
 
 	//2. Create object of user
@@ -258,17 +259,15 @@ const loginUser = async (userData) => {
 
 	//if password does not match
 	if (!isMatched) {
-		let error = ERROR.PASSWORD_INCORRECT;
-		throw new AppError(error?.message, error?.code, error?.httpStatus);
+		throwAppError(PASS_ERROR.PASSWORD_INCORRECT);
 	}
 
 	//check user account is activate or not
-	const isActive = user.isUserAccountActive();
+	const isActive = await user.isUserAccountActive();
 
 	//if diactived user account
 	if (!isActive) {
-		let error = ERROR.USER_DEACTIVATED;
-		throw new AppError(error?.message, error?.code, error?.httpStatus);
+		throwAppError(USER_ERROR.USER_DEACTIVATED);
 	}
 
 	//if active
@@ -285,37 +284,24 @@ const loginUser = async (userData) => {
 		accessToken,
 		refreshToken,
 	};
-};
+}
 
 /**
  * @param {string} refreshToken - refresh token came in request with which new access token will generated
  * @return {Object} - new access token
  */
-const generateAccessTokenViaRefreshToken = async (refreshToken) => {
+async function generateAccessTokenViaRefreshToken(refreshToken) {
 	try {
 		//check refreshToken exist
 		if (!refreshToken) {
-			let error = ERROR.TOKEN_NOT_FOUND;
-			throw new AppError(error?.message, error?.code, error?.httpStatus);
+			throwAppError(TOKEN_ERROR.TOKEN_NOT_FOUND);
 		}
 
 		//verify and decod token
 		const decoded = jwt.verify(refreshToken, process.env.JWT_SECRETE);
 
 		//check if user exist and active
-		const userDataFromDatabase = await UserModel.findById(decoded._id);
-
-		//if user not found
-		if (!userDataFromDatabase || userDataFromDatabase.isDeleted) {
-			let error = ERROR.USER_NOT_FOUND;
-			throw new AppError(error?.message, error?.code, error?.httpStatus);
-		}
-
-		//check if user active
-		if (!userDataFromDatabase.isActive) {
-			let error = ERROR.USER_DEACTIVATED;
-			throw new AppError(error?.message, error?.code, error?.httpStatus);
-		}
+		const userDataFromDatabase = await assertUseExistAndActiveById(decoded._id);
 
 		//create object of user class
 		const user = new UserClass(userDataFromDatabase);
@@ -329,12 +315,13 @@ const generateAccessTokenViaRefreshToken = async (refreshToken) => {
 		return newAccessToken;
 	} catch (error) {
 		if (error.name === "TokenExpiredError") {
-			let err = ERROR.TOKEN_EXPIRED;
-			throw new AppError(err?.message, err?.code, err?.httpStatus);
+			throwAppError(TOKEN_ERROR.TOKEN_EXPIRED);
+		} else if (error.name === "JsonWebTokenError") {
+			throwAppError(TOKEN_ERROR.TOKEN_INVALID);
 		}
 		throw error;
 	}
-};
+}
 
 /**
  * @param {string} credential - example@gmail.com/999989898
@@ -342,10 +329,10 @@ const generateAccessTokenViaRefreshToken = async (refreshToken) => {
  * @return {Object} - response success/fail
  */
 
-const findUserAndSentOtp = async (credential, type) => {
+async function findUserAndSentOtp(credential, type) {
 	try {
 		//first check user
-		await checkUserExistAndActive(credential);
+		await assertUserExistAndActiveByCredential(credential);
 
 		//if user active then sent otp on credential
 		await sendOtp(OTP_TYPE.FORGOT_PASSWORD, type, credential);
@@ -354,7 +341,7 @@ const findUserAndSentOtp = async (credential, type) => {
 	} catch (error) {
 		throw error;
 	}
-};
+}
 
 /**
  * @param {string} credential - "credential to verify"
@@ -363,9 +350,9 @@ const findUserAndSentOtp = async (credential, type) => {
  * @return {Object} - response
  */
 
-const verifyForgotPassOtp = async (credential, otp) => {
+async function verifyForgotPassOtp(credential, otp) {
 	//first check user
-	await checkUserExistAndActive(credential);
+	await assertUserExistAndActiveByCredential(credential);
 
 	//validate forgot passoword otp
 	await validateOtp(OTP_TYPE.FORGOT_PASSWORD, credential, otp);
@@ -374,7 +361,7 @@ const verifyForgotPassOtp = async (credential, otp) => {
 	const newOtp = await getNewOtp(credential, SESSION_OTP_TYPE.FORGOT_PASSWORD);
 
 	return newOtp;
-};
+}
 
 /**
  *
@@ -382,10 +369,10 @@ const verifyForgotPassOtp = async (credential, otp) => {
  * @param {string} newPassword - new password to set
  * @returns
  */
-const changeUserPassword = async (credential, newPassword) => {
+async function changeUserPassword(credential, newPassword) {
 	try {
 		//first check user
-		await checkUserExistAndActive(credential);
+		await assertUserExistAndActiveByCredential(credential);
 
 		//set new password of user
 		const setNewPasswordResponse = await setNewPassword(
@@ -394,49 +381,46 @@ const changeUserPassword = async (credential, newPassword) => {
 		);
 
 		if (!setNewPasswordResponse) {
-			let error = ERROR.PASSWORD_RESET_FAILED;
-			throw new AppError(error?.message, error?.code, error?.httpStatus);
+			throwAppError(PASS_ERROR.PASSWORD_RESET_FAILED);
 		}
 
 		return;
 	} catch (error) {
 		throw error;
 	}
-};
+}
 
-const resetUserPassword = async (user, oldPassword, newPassword) => {
+async function verifyOldPassAndSetNewPass(user, oldPassword, newPassword) {
 	//check old password match
 	const isMatched = await user.verifyPassword(oldPassword);
-	console.log("user", user.getUserInfo())
-	console.log(oldPassword,newPassword);
-	console.log("is match",isMatched)
+
 	//if password does not match
 	if (!isMatched) {
-		let error = ERROR.PASSWORD_INCORRECT;
-		throw new AppError(error?.message, error?.code, error?.httpStatus);
+		throwAppError(PASS_ERROR.PASSWORD_INCORRECT);
 	}
 
 	const userData = await user.getUserInfo();
 	//if password matches change password
 	//set new password of user
-	const updatedUser = await setNewPasswordWithId(userData._id,newPassword);
+	const updatedUser = await setNewPasswordById(userData._id, newPassword);
 
-	//if password changed return 
+	//if password changed return
 	return;
-};
+}
 
 module.exports = {
-	findUserWithCredential,
-	checkUserExist,
+	findUserByCredential,
+	assertUserDoesNotExistByCredential,
 	sendVericationOtp,
 	getNewOtp,
 	saveUserInDatabase,
+	getUserRegistrationRequiredData,
 	loginUser,
 	generateAccessTokenViaRefreshToken,
 	findUserAndSentOtp,
 	verifyForgotPassOtp,
 	changeUserPassword,
-	findUserWithId,
-	checkUserWithIdExistAndActive,
-	resetUserPassword,
+	findUserById,
+	assertUseExistAndActiveById,
+	verifyOldPassAndSetNewPass,
 };

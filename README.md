@@ -94,8 +94,8 @@
 ### 1.Clone the repo
 
 ```bash
-git clone https://github.com/your-username/myinventory.git
-cd myinventory
+git clone https://github.com/Kevalg-Solanki/MyInventory.git
+cd MyInventory
 ```
 
 ### 2.Install dependencies
@@ -117,6 +117,9 @@ PORT = 5000
 JWT_SECRETE = "<jwt_secrete>"
 JWT_ACCESS_TOKEN_EXPIRY = "24h"
 JWT_REFRESH_TOKEN_EXPIRY = "7d"
+
+# Hashing cost factor for bycrypt
+HASH_COST_FACTOR = <number>
 
 #Expiry in minutes
 VERIFY_CRED_OTP_EXPIRY = 5

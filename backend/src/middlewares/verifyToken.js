@@ -1,76 +1,54 @@
 //External modules
 const jwt = require("jsonwebtoken");
 
-//constants
-const ERROR = require("../constants/errors.js");
+//models
 const { UserModel } = require("../modules/user/user.model");
 
-const verifyToken = async (req,res,next)=>{
+//constants
+const { TOKEN_ERROR, USER_ERROR, ID_ERROR } = require("../constants");
 
-    try
-    {   
-        //get token 
-        const authToken = req.header("Authorization");
+//utils
+const throwAppError = require("../utils/throwAppError");
+const { isValidObjectId } = require("mongoose");
 
-        //check token exist
-        if(!authToken || !authToken.startsWith('Bearer '))
-        {
-            let err = ERROR.TOKEN_NOT_FOUND;
-            //if token not exist or wrong keyword
-            return res.status(err?.httpStatus).json({
-                success:false,
-                statusCode:err.httpStatus,
-                message:err.message,
-                code:err?.code
-            })
-        }
+async function verifyToken(req, res, next){
+	const throwError = (error) => next(throwAppError(error));
+	try {
+		//get token
+		const authToken = req.header("Authorization");
 
-        //get token part only
-        const token = authToken.split(" ")[1];
+		//check token exist
+		if (!authToken || !authToken.startsWith("Bearer "))
+			return throwError(TOKEN_ERROR.TOKEN_NOT_FOUND);
 
-        //verify token
-        const decoded = jwt.verify(token,process.env.JWT_SECRETE);
+		//get token part only
+		const token = authToken.split(" ")[1];
+		//verify token
+		const decoded = jwt.verify(token, process.env.JWT_SECRETE);
 
-        //check if user exist
-        req.user = await UserModel.findById(decoded._id).select("-password -__v");//exclude password field to fetch
+		//check id
+		if(!isValidObjectId(decoded._id)) return throwError(ID_ERROR.OBJECTID_INVALID);
 
-        //if user not exist 
-        if(!req.user)
-        {
-            let err = ERROR.USER_NOT_FOUND;
-            return res.status(err?.httpStatus).json({
-                success:false,
-                statusCode:err.httpStatus,
-                message:err.message,
-                code:err?.code
-            })
-        }
+		//check if user exist
+		req.user = await UserModel.findById(decoded._id).select("-password -__v"); //exclude password field to fetch
 
-        //if token valid
-        next();
+		//if user not exist
+		if (!req.user || req.user?.isDeleted)
+			return throwError(USER_ERROR.USER_NOT_FOUND);
 
-    }   
-    catch(error)
-    {
-        console.error(error);
+		//check user is active or not
+		if (!req.user?.isActive) return throwError(USER_ERROR.USER_DEACTIVATED);
 
-        if(error?.name ==="JsonWebTokenError")
-        {
-            let err = ERROR.TOKEN_INVALID;
-            return res.status(err?.httpStatus).json({
-                success:false,
-                statusCode:err.httpStatus,
-                message:err.message,
-                code:err?.code
-            })
-        }
+		//if token valid
+		return next();
+	} catch (error) {
+		if (error?.name === "TokenExpiredError")
+			return throwError(TOKEN_ERROR.TOKEN_EXPIRED);
 
-        return res.status(500).json({
-            success:false,
-            statusCode:500,
-            message:"Internal Server Error"
-        })
-    }
-}
+		if (error?.name === "JsonWebTokenError") return throwError(TOKEN_ERROR.TOKEN_INVALID);
+
+		return next(error);
+	}
+};
 
 module.exports = verifyToken;

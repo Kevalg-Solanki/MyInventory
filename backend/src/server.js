@@ -12,7 +12,7 @@ const app = require("./app");
 //Main
 const PORT = process.env.PORT;
 
-const startServer = async () => {
+async function startServer() {
 	try {
 		//connect to the database
 		await connectToDb();
@@ -25,7 +25,7 @@ const startServer = async () => {
 		console.error("Database connection failed: ", error);
 		process.exit(1);
 	}
-};
+}
 
 //start server
 startServer();

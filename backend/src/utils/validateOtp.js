@@ -2,8 +2,8 @@
 const otpModel = require("../modules/otp/otp.model");
 
 //constants
-const ERROR = require("../constants/errors");
-const AppError = require("./appErrorHandler");
+const throwAppError = require("./throwAppError.js");
+const { OTP_ERROR } = require("../constants/index.js");
 
 /**
  * @param {string} type - type of otp e.g. verify-credential,registration
@@ -12,37 +12,32 @@ const AppError = require("./appErrorHandler");
  * @return {Object} - return otp if found otherwise null
  */
 
-const validateOtp = async (type, credential, otp) => {
-	
-		//1.first check otp exist or not
-		const existingOtpInDatabase = await otpModel.findOne({
-			destination: credential,
-			type:type
-		});
+async function validateOtp(type, credential, otp){
+	//1.first check otp exist or not
+	const existingOtpInDatabase = await otpModel.findOne({
+		destination: credential,
+		type: type,
+	});
 
-		if (!existingOtpInDatabase) {
-			let error = ERROR.OTP_NOT_AVAILABLE;
-			throw new AppError(error?.message,error?.code,error?.httStatus);
-		}
+	if (!existingOtpInDatabase) {
+		throwAppError(OTP_ERROR.OTP_NOT_AVAILABLE);
+	}
 
-		//2.check otp is expired or not
-		if (Date.now() > existingOtpInDatabase.expireIn) {
-			let error = ERROR.OTP_EXPIRED;
-			throw new AppError(error?.message,error?.code,error?.httStatus);
-		}
+	//2.check otp is expired or not
+	if (Date.now() > existingOtpInDatabase.expireIn) {
+		throwAppError(OTP_ERROR.OTP_EXPIRED);
+	}
 
-		//3.check otp is correct or not
-		if (existingOtpInDatabase.otp != otp) {
-			let error = ERROR.OTP_INVALID;
-			throw new AppError(error?.message,error?.code,error?.httStatus);
-		}
+	//3.check otp is correct or not
+	if (existingOtpInDatabase.otp != otp) {
+		throwAppError(OTP_ERROR.OTP_INVALID);
+	}
 
-		//first clear otp for user
-		await otpModel.deleteMany({destination:credential});
+	//first clear otp for user
+	await otpModel.deleteMany({ destination: credential });
 
-		//if otp exist,not expired,valid then
-		return true;
+	//if otp exist,not expired,valid then
+	return true;
 };
 
 module.exports = validateOtp;
-
